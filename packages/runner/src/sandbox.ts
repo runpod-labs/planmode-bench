@@ -63,12 +63,12 @@ async function getBaseDir(task: Task, tasksDir: string): Promise<string> {
       // No scaffold is fine for repo tasks
     }
     await execAsync(
-      "rm -rf .git && git init && git add -A && git commit -m 'base'",
+      "rm -rf .git && git init && git add -A && git commit --no-verify -m 'base'",
       { cwd: baseDir, timeout: 60_000 }
     );
   } else {
     await cp(scaffoldDir, baseDir, { recursive: true });
-    await execAsync("git init && git add -A && git commit -m 'base'", {
+    await execAsync("git init && git add -A && git commit --no-verify -m 'base'", {
       cwd: baseDir,
       timeout: 30_000,
     });
@@ -101,16 +101,25 @@ async function getBaseDir(task: Task, tasksDir: string): Promise<string> {
   }
 
   // Add .gitignore for deps (we symlink them to worktrees instead of committing)
-  await execAsync(
-    'echo "node_modules/\n.venv/\n__pycache__/\n*.pyc" >> .gitignore',
-    { cwd: baseDir, shell: "/bin/bash" }
-  );
+  const { writeFile: writeFileFS } = await import("node:fs/promises");
+  const gitignorePath = path.join(baseDir, ".gitignore");
+  try {
+    const existing = await import("node:fs/promises").then(m => m.readFile(gitignorePath, "utf-8").catch(() => ""));
+    const additions = ["node_modules/", ".venv/", "__pycache__/", "*.pyc", ".next/", "dist/"];
+    const lines = existing.split("\n");
+    for (const a of additions) {
+      if (!lines.includes(a)) lines.push(a);
+    }
+    await writeFileFS(gitignorePath, lines.join("\n"));
+  } catch {
+    await writeFileFS(gitignorePath, "node_modules/\n.venv/\n__pycache__/\n*.pyc\n.next/\ndist/\n");
+  }
 
   // Commit installed state so worktrees get a clean snapshot
-  await execAsync("git add -A && git commit -m 'deps installed' --allow-empty", {
+  // Use --no-verify to skip any repo-specific hooks (husky, commitlint, etc.)
+  await execAsync("git add -A && git commit --no-verify -m 'deps installed' --allow-empty", {
     cwd: baseDir,
-    timeout: 60_000,
-    env: { ...process.env, GIT_COMMITTER_NAME: "bench", GIT_COMMITTER_EMAIL: "bench@local", GIT_AUTHOR_NAME: "bench", GIT_AUTHOR_EMAIL: "bench@local" },
+    timeout: 120_000,
   });
 
   console.log(`    Base ready: ${baseDir}`);
