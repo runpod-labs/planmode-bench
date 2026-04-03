@@ -1,0 +1,55 @@
+id: "algorithm/implement-event-emitter"
+name: "Implement Full-Featured Event Emitter"
+version: 1
+
+category: "algorithm"
+difficulty: "medium"
+estimated_time_minutes: 15
+tags: ["typescript", "data-structures", "event-emitter", "design-patterns"]
+author: "runpod-labs"
+created_at: "2026-04-03"
+
+prompt: |
+  Implement the EventEmitter class in `src/event-emitter.ts`. The class should support:
+
+  1. `on(event, listener)` - Register a listener. Returns an unsubscribe function.
+  2. `once(event, listener)` - Register a listener that fires only once.
+  3. `emit(event, ...args)` - Call all listeners for the event. Returns true if any listeners existed.
+  4. `off(event, listener)` - Remove a specific listener.
+  5. `removeAllListeners(event?)` - Remove all listeners, or all for a specific event.
+  6. `listenerCount(event)` - Return the number of listeners for an event.
+  7. `eventNames()` - Return an array of event names that have listeners.
+
+  Edge cases to handle:
+  - A listener that removes itself during emit should not crash
+  - Calling off() with a non-registered listener should not throw
+  - Listeners should be called in registration order
+
+  All tests in tests/event-emitter.test.ts should pass.
+
+setup:
+  install_command: "npm install"
+  timeout_minutes: 10
+  max_budget_usd: 2.00
+
+evaluation:
+  - type: "test-suite"
+    command: "npx vitest run"
+    weight: 0.5
+
+  - type: "test-integrity"
+    weight: 0.1
+
+  - type: "build"
+    command: "npx tsc --noEmit"
+    weight: 0.2
+
+  - type: "file-check"
+    checks:
+      - path: "src/event-emitter.ts"
+        must_exist: true
+        must_contain:
+          - "on("
+          - "emit("
+          - "once("
+    weight: 0.2

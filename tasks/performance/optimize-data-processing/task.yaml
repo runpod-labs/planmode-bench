@@ -1,0 +1,50 @@
+id: "performance/optimize-data-processing"
+name: "Optimize Slow Data Processing Pipeline"
+version: 1
+
+category: "performance"
+difficulty: "hard"
+estimated_time_minutes: 20
+tags: ["typescript", "performance", "optimization", "algorithms", "data-structures"]
+author: "runpod-labs"
+created_at: "2026-04-03"
+
+prompt: |
+  The data processing pipeline in `src/pipeline.ts` is too slow. Each function has
+  intentionally naive implementations that need to be optimized.
+
+  Optimize all functions in `src/pipeline.ts` to meet the performance thresholds
+  in `tests/performance.test.ts`. The optimized functions must produce the same
+  results as the originals (correctness tests must still pass).
+
+  Key optimizations needed:
+  - Replace O(n^2) algorithms with O(n) or O(n log n) alternatives
+  - Use appropriate data structures (Map, Set) instead of nested loops
+  - Avoid redundant computation
+
+  All tests in both tests/pipeline.test.ts and tests/performance.test.ts should pass.
+
+setup:
+  install_command: "npm install"
+  timeout_minutes: 15
+  max_budget_usd: 3.00
+
+evaluation:
+  - type: "test-suite"
+    command: "npx vitest run"
+    weight: 0.5
+
+  - type: "test-integrity"
+    weight: 0.1
+
+  - type: "build"
+    command: "npx tsc --noEmit"
+    weight: 0.2
+
+  - type: "file-check"
+    checks:
+      - path: "src/pipeline.ts"
+        must_exist: true
+        must_contain:
+          - "Map"
+    weight: 0.2
