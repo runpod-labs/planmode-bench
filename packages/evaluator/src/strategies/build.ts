@@ -13,6 +13,7 @@ export async function evaluateBuild(
     const { stdout, stderr } = await execAsync(command, {
       cwd: workDir,
       timeout: 60_000,
+      shell: "/bin/bash",
     });
 
     return {

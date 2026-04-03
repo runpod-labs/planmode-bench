@@ -66,7 +66,7 @@ export async function executeTask(options: ExecuteOptions): Promise<RunResultTyp
     }
 
     // Evaluate the result
-    const evaluation = await evaluate(workspace.dir, task.evaluation);
+    const evaluation = await evaluate(workspace.dir, task.evaluation, workspace.shellPrefix);
 
     const runResult: RunResultType = {
       schema_version: 1,

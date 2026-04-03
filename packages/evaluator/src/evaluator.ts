@@ -8,21 +8,23 @@ import { evaluateTestIntegrity } from "./strategies/test-integrity.js";
 
 export async function evaluate(
   workDir: string,
-  strategies: EvaluationStrategyType[]
+  strategies: EvaluationStrategyType[],
+  shellPrefix: string = ""
 ): Promise<EvaluationResultType> {
   const start = performance.now();
   const strategyResults = [];
+  const prefix = (cmd: string) => shellPrefix ? `${shellPrefix}${cmd}` : cmd;
 
   for (const strategy of strategies) {
     switch (strategy.type) {
       case "test-suite":
         strategyResults.push(
-          await evaluateTestSuite(workDir, strategy.command, strategy.weight)
+          await evaluateTestSuite(workDir, prefix(strategy.command), strategy.weight)
         );
         break;
       case "build":
         strategyResults.push(
-          await evaluateBuild(workDir, strategy.command, strategy.weight)
+          await evaluateBuild(workDir, prefix(strategy.command), strategy.weight)
         );
         break;
       case "file-check":
@@ -37,13 +39,13 @@ export async function evaluate(
         break;
       case "custom":
         strategyResults.push(
-          await evaluateCustom(workDir, strategy.command, strategy.weight)
+          await evaluateCustom(workDir, prefix(strategy.command), strategy.weight)
         );
         break;
       case "lint":
         // Lint uses the same logic as build (exit code 0 = pass)
         strategyResults.push(
-          await evaluateBuild(workDir, strategy.command, strategy.weight)
+          await evaluateBuild(workDir, prefix(strategy.command), strategy.weight)
         );
         break;
       case "diff":

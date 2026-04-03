@@ -13,6 +13,7 @@ export async function evaluateCustom(
     const { stdout } = await execAsync(command, {
       cwd: workDir,
       timeout: 60_000,
+      shell: "/bin/bash",
     });
 
     const result = JSON.parse(stdout.trim()) as { score: number; details?: Record<string, unknown> };

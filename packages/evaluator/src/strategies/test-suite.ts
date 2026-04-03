@@ -13,6 +13,7 @@ export async function evaluateTestSuite(
     const { stdout, stderr } = await execAsync(command, {
       cwd: workDir,
       timeout: 60_000,
+      shell: "/bin/bash",
     });
 
     const output = stdout + stderr;
