@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "task_id": "refactoring/extract-service-layer",
+  "task_name": "Extract Service Layer from Route Handlers",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-03T15:36:17.361Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 299744,
+    "duration_api_ms": 335066,
+    "num_turns": 16,
+    "total_cost_usd": 0.8430087999999999,
+    "input_tokens": 18,
+    "output_tokens": 12208,
+    "cache_read_tokens": 283810,
+    "cache_creation_tokens": 66506,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 232154,
+    "plan_api_ms": 269860,
+    "plan_tokens_in": 11,
+    "plan_tokens_out": 7447,
+    "plan_cost_usd": 0.5795867499999999,
+    "plan_content": "Here's the complete plan:\n\n---\n\n## Plan Summary\n\n**5 files touched, 0 test changes needed.**\n\n### What's happening\n\nBusiness logic is being pulled out of the 4 route handlers and moved into 2 new service files. Route handlers become thin HTTP adapters.\n\n### Error-handling strategy: Discriminated union\n\nService functions that can fail return `ServiceResult<T>`:\n```typescript\ntype ServiceResult<T> = { success: true; data: T } | { success: false; error: string; statusCode: 400 | 404 }\n```\nThis is better than throwing exceptions here because these failures (not found, insufficient stock, invalid status transition) are **expected domain outcomes** — not exceptional conditions. The union makes the contract explicit in the type signature, and route handlers just do `if (!result.success)` instead of try/catch.\n\n### Service functions\n\n**`src/services/product-service.ts`**\n| Function | Returns |\n|---|---|\n| `listProducts(filters)` | direct result (no failure mode) |\n| `getProductById(id)` | `ServiceResult<ProductDetail>` |\n| `adjustProductStock(id, adjustment)` | `ServiceResult<ProductDetail>` |\n\n**`src/services/order-service.ts`**\n| Function | Returns |\n|---|---|\n| `listOrders(filters)` | direct result (no failure mode) |\n| `getOrderById(id)` | `ServiceResult<OrderDetail>` |\n| `createOrder(input)` | `ServiceResult<Order>` |\n| `updateOrderStatus(id, status)` | `ServiceResult<Order>` |\n\n### Clear boundaries\n\n- **Route handlers keep:** query string parsing, `typeof adjustment !== \"number\"` shape check, `res.status(201)`, all `res.json()` calls\n- **Services own:** filtering, computed fields (`isLowStock`, `inventoryValue`, summaries), stock mutation, order construction, status transition table, item enrichment\n\n### Verification\n```bash\nnpm test  # all 12 existing integration tests must pass unchanged\n```",
+    "execute_duration_ms": 67590,
+    "execute_api_ms": 65206,
+    "execute_tokens_in": 7,
+    "execute_tokens_out": 4761,
+    "execute_cost_usd": 0.26342204999999996
+  },
+  "evaluation": {
+    "overall_score": 0.8,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-refactoring-extract-service-layer-0nH6n8\n\n ✓ tests/products.test.ts (5 tests) 14ms\n ✓ tests/orders.test.ts (9 tests) 24ms\n\n Test Files  2 passed (2)\n      Tests  14 passed (14)\n   Start at  17:36:16\n   Duration  355ms (transform 112ms, setup 0ms, collect 311ms, tests 37ms, environment 0ms, prepare 90ms)\n\n"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/services/product-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/services/order-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/products.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/orders.ts",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*product",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*order",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1712
+  },
+  "session_id": "2055e84a-c11e-4132-9390-1f5891ce15b6"
+}

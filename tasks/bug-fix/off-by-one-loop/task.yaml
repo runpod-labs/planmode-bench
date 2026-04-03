@@ -1,0 +1,40 @@
+id: "bug-fix/off-by-one-loop"
+name: "Fix Off-by-One Error in Loop"
+version: 1
+
+category: "bug-fix"
+difficulty: "easy"
+estimated_time_minutes: 5
+tags: ["typescript", "arrays", "loops", "bug"]
+author: "runpod-labs"
+created_at: "2026-04-03"
+
+prompt: |
+  There is a bug in `src/utils.ts` in the `processItems` function.
+  Users report that the last item in the array is never processed.
+  Fix the bug and make sure all tests pass.
+
+setup:
+  install_command: "npm install"
+  timeout_minutes: 5
+  max_budget_usd: 1.00
+
+evaluation:
+  - type: "test-suite"
+    command: "npx vitest run"
+    weight: 0.5
+
+  - type: "test-integrity"
+    weight: 0.1
+
+  - type: "file-check"
+    checks:
+      - path: "src/utils.ts"
+        must_exist: true
+        must_not_contain:
+          - "i < items.length - 1"
+    weight: 0.2
+
+  - type: "build"
+    command: "npx tsc --noEmit"
+    weight: 0.2

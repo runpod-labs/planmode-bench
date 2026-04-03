@@ -1,0 +1,74 @@
+id: "refactoring/extract-service-layer"
+name: "Extract Service Layer from Route Handlers"
+version: 1
+
+category: "refactoring"
+difficulty: "hard"
+estimated_time_minutes: 20
+tags: ["typescript", "express", "refactoring", "architecture", "multi-file"]
+author: "runpod-labs"
+created_at: "2026-04-03"
+
+prompt: |
+  The Express route handlers in `src/routes/products.ts` and `src/routes/orders.ts`
+  contain business logic mixed directly into the route handlers. This makes the code
+  hard to test and maintain.
+
+  Refactor the code to extract business logic into a service layer:
+
+  1. Create `src/services/product-service.ts` with all product business logic
+  2. Create `src/services/order-service.ts` with all order business logic
+  3. Route handlers should only handle HTTP concerns (parsing request, sending response)
+  4. Route handlers should call service functions for business logic
+  5. All existing tests must continue to pass
+  6. Service functions should be properly typed with TypeScript
+
+setup:
+  install_command: "npm install"
+  timeout_minutes: 15
+  max_budget_usd: 3.00
+
+evaluation:
+  - type: "test-suite"
+    command: "npx vitest run"
+    weight: 0.3
+
+  - type: "test-integrity"
+    weight: 0.1
+
+  - type: "file-check"
+    checks:
+      - path: "src/services/product-service.ts"
+        must_exist: true
+      - path: "src/services/order-service.ts"
+        must_exist: true
+      - path: "src/routes/products.ts"
+        must_exist: true
+      - path: "src/routes/orders.ts"
+        must_exist: true
+    weight: 0.2
+
+  - type: "build"
+    command: "npx tsc --noEmit"
+    weight: 0.2
+
+  - type: "regex"
+    file: "src/routes/products.ts"
+    patterns:
+      - pattern: "import.*services.*product"
+        should_match: true
+    weight: 0.1
+
+  - type: "regex"
+    file: "src/routes/orders.ts"
+    patterns:
+      - pattern: "import.*services.*order"
+        should_match: true
+    weight: 0.1
+
+plan_quality_hints:
+  should_mention:
+    - "service layer"
+    - "separation of concerns"
+    - "dependency"
+  description: "A good plan should identify which functions to extract and map out the import dependencies"

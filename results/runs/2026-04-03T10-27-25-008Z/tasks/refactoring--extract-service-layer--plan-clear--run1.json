@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "task_id": "refactoring/extract-service-layer",
+  "task_name": "Extract Service Layer from Route Handlers",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-03T10:40:22.286Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 402651,
+    "duration_api_ms": 433676,
+    "num_turns": 24,
+    "total_cost_usd": 0.90905215,
+    "input_tokens": 29,
+    "output_tokens": 16247,
+    "cache_read_tokens": 361437,
+    "cache_creation_tokens": 46234,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 237230,
+    "plan_api_ms": 270225,
+    "plan_tokens_in": 11,
+    "plan_tokens_out": 5785,
+    "plan_cost_usd": 0.5310979499999999,
+    "plan_content": "Here's the implementation plan for the service layer refactor.\n\n## Overview\n\nThe plan creates **3 new files** and modifies **3 existing files**. No test files change.\n\n### New files\n| File | Purpose |\n|------|---------|\n| `src/services/errors.ts` | `ServiceError` class with `statusCode` + `message` |\n| `src/services/product-service.ts` | `listProducts`, `getProductById`, `adjustProductStock` |\n| `src/services/order-service.ts` | `listOrders`, `getOrderById`, `createOrder`, `updateOrderStatus` |\n\n### Modified files\n| File | Change |\n|------|--------|\n| `src/types.ts` | Add `ProductDetail`, `ProductListResult`, `EnrichedOrder`, `EnrichedOrderItem`, `OrderListResult` |\n| `src/routes/products.ts` | Remove data imports; call service functions; catch `ServiceError` |\n| `src/routes/orders.ts` | Same pattern |\n\n### Error handling strategy\nServices throw `ServiceError(statusCode, message)` for all business rule violations (404 not found, 400 validation, 400 invalid state transition). Route handlers catch it with a shared `handleServiceError` helper — giving every route a uniform 3-line try/catch shell, rather than duplicating `if (!product) res.status(404)...` in each handler.\n\n### What stays in routes (HTTP concerns only)\n- Parsing `req.params.id` with `parseInt`\n- Casting `req.query` / `req.body` to typed shapes\n- Setting the response status (e.g. `res.status(201)` for `POST /orders`)\n- Calling `res.json()`\n\nAll 14 existing tests pass without modification since they test HTTP endpoints end-to-end via `supertest`.",
+    "execute_duration_ms": 165421,
+    "execute_api_ms": 163451,
+    "execute_tokens_in": 18,
+    "execute_tokens_out": 10462,
+    "execute_cost_usd": 0.37795419999999996
+  },
+  "evaluation": {
+    "overall_score": 0.8,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-refactoring-extract-service-layer-zYrXOX\n\n ✓ tests/products.test.ts (5 tests) 13ms\n ✓ tests/orders.test.ts (9 tests) 22ms\n\n Test Files  2 passed (2)\n      Tests  14 passed (14)\n   Start at  12:40:21\n   Duration  258ms (transform 55ms, setup 0ms, collect 182ms, tests 35ms, environment 0ms, prepare 67ms)\n\n"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/services/product-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/services/order-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/products.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/orders.ts",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*product-service",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*order-service",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1424
+  },
+  "session_id": "4df57659-77bb-414d-9c4d-b778c6b9eb01"
+}

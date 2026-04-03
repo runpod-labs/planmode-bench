@@ -1,0 +1,54 @@
+id: "feature-addition/add-pagination"
+name: "Add Pagination to Users API"
+version: 1
+
+category: "feature-addition"
+difficulty: "medium"
+estimated_time_minutes: 15
+tags: ["typescript", "api", "express", "pagination"]
+author: "runpod-labs"
+created_at: "2026-04-03"
+
+prompt: |
+  The `GET /users` endpoint in `src/routes.ts` currently returns all users at once.
+  Add pagination support with the following requirements:
+
+  1. Accept `page` (default: 1) and `limit` (default: 10) query parameters
+  2. Return a response with this shape:
+     {
+       data: User[],
+       pagination: {
+         page: number,
+         limit: number,
+         total: number,
+         totalPages: number
+       }
+     }
+  3. If page is out of range, return an empty data array (not an error)
+  4. All existing tests should still pass, and the new pagination tests should pass too
+
+setup:
+  install_command: "npm install"
+  timeout_minutes: 10
+  max_budget_usd: 2.00
+
+evaluation:
+  - type: "test-suite"
+    command: "npx vitest run"
+    weight: 0.5
+
+  - type: "test-integrity"
+    weight: 0.1
+
+  - type: "file-check"
+    checks:
+      - path: "src/routes.ts"
+        must_exist: true
+        must_contain:
+          - "pagination"
+          - "totalPages"
+    weight: 0.2
+
+  - type: "build"
+    command: "npx tsc --noEmit"
+    weight: 0.2

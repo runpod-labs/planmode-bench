@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "bug-fix/off-by-one-loop",
+  "task_name": "Fix Off-by-One Error in Loop",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-03T15:24:18.959Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 57186,
+    "duration_api_ms": 54018,
+    "num_turns": 11,
+    "total_cost_usd": 0.12769635,
+    "input_tokens": 16,
+    "output_tokens": 2193,
+    "cache_read_tokens": 116822,
+    "cache_creation_tokens": 9727,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 36316,
+    "plan_api_ms": 35199,
+    "plan_tokens_in": 8,
+    "plan_tokens_out": 1171,
+    "plan_cost_usd": 0.07689119999999999,
+    "plan_content": "## Plan Summary\n\n**Root cause:** Classic off-by-one error in `src/utils.ts` line 7.\n\n### The Bug\n```typescript\n// BROKEN — stops one iteration too early, last item is always skipped\nfor (let i = 0; i < items.length - 1; i++) {\n```\n\n### The Fix\n```typescript\n// FIXED — iterates over all items including the last\nfor (let i = 0; i < items.length; i++) {\n```\n\n### What changes\n| File | Change |\n|---|---|\n| `src/utils.ts` | Line 7: `items.length - 1` → `items.length` |\n\n### Verification\nRun `npm test` — all 4 existing test cases in `tests/utils.test.ts` should pass (multi-item, single-item, two-item, and empty array).\n\nThis is a single-character removal (`- 1`) and nothing else needs to change.",
+    "execute_duration_ms": 20870,
+    "execute_api_ms": 18819,
+    "execute_tokens_in": 8,
+    "execute_tokens_out": 1022,
+    "execute_cost_usd": 0.05080515
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.6,
+        "weighted_score": 0.6,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 1,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-bug-fix-off-by-one-loop-85FE81\n\n ✓ tests/utils.test.ts (6 tests) 2ms\n\n Test Files  1 passed (1)\n      Tests  6 passed (6)\n   Start at  17:24:18\n   Duration  268ms (transform 41ms, setup 0ms, collect 35ms, tests 2ms, environment 0ms, prepare 70ms)\n\n"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "src/utils.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/utils.ts",
+              "check": "not contains \"i < items.length - 1\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1421
+  },
+  "session_id": "3f0d0778-a990-4f2b-971b-c7501d8773a4"
+}

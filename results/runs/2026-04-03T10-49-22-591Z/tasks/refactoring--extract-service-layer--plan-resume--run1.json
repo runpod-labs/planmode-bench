@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "task_id": "refactoring/extract-service-layer",
+  "task_name": "Extract Service Layer from Route Handlers",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-03T12:41:39.394Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 5812843,
+    "duration_api_ms": 6757425,
+    "num_turns": 18,
+    "total_cost_usd": 0.9551228500000001,
+    "input_tokens": 20,
+    "output_tokens": 7879,
+    "cache_read_tokens": 381315,
+    "cache_creation_tokens": 53385,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 5733160,
+    "plan_api_ms": 6681551,
+    "plan_tokens_in": 8,
+    "plan_tokens_out": 2597,
+    "plan_cost_usd": 0.6743521000000001,
+    "plan_content": "Here's a summary of the plan:\n\n---\n\n## Refactoring Plan: Service Layer Extraction\n\n### What I found\nThe codebase has two route files with all business logic embedded inline, an in-memory data store (`src/data.ts`), shared types (`src/types.ts`), and 13 integration tests using Vitest + Supertest that test the HTTP API contract.\n\n---\n\n### Error Handling Strategy\nA `ServiceError` class (added to `src/types.ts`) carries a `statusCode`. Service functions either return data or throw `ServiceError`. Route handlers catch it and map to `res.status(err.statusCode).json(...)`.\n\n---\n\n### New files to create\n\n**`src/services/product-service.ts`** — 3 functions:\n- `listProducts(filters)` → filtered list + summary stats\n- `getProduct(id)` → product with `isLowStock` + `inventoryValue`, throws 404\n- `adjustProductStock(id, adjustment)` → updated product, throws 404/400\n\n**`src/services/order-service.ts`** — 4 functions:\n- `listOrders(filters)` → filtered list + revenue summary\n- `getOrder(id)` → order with enriched `productName` on items, throws 404\n- `createOrder(input)` → validated + created order (deducts stock), throws 400\n- `updateOrderStatus(id, status)` → order with new status (enforces state machine), throws 400/404\n\n---\n\n### Files to modify\n- **`src/types.ts`** — add `ServiceError` class\n- **`src/routes/products.ts`** — delegate to product service; keep only HTTP parsing/responding\n- **`src/routes/orders.ts`** — delegate to order service; keep only HTTP parsing/responding\n\n---\n\n### Key decisions\n- `typeof adjustment !== \"number\"` check stays in the route handler (it's HTTP body validation, not business logic)\n- NaN guards for numeric query params (`minPrice`, `maxPrice`, `userId`) happen in route handlers before calling the service\n- All `.js` extensions on ESM imports",
+    "execute_duration_ms": 79683,
+    "execute_api_ms": 75874,
+    "execute_tokens_in": 12,
+    "execute_tokens_out": 5282,
+    "execute_cost_usd": 0.28077074999999996
+  },
+  "evaluation": {
+    "overall_score": 0.8,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-refactoring-extract-service-layer-lpd3fv\n\n ✓ tests/products.test.ts (5 tests) 14ms\n ✓ tests/orders.test.ts (9 tests) 24ms\n\n Test Files  2 passed (2)\n      Tests  14 passed (14)\n   Start at  14:41:38\n   Duration  415ms (transform 101ms, setup 0ms, collect 302ms, tests 38ms, environment 0ms, prepare 132ms)\n\n"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/services/product-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/services/order-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/products.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/orders.ts",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*product",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*order",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1560
+  },
+  "session_id": "b1127005-bb5b-4b4f-b858-c17d6f9a589d"
+}
