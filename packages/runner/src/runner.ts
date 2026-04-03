@@ -1,4 +1,4 @@
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readFile, mkdir, writeFile, readdir, access } from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYAML } from "yaml";
 import {
@@ -16,6 +16,8 @@ import { prepareAllBases } from "./sandbox.js";
 export interface RunOptions {
   tasksDir: string;
   outputDir: string;
+  /** Resume an existing run instead of creating a new one */
+  resumeRunId?: string;
   configOverrides?: Partial<{
     tasks: string[];
     modes: Mode[];
@@ -36,13 +38,7 @@ async function discoverTasks(
   tasksDir: string,
   filter: string[]
 ): Promise<Task[]> {
-  const { glob } = await import("node:fs");
-  const { promisify } = await import("node:util");
-
-  // Find all task.yaml files
-  const { readdir } = await import("node:fs/promises");
   const tasks: Task[] = [];
-
   const categories = await readdir(tasksDir);
   for (const category of categories) {
     const categoryPath = path.join(tasksDir, category);
@@ -63,10 +59,42 @@ async function discoverTasks(
       // Skip non-directories
     }
   }
-
   return tasks;
 }
 
+/** Get the result filename for a job */
+function jobResultFile(taskId: string, mode: string, runNumber: number): string {
+  return `${taskId.replace("/", "--")}--${mode}--run${runNumber}.json`;
+}
+
+/** Check if a job result already exists on disk */
+async function jobCompleted(tasksOutputDir: string, filename: string): Promise<boolean> {
+  try {
+    await access(path.join(tasksOutputDir, filename));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Load an existing result from disk */
+async function loadResult(tasksOutputDir: string, filename: string): Promise<RunResultType | null> {
+  try {
+    const content = await readFile(path.join(tasksOutputDir, filename), "utf-8");
+    return JSON.parse(content) as RunResultType;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persistent job queue with file-based state.
+ *
+ * Each job writes its result to disk immediately on completion.
+ * On resume, already-completed jobs are skipped.
+ * Concurrency is capped -- only N jobs run at a time.
+ * If the process crashes, just re-run with --resume to continue.
+ */
 export async function run(options: RunOptions): Promise<RunSummaryType> {
   const config = RunnerConfig.parse(options.configOverrides ?? {});
 
@@ -74,6 +102,7 @@ export async function run(options: RunOptions): Promise<RunSummaryType> {
   console.log(`Model: ${config.model}`);
   console.log(`Modes: ${config.modes.join(", ")}`);
   console.log(`Runs per task: ${config.runs_per_task}`);
+  console.log(`Concurrency: ${config.concurrency}`);
   console.log();
 
   // Discover tasks
@@ -84,99 +113,145 @@ export async function run(options: RunOptions): Promise<RunSummaryType> {
     throw new Error("No tasks found");
   }
 
-  // Create output directory
-  const runId = new Date().toISOString().replace(/[:.]/g, "-");
+  // Create or resume output directory
+  const runId = options.resumeRunId ?? new Date().toISOString().replace(/[:.]/g, "-");
   const runDir = path.join(options.outputDir, "runs", runId);
   const tasksOutputDir = path.join(runDir, "tasks");
   await mkdir(tasksOutputDir, { recursive: true });
 
-  // Step 1: Prepare all base installations (clone repos, install deps)
-  // This only happens once per task -- subsequent runs use worktrees
+  // Save run metadata
+  await writeFile(
+    path.join(runDir, "meta.json"),
+    JSON.stringify({
+      run_id: runId,
+      model: config.model,
+      modes: config.modes,
+      runs_per_task: config.runs_per_task,
+      concurrency: config.concurrency,
+      tasks: tasks.map((t) => t.id),
+      started_at: new Date().toISOString(),
+    }, null, 2)
+  );
+
+  // Step 1: Prepare all base installations in parallel
   await prepareAllBases(tasks, options.tasksDir);
 
-  // Step 2: Build the list of all jobs
+  // Step 2: Build job queue and check what's already done
   interface Job {
     task: Task;
     mode: Mode;
     runNumber: number;
+    filename: string;
   }
-  const jobs: Job[] = [];
+
+  const allJobs: Job[] = [];
+  const pendingJobs: Job[] = [];
+  const allResults: RunResultType[] = [];
+
   for (const task of tasks) {
     for (const mode of config.modes) {
       for (let runNum = 1; runNum <= config.runs_per_task; runNum++) {
-        jobs.push({ task, mode, runNumber: runNum });
-      }
-    }
-  }
+        const filename = jobResultFile(task.id, mode, runNum);
+        const job: Job = { task, mode, runNumber: runNum, filename };
+        allJobs.push(job);
 
-  console.log(`Running ${jobs.length} jobs (concurrency: ${config.concurrency})\n`);
-
-  // Step 3: Execute with concurrency
-  const allResults: RunResultType[] = [];
-  const startTime = performance.now();
-
-  // Process jobs in batches of `concurrency`
-  for (let i = 0; i < jobs.length; i += config.concurrency) {
-    const batch = jobs.slice(i, i + config.concurrency);
-    const batchResults = await Promise.allSettled(
-      batch.map(async (job) => {
-        try {
-          const result = await executeTask({
-            task: job.task,
-            mode: job.mode,
-            runNumber: job.runNumber,
-            tasksDir: options.tasksDir,
-            config,
-          });
-
-          // Save individual result
-          const resultFile = path.join(
-            tasksOutputDir,
-            `${job.task.id.replace("/", "--")}--${job.mode}--run${job.runNumber}.json`
-          );
-          await writeFile(resultFile, JSON.stringify(result, null, 2));
-
-          return result;
-        } catch (error) {
-          console.error(`  [${job.mode}] ${job.task.id} run ${job.runNumber} FAILED: ${(error as Error).message}`);
-          return null;
+        if (await jobCompleted(tasksOutputDir, filename)) {
+          // Already done -- load the result
+          const existing = await loadResult(tasksOutputDir, filename);
+          if (existing) {
+            allResults.push(existing);
+            console.log(`  [skip] ${task.id} ${mode} run${runNum} (already done)`);
+          }
+        } else {
+          pendingJobs.push(job);
         }
-      })
-    );
-
-    for (const r of batchResults) {
-      if (r.status === "fulfilled" && r.value) {
-        allResults.push(r.value);
       }
     }
   }
+
+  const totalJobs = allJobs.length;
+  const skipped = totalJobs - pendingJobs.length;
+
+  if (skipped > 0) {
+    console.log(`\nResuming: ${skipped} done, ${pendingJobs.length} pending\n`);
+  }
+
+  console.log(`Running ${pendingJobs.length}/${totalJobs} jobs (concurrency: ${config.concurrency})\n`);
+
+  // Step 3: Process pending jobs with capped concurrency
+  const startTime = performance.now();
+  let completed = skipped;
+
+  // Semaphore for concurrency control
+  let running = 0;
+  const queue = [...pendingJobs];
+
+  async function processJob(job: Job): Promise<void> {
+    try {
+      const result = await executeTask({
+        task: job.task,
+        mode: job.mode,
+        runNumber: job.runNumber,
+        tasksDir: options.tasksDir,
+        config,
+      });
+
+      // Persist result immediately
+      await writeFile(
+        path.join(tasksOutputDir, job.filename),
+        JSON.stringify(result, null, 2)
+      );
+
+      allResults.push(result);
+      completed++;
+      console.log(
+        `  [${completed}/${totalJobs}] ${job.task.id} ${job.mode} run${job.runNumber}: ${result.evaluation.overall_score.toFixed(2)} ($${result.metrics.total_cost_usd.toFixed(4)})`
+      );
+    } catch (error) {
+      completed++;
+      console.error(
+        `  [${completed}/${totalJobs}] ${job.task.id} ${job.mode} run${job.runNumber} FAILED: ${(error as Error).message}`
+      );
+    }
+  }
+
+  // Run jobs with a proper semaphore (not batching)
+  // This keeps `concurrency` jobs running at all times
+  await new Promise<void>((resolve) => {
+    let idx = 0;
+
+    function next() {
+      while (running < config.concurrency && idx < queue.length) {
+        const job = queue[idx++];
+        running++;
+        processJob(job).finally(() => {
+          running--;
+          if (idx >= queue.length && running === 0) {
+            resolve();
+          } else {
+            next();
+          }
+        });
+      }
+      // If queue was empty from the start
+      if (queue.length === 0) resolve();
+    }
+
+    next();
+  });
 
   const totalDuration = Math.round(performance.now() - startTime);
 
-  // Generate summary
-  const summary = generateSummary(
-    runId,
-    config,
-    tasks,
-    allResults,
-    totalDuration
-  );
+  // Generate and save summary
+  const summary = generateSummary(runId, config, tasks, allResults, totalDuration);
 
-  // Save summary
-  await writeFile(
-    path.join(runDir, "summary.json"),
-    JSON.stringify(summary, null, 2)
-  );
-
-  // Save as latest
-  await writeFile(
-    path.join(options.outputDir, "latest.json"),
-    JSON.stringify(summary, null, 2)
-  );
+  await writeFile(path.join(runDir, "summary.json"), JSON.stringify(summary, null, 2));
+  await writeFile(path.join(options.outputDir, "latest.json"), JSON.stringify(summary, null, 2));
 
   console.log(`\nResults saved to ${runDir}`);
   console.log(`Total cost: $${summary.total_cost_usd.toFixed(4)}`);
   console.log(`Total duration: ${(totalDuration / 1000).toFixed(1)}s`);
+  console.log(`Jobs: ${completed}/${totalJobs} (${skipped} resumed)`);
 
   return summary;
 }
@@ -189,14 +264,12 @@ function generateSummary(
   totalDuration: number
 ): RunSummaryType {
   const modes: Mode[] = ["normal", "plan-resume", "plan-clear"];
-
   const resultsByMode = (mode: Mode) => results.filter((r) => r.mode === mode);
 
   const overallByMode = Object.fromEntries(
     modes.map((mode) => [mode, aggregateResults(resultsByMode(mode))])
   ) as Record<Mode, ReturnType<typeof aggregateResults>>;
 
-  // By category
   const categories = [...new Set(tasks.map((t) => t.category))];
   const byCategory = Object.fromEntries(
     categories.map((cat) => {
@@ -206,16 +279,13 @@ function generateSummary(
         Object.fromEntries(
           modes.map((mode) => [
             mode,
-            aggregateResults(
-              results.filter((r) => r.mode === mode && taskIds.includes(r.task_id))
-            ),
+            aggregateResults(results.filter((r) => r.mode === mode && taskIds.includes(r.task_id))),
           ])
         ),
       ];
     })
   );
 
-  // By difficulty
   const difficulties = [...new Set(tasks.map((t) => t.difficulty))];
   const byDifficulty = Object.fromEntries(
     difficulties.map((diff) => {
@@ -225,40 +295,29 @@ function generateSummary(
         Object.fromEntries(
           modes.map((mode) => [
             mode,
-            aggregateResults(
-              results.filter((r) => r.mode === mode && taskIds.includes(r.task_id))
-            ),
+            aggregateResults(results.filter((r) => r.mode === mode && taskIds.includes(r.task_id))),
           ])
         ),
       ];
     })
   );
 
-  // Per task comparisons
   const perTask = tasks.map((task) => {
     const taskResults = results.filter((r) => r.task_id === task.id);
-
     const modeScores = Object.fromEntries(
       modes.map((mode) => {
-        const scores = taskResults
-          .filter((r) => r.mode === mode)
-          .map((r) => r.evaluation.overall_score);
+        const scores = taskResults.filter((r) => r.mode === mode).map((r) => r.evaluation.overall_score);
         return [mode, { scores, avg: mean(scores), std: stddev(scores) }];
       })
     ) as Record<Mode, { scores: number[]; avg: number; std: number }>;
 
-    // Determine winner (highest average score)
     const modeAvgs = modes.map((m) => ({ mode: m, avg: modeScores[m].avg }));
     modeAvgs.sort((a, b) => b.avg - a.avg);
-    const winner =
-      modeAvgs[0].avg - modeAvgs[1].avg < 0.01 ? "tie" : modeAvgs[0].mode;
+    const winner = modeAvgs[0].avg - modeAvgs[1].avg < 0.01 ? "tie" : modeAvgs[0].mode;
 
-    // P-value: compare best plan mode vs normal
     const normalScores = modeScores["normal"].scores;
     const bestPlanMode =
-      modeScores["plan-clear"].avg >= modeScores["plan-resume"].avg
-        ? "plan-clear"
-        : "plan-resume";
+      modeScores["plan-clear"].avg >= modeScores["plan-resume"].avg ? "plan-clear" : "plan-resume";
     const bestPlanScores = modeScores[bestPlanMode].scores;
     const p_value = welchTTest(normalScores, bestPlanScores);
 

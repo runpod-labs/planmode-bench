@@ -9,6 +9,7 @@ interface RunCommandOptions {
   model?: string;
   concurrency?: string;
   planBudgetRatio?: string;
+  resume?: string;
 }
 
 export async function runCommand(options: RunCommandOptions): Promise<void> {
@@ -27,6 +28,7 @@ export async function runCommand(options: RunCommandOptions): Promise<void> {
   await run({
     tasksDir,
     outputDir,
+    resumeRunId: options.resume,
     configOverrides: {
       tasks: taskList,
       modes,

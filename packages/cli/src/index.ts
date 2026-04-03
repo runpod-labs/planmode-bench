@@ -35,6 +35,7 @@ program
   .option("--model <model>", "Model to use", "claude-sonnet-4-6")
   .option("--concurrency <n>", "Parallel task runs", "1")
   .option("--plan-budget-ratio <ratio>", "Budget ratio for plan phase", "0.3")
+  .option("--resume <run-id>", "Resume a previous run (skip completed jobs)")
   .action(runCommand);
 
 program
