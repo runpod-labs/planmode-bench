@@ -100,10 +100,17 @@ async function getBaseDir(task: Task, tasksDir: string): Promise<string> {
     }
   }
 
+  // Add .gitignore for deps (we symlink them to worktrees instead of committing)
+  await execAsync(
+    'echo "node_modules/\n.venv/\n__pycache__/\n*.pyc" >> .gitignore',
+    { cwd: baseDir, shell: "/bin/bash" }
+  );
+
   // Commit installed state so worktrees get a clean snapshot
   await execAsync("git add -A && git commit -m 'deps installed' --allow-empty", {
     cwd: baseDir,
-    timeout: 30_000,
+    timeout: 60_000,
+    env: { ...process.env, GIT_COMMITTER_NAME: "bench", GIT_COMMITTER_EMAIL: "bench@local", GIT_AUTHOR_NAME: "bench", GIT_AUTHOR_EMAIL: "bench@local" },
   });
 
   console.log(`    Base ready: ${baseDir}`);
