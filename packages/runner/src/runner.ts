@@ -11,6 +11,7 @@ import {
 } from "@planmode-bench/schema";
 import { aggregateResults, mean, stddev, welchTTest } from "@planmode-bench/evaluator";
 import { executeTask } from "./executor.js";
+import { prepareAllBases } from "./sandbox.js";
 
 export interface RunOptions {
   tasksDir: string;
@@ -89,39 +90,65 @@ export async function run(options: RunOptions): Promise<RunSummaryType> {
   const tasksOutputDir = path.join(runDir, "tasks");
   await mkdir(tasksOutputDir, { recursive: true });
 
-  // Execute all task x mode x run combinations
+  // Step 1: Prepare all base installations (clone repos, install deps)
+  // This only happens once per task -- subsequent runs use worktrees
+  await prepareAllBases(tasks, options.tasksDir);
+
+  // Step 2: Build the list of all jobs
+  interface Job {
+    task: Task;
+    mode: Mode;
+    runNumber: number;
+  }
+  const jobs: Job[] = [];
+  for (const task of tasks) {
+    for (const mode of config.modes) {
+      for (let runNum = 1; runNum <= config.runs_per_task; runNum++) {
+        jobs.push({ task, mode, runNumber: runNum });
+      }
+    }
+  }
+
+  console.log(`Running ${jobs.length} jobs (concurrency: ${config.concurrency})\n`);
+
+  // Step 3: Execute with concurrency
   const allResults: RunResultType[] = [];
   const startTime = performance.now();
 
-  for (const task of tasks) {
-    console.log(`Task: ${task.name} (${task.id})`);
-
-    for (const mode of config.modes) {
-      for (let runNum = 1; runNum <= config.runs_per_task; runNum++) {
+  // Process jobs in batches of `concurrency`
+  for (let i = 0; i < jobs.length; i += config.concurrency) {
+    const batch = jobs.slice(i, i + config.concurrency);
+    const batchResults = await Promise.allSettled(
+      batch.map(async (job) => {
         try {
           const result = await executeTask({
-            task,
-            mode,
-            runNumber: runNum,
+            task: job.task,
+            mode: job.mode,
+            runNumber: job.runNumber,
             tasksDir: options.tasksDir,
             config,
           });
 
-          allResults.push(result);
-
           // Save individual result
           const resultFile = path.join(
             tasksOutputDir,
-            `${task.id.replace("/", "--")}--${mode}--run${runNum}.json`
+            `${job.task.id.replace("/", "--")}--${job.mode}--run${job.runNumber}.json`
           );
           await writeFile(resultFile, JSON.stringify(result, null, 2));
+
+          return result;
         } catch (error) {
-          console.error(`  [${mode}] run ${runNum} FAILED: ${(error as Error).message}`);
+          console.error(`  [${job.mode}] ${job.task.id} run ${job.runNumber} FAILED: ${(error as Error).message}`);
+          return null;
         }
+      })
+    );
+
+    for (const r of batchResults) {
+      if (r.status === "fulfilled" && r.value) {
+        allResults.push(r.value);
       }
     }
-
-    console.log();
   }
 
   const totalDuration = Math.round(performance.now() - startTime);

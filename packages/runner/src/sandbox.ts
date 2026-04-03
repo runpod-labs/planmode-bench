@@ -1,4 +1,4 @@
-import { mkdtemp, cp, rm, access } from "node:fs/promises";
+import { mkdtemp, cp, rm, access, mkdir, symlink, readdir } from "node:fs/promises";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import path from "node:path";
@@ -10,7 +10,6 @@ const execAsync = promisify(exec);
 export interface Workspace {
   dir: string;
   task: Task;
-  /** Shell prefix to activate venv for Python tasks */
   shellPrefix: string;
   cleanup: () => Promise<void>;
 }
@@ -20,19 +19,25 @@ function isPythonTask(task: Task): boolean {
   return cmd.includes("pip") || cmd.includes("python");
 }
 
-/** Wraps a command with venv activation if this is a Python task */
-function wrapCmd(cmd: string, tmpDir: string, python: boolean): string {
-  if (!python) return cmd;
-  return `source ${tmpDir}/.venv/bin/activate && ${cmd}`;
-}
+/**
+ * Base directory for a task -- set up once, never modified.
+ * Contains the full repo + installed deps. Worktrees branch off this.
+ */
+const BASE_DIR = path.join(os.tmpdir(), "planmode-bench-bases");
 
-export async function createWorkspace(
-  task: Task,
-  tasksDir: string
-): Promise<Workspace> {
-  const tmpDir = await mkdtemp(
-    path.join(os.tmpdir(), `planmode-bench-${task.id.replace("/", "-")}-`)
-  );
+async function getBaseDir(task: Task, tasksDir: string): Promise<string> {
+  const baseDir = path.join(BASE_DIR, task.id.replace("/", "-"));
+
+  // Check if base already exists and is ready
+  try {
+    await access(path.join(baseDir, ".git"));
+    console.log(`    Base exists: ${baseDir}`);
+    return baseDir;
+  } catch {
+    // Need to create base
+  }
+
+  await mkdir(baseDir, { recursive: true });
 
   const scaffoldDir = path.join(
     tasksDir,
@@ -41,35 +46,31 @@ export async function createWorkspace(
   );
 
   if (task.setup.source_repo) {
-    // Clone real repo, then overlay scaffold files on top
     const { url, ref } = task.setup.source_repo;
-    console.log(`    Cloning ${url}@${ref}...`);
+    console.log(`    Cloning ${url}@${ref} into base...`);
+    await execAsync(`git clone --depth 1 --branch ${ref} ${url} ${baseDir}/repo`, {
+      timeout: 300_000,
+    });
     await execAsync(
-      `git clone --depth 1 --branch ${ref} ${url} ${tmpDir}/repo`,
-      { timeout: 300_000 }
-    );
-    // Move repo contents to tmpDir root
-    await execAsync(
-      `shopt -s dotglob && mv ${tmpDir}/repo/* ${tmpDir}/ && rm -rf ${tmpDir}/repo`,
+      `shopt -s dotglob && mv ${baseDir}/repo/* ${baseDir}/ && rm -rf ${baseDir}/repo`,
       { timeout: 30_000, shell: "/bin/bash" }
     );
-    // Overlay scaffold files on top (tests, configs we add)
+    // Overlay scaffold files
     try {
       await access(scaffoldDir);
-      await cp(scaffoldDir, tmpDir, { recursive: true });
+      await cp(scaffoldDir, baseDir, { recursive: true });
     } catch {
-      // No scaffold dir is fine for repo-based tasks
+      // No scaffold is fine for repo tasks
     }
-    // Re-init git with our overlay included
     await execAsync(
-      "rm -rf .git && git init && git add -A && git commit -m 'initial scaffold'",
-      { cwd: tmpDir, timeout: 30_000 }
+      "rm -rf .git && git init && git add -A && git commit -m 'base'",
+      { cwd: baseDir, timeout: 60_000 }
     );
   } else {
-    // Standard scaffold-only task
-    await cp(scaffoldDir, tmpDir, { recursive: true });
-    await execAsync("git init && git add -A && git commit -m 'initial scaffold'", {
-      cwd: tmpDir,
+    await cp(scaffoldDir, baseDir, { recursive: true });
+    await execAsync("git init && git add -A && git commit -m 'base'", {
+      cwd: baseDir,
+      timeout: 30_000,
     });
   }
 
@@ -77,40 +78,145 @@ export async function createWorkspace(
 
   // Create venv for Python tasks
   if (python) {
-    console.log(`    Creating Python venv...`);
-    await execAsync("python3 -m venv .venv", { cwd: tmpDir, timeout: 60_000 });
+    console.log(`    Creating Python venv in base...`);
+    await execAsync("python3 -m venv .venv", { cwd: baseDir, timeout: 60_000 });
   }
 
-  // Run setup commands
+  // Install deps
   if (task.setup.install_command) {
-    const cmd = wrapCmd(task.setup.install_command, tmpDir, python);
-    console.log(`    Running: ${task.setup.install_command}`);
-    await execAsync(cmd, {
-      cwd: tmpDir,
-      timeout: 300_000,
-      shell: "/bin/bash",
-    });
+    const cmd = python
+      ? `source ${baseDir}/.venv/bin/activate && ${task.setup.install_command}`
+      : task.setup.install_command;
+    console.log(`    Installing deps in base...`);
+    await execAsync(cmd, { cwd: baseDir, timeout: 300_000, shell: "/bin/bash" });
   }
 
   if (task.setup.pre_commands) {
-    for (const cmd of task.setup.pre_commands) {
-      const wrapped = wrapCmd(cmd, tmpDir, python);
-      await execAsync(wrapped, {
-        cwd: tmpDir,
-        timeout: 120_000,
-        shell: "/bin/bash",
-      });
+    for (const pre of task.setup.pre_commands) {
+      const cmd = python
+        ? `source ${baseDir}/.venv/bin/activate && ${pre}`
+        : pre;
+      await execAsync(cmd, { cwd: baseDir, timeout: 120_000, shell: "/bin/bash" });
     }
   }
 
-  const shellPrefix = python ? `source ${tmpDir}/.venv/bin/activate && ` : "";
+  // Commit installed state so worktrees get a clean snapshot
+  await execAsync("git add -A && git commit -m 'deps installed' --allow-empty", {
+    cwd: baseDir,
+    timeout: 30_000,
+  });
+
+  console.log(`    Base ready: ${baseDir}`);
+  return baseDir;
+}
+
+/**
+ * Create an isolated workspace using git worktree from the base.
+ * Fast because it doesn't re-clone or re-install -- just branches off.
+ */
+export async function createWorkspace(
+  task: Task,
+  tasksDir: string
+): Promise<Workspace> {
+  const baseDir = await getBaseDir(task, tasksDir);
+  const python = isPythonTask(task);
+
+  // Create a worktree for this run
+  const worktreeId = `run-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const branchName = `bench-${worktreeId}`;
+  const worktreeDir = path.join(os.tmpdir(), `planmode-bench-wt-${worktreeId}`);
+
+  await execAsync(`git worktree add -b ${branchName} ${worktreeDir} HEAD`, {
+    cwd: baseDir,
+    timeout: 30_000,
+  });
+
+  // For Node.js tasks, symlink node_modules from base (huge speed gain)
+  try {
+    await access(path.join(baseDir, "node_modules"));
+    await symlink(
+      path.join(baseDir, "node_modules"),
+      path.join(worktreeDir, "node_modules"),
+      "junction"
+    );
+  } catch {
+    // No node_modules in base, that's fine
+  }
+
+  // For pnpm monorepos, also handle nested node_modules
+  try {
+    const dirs = await readdir(baseDir);
+    for (const dir of dirs) {
+      if (dir === "node_modules" || dir === ".git" || dir.startsWith(".")) continue;
+      const nestedNM = path.join(baseDir, dir, "node_modules");
+      try {
+        await access(nestedNM);
+        await mkdir(path.join(worktreeDir, dir), { recursive: true });
+        await symlink(nestedNM, path.join(worktreeDir, dir, "node_modules"), "junction");
+      } catch {
+        // No nested node_modules
+      }
+    }
+  } catch {
+    // Can't read dirs, skip
+  }
+
+  // For Python tasks, symlink the venv from base
+  if (python) {
+    try {
+      await access(path.join(baseDir, ".venv"));
+      await symlink(
+        path.join(baseDir, ".venv"),
+        path.join(worktreeDir, ".venv"),
+        "junction"
+      );
+    } catch {
+      // No venv, create one
+      await execAsync("python3 -m venv .venv", { cwd: worktreeDir, timeout: 60_000 });
+    }
+  }
+
+  const shellPrefix = python ? `source ${worktreeDir}/.venv/bin/activate && ` : "";
 
   return {
-    dir: tmpDir,
+    dir: worktreeDir,
     task,
     shellPrefix,
     cleanup: async () => {
-      await rm(tmpDir, { recursive: true, force: true });
+      // Remove worktree and branch
+      try {
+        await execAsync(`git worktree remove ${worktreeDir} --force`, {
+          cwd: baseDir,
+          timeout: 15_000,
+        });
+      } catch {
+        // Force cleanup if git worktree remove fails
+        await rm(worktreeDir, { recursive: true, force: true });
+        try {
+          await execAsync(`git worktree prune`, { cwd: baseDir, timeout: 10_000 });
+        } catch { /* ignore */ }
+      }
+      try {
+        await execAsync(`git branch -D ${branchName}`, {
+          cwd: baseDir,
+          timeout: 5_000,
+        });
+      } catch { /* ignore */ }
     },
   };
+}
+
+/**
+ * Pre-setup all task bases. Call this before running benchmarks.
+ */
+export async function prepareAllBases(
+  tasks: Task[],
+  tasksDir: string
+): Promise<void> {
+  console.log(`Preparing ${tasks.length} task base(s)...\n`);
+  for (const task of tasks) {
+    console.log(`  [${task.id}]`);
+    await getBaseDir(task, tasksDir);
+    console.log();
+  }
 }
