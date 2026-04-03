@@ -209,14 +209,23 @@ export async function createWorkspace(
 /**
  * Pre-setup all task bases. Call this before running benchmarks.
  */
+const DEFAULT_PREP_CONCURRENCY = 5;
+
 export async function prepareAllBases(
   tasks: Task[],
-  tasksDir: string
+  tasksDir: string,
+  concurrency: number = DEFAULT_PREP_CONCURRENCY
 ): Promise<void> {
-  console.log(`Preparing ${tasks.length} task base(s)...\n`);
-  for (const task of tasks) {
-    console.log(`  [${task.id}]`);
-    await getBaseDir(task, tasksDir);
-    console.log();
+  console.log(`Preparing ${tasks.length} task base(s) (concurrency: ${concurrency})...\n`);
+  for (let i = 0; i < tasks.length; i += concurrency) {
+    const batch = tasks.slice(i, i + concurrency);
+    await Promise.all(
+      batch.map(async (task) => {
+        console.log(`  [${task.id}] starting...`);
+        await getBaseDir(task, tasksDir);
+        console.log(`  [${task.id}] ready`);
+      })
+    );
   }
+  console.log();
 }
