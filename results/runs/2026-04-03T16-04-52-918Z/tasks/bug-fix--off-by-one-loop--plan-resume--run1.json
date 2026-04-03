@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "task_id": "bug-fix/off-by-one-loop",
+  "task_name": "Fix Off-by-One Error in Loop",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-03T16:12:53.044Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 66814,
+    "duration_api_ms": 63666,
+    "num_turns": 8,
+    "total_cost_usd": 0.1443215,
+    "input_tokens": 14,
+    "output_tokens": 2309,
+    "cache_read_tokens": 99184,
+    "cache_creation_tokens": 14137,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 49624,
+    "plan_api_ms": 48495,
+    "plan_tokens_in": 8,
+    "plan_tokens_out": 1574,
+    "plan_cost_usd": 0.09238294999999999,
+    "plan_content": "## Plan Summary\n\n### Root Cause\nClassic off-by-one error in `src/utils.ts`, line 7:\n\n```typescript\n// BUGGY — stops one iteration too early\nfor (let i = 0; i < items.length - 1; i++) {\n```\n\nThe `- 1` means for an N-element array the loop only visits indices `0 … N-2`, silently dropping the last item.\n\n### The Fix — single character change\n```typescript\n// FIXED\nfor (let i = 0; i < items.length; i++) {\n```\n\n### Files to touch\n| File | Change |\n|------|--------|\n| `src/utils.ts` | Remove `- 1` from the loop condition (line 7) |\n| `tests/utils.test.ts` | **No changes needed** — tests already cover the failing cases |\n\n### Test status\n3 of the 4 existing `processItems` tests are currently **failing** because of this bug. After the one-line fix, all tests will pass.",
+    "execute_duration_ms": 17190,
+    "execute_api_ms": 15171,
+    "execute_tokens_in": 6,
+    "execute_tokens_out": 735,
+    "execute_cost_usd": 0.05193855
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 1,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-bug-fix-off-by-one-loop-61lUq9\n\n ✓ tests/utils.test.ts (6 tests) 2ms\n\n Test Files  1 passed (1)\n      Tests  6 passed (6)\n   Start at  18:12:52\n   Duration  198ms (transform 27ms, setup 0ms, collect 22ms, tests 2ms, environment 0ms, prepare 37ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "src/utils.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/utils.ts",
+              "check": "not contains \"i < items.length - 1\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1344
+  },
+  "session_id": "f9cff876-0988-48c6-a6df-f32cab4604d5"
+}
