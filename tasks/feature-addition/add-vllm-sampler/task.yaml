@@ -1,0 +1,98 @@
+id: "feature-addition/add-vllm-sampler"
+name: "Add Top-A Sampling Strategy to vLLM"
+version: 1
+
+category: "feature-addition"
+difficulty: "expert"
+estimated_time_minutes: 30
+tags: ["python", "vllm", "sampling", "inference", "real-codebase", "large-repo"]
+author: "runpod-labs"
+created_at: "2026-04-03"
+
+prompt: |
+  Add a "Top-A" sampling method to vLLM's sampling pipeline. Top-A sampling is
+  a probability-based filtering strategy that keeps only tokens whose probability
+  is at least a fraction `a` of the maximum token probability. Formally, a token
+  is kept if `p(token) >= a * max(p)`, then the remaining distribution is
+  renormalized.
+
+  Study the existing sampling infrastructure before making changes:
+  - `vllm/sampling_params.py` — where sampling parameters like top_p and top_k
+    are defined in the `SamplingParams` class
+  - `vllm/model_executor/layers/sampler.py` — where sampling logic is applied
+  - Look at how `top_p` and `top_k` filtering are implemented to understand the
+    pattern
+
+  Requirements:
+
+  1. Add a `top_a` parameter to `SamplingParams` in `vllm/sampling_params.py`:
+     - Type: `float`
+     - Default: `0.0` (disabled — all tokens are kept)
+     - Valid range: `0.0 <= top_a <= 1.0`
+     - Add validation that rejects values outside this range
+     - Document the parameter in the docstring
+
+  2. Implement Top-A filtering in the sampling pipeline
+     (`vllm/model_executor/layers/sampler.py` or the appropriate location):
+     - Convert logits to probabilities (softmax)
+     - Find the maximum probability for each sequence in the batch
+     - Mask out (set to `-inf` logits or zero probability) any token where
+       `p(token) < top_a * max_p`
+     - Renormalize the remaining distribution
+     - When `top_a == 0.0`, skip the filtering entirely (no-op)
+     - Ensure it works correctly in batched inference (different sequences
+       in the same batch may have different `top_a` values)
+
+  3. Thread the `top_a` value through any intermediate data structures that
+     carry sampling parameters from `SamplingParams` into the sampler layer
+     (e.g., `SamplingMetadata`, `SamplingTensors`, or similar)
+
+  4. All existing tests should still pass
+  5. The tests in `tests/test_top_a_sampler.py` should pass
+
+setup:
+  source_repo:
+    url: "https://github.com/vllm-project/vllm.git"
+    ref: "v0.9.2"
+  install_command: "pip3 install -e ."
+  timeout_minutes: 30
+  max_budget_usd: 5.00
+
+evaluation:
+  - type: "file-check"
+    checks:
+      - path: "vllm/sampling_params.py"
+        must_exist: true
+        must_contain:
+          - "top_a"
+      - path: "vllm/model_executor/layers/sampler.py"
+        must_exist: true
+        must_contain:
+          - "top_a"
+    weight: 0.3
+
+  - type: "test-suite"
+    command: "python3 -m pytest tests/test_top_a_sampler.py -v"
+    weight: 0.3
+
+  - type: "build"
+    command: "python3 -c 'from vllm.sampling_params import SamplingParams; p = SamplingParams(top_a=0.5); assert p.top_a == 0.5; print(\"Import and construction OK\")'"
+    weight: 0.2
+
+  - type: "regex"
+    file: "vllm/sampling_params.py"
+    patterns:
+      - pattern: "top_a"
+        should_match: true
+      - pattern: "0\\.0.*<=.*top_a|top_a.*<=.*1\\.0|top_a.*range"
+        should_match: true
+    weight: 0.1
+
+  - type: "regex"
+    file: "vllm/model_executor/layers/sampler.py"
+    patterns:
+      - pattern: "top_a"
+        should_match: true
+      - pattern: "max.*prob|softmax|max_p"
+        should_match: true
+    weight: 0.1

@@ -1,0 +1,72 @@
+id: "feature-addition/add-diffusers-scheduler"
+name: "Add Cosine Annealing Noise Scheduler to Diffusers"
+version: 1
+
+category: "feature-addition"
+difficulty: "expert"
+estimated_time_minutes: 30
+tags: ["python", "ml", "diffusion", "scheduler", "real-codebase", "large-repo"]
+author: "runpod-labs"
+created_at: "2026-04-04"
+
+prompt: |
+  Add a new `CosineAnnealingScheduler` to the Hugging Face diffusers library.
+
+  Study how existing schedulers are implemented (look at `src/diffusers/schedulers/`
+  directory, especially `scheduling_ddpm.py` and `scheduling_euler_discrete.py`).
+
+  Requirements:
+  1. Create `src/diffusers/schedulers/scheduling_cosine_annealing.py` with a
+     `CosineAnnealingScheduler` class
+  2. The scheduler should:
+     - Inherit from `SchedulerMixin` and `ConfigMixin`
+     - Use a cosine annealing beta schedule: beta_t = beta_min + 0.5*(beta_max-beta_min)*(1+cos(pi*t/T))
+     - Support `num_train_timesteps`, `beta_start`, `beta_end` config params
+     - Implement `set_timesteps(num_inference_steps)`
+     - Implement `step(model_output, timestep, sample)` that performs one denoising step
+     - Implement `add_noise(original_samples, noise, timesteps)` for training
+     - Return `SchedulerOutput` from the step method
+  3. Register it in `src/diffusers/schedulers/__init__.py`
+  4. Register it in `src/diffusers/__init__.py`
+  5. Follow the existing code patterns exactly (use `@register_to_config` decorator, etc.)
+  6. All existing tests should still pass
+
+setup:
+  source_repo:
+    url: "https://github.com/huggingface/diffusers.git"
+    ref: "v0.37.1"
+  install_command: "pip3 install -e '.[dev]'"
+  timeout_minutes: 30
+  max_budget_usd: 5.00
+
+evaluation:
+  - type: "test-suite"
+    command: "python3 -m pytest tests/test_cosine_scheduler.py -v"
+    weight: 0.3
+
+  - type: "file-check"
+    checks:
+      - path: "src/diffusers/schedulers/scheduling_cosine_annealing.py"
+        must_exist: true
+        must_contain:
+          - "CosineAnnealingScheduler"
+          - "SchedulerMixin"
+          - "cosine"
+          - "step"
+          - "add_noise"
+    weight: 0.3
+
+  - type: "build"
+    command: "python3 -c 'from diffusers import CosineAnnealingScheduler; print(\"Import OK\")'"
+    weight: 0.2
+
+  - type: "regex"
+    file: "src/diffusers/schedulers/scheduling_cosine_annealing.py"
+    patterns:
+      - pattern: "class CosineAnnealingScheduler"
+        should_match: true
+      - pattern: "register_to_config"
+        should_match: true
+      - pattern: "def step"
+        should_match: true
+    weight: 0.2

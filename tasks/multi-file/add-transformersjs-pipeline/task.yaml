@@ -1,0 +1,97 @@
+id: "multi-file/add-transformersjs-pipeline"
+name: "Add Image-Text-to-Text Pipeline to Transformers.js"
+version: 1
+
+category: "multi-file"
+difficulty: "expert"
+estimated_time_minutes: 30
+tags: ["typescript", "ml", "transformers", "pipeline", "real-codebase", "large-repo"]
+author: "runpod-labs"
+created_at: "2026-04-04"
+
+prompt: |
+  Add a new `image-text-to-text` pipeline to the Transformers.js library.
+
+  Study how existing pipelines are implemented in `src/pipelines.js`. Use
+  `DocumentQuestionAnsweringPipeline` and `ImageToTextPipeline` as your primary
+  references since they handle multimodal (image + text) inputs.
+
+  Requirements:
+  1. Add an `ImageTextToTextPipeline` class in `src/pipelines.js`
+  2. The pipeline should accept an image and a text prompt (the text prompt
+     describes what to do with the image, e.g. "Describe this image in detail")
+  3. Use `AutoModelForImageTextToText` (already defined in `src/models.js`)
+  4. Use `AutoProcessor` for image processing and `AutoTokenizer` for text
+  5. Implement the `_call` method that:
+     - Processes the image using the processor
+     - Tokenizes the text prompt
+     - Runs the model's `generate()` method with both pixel values and input IDs
+     - Decodes the generated token IDs back to text
+     - Returns an array of objects: `[{ generated_text: string }]`
+  6. Register the pipeline in the `SUPPORTED_TASKS` mapping with:
+     - `"tokenizer": AutoTokenizer`
+     - `"pipeline": ImageTextToTextPipeline`
+     - `"model": AutoModelForImageTextToText`
+     - `"processor": AutoProcessor`
+     - `"type": "multimodal"`
+     - A sensible `"default"` model (e.g. `"onnx-community/Florence-2-base-ft"`)
+  7. Export the pipeline class
+  8. Add JSDoc documentation following existing patterns (typedefs, callback,
+     pipeline type, class-level docs with example usage)
+  9. Add `"image-text-to-text"` to the pipeline factory function's JSDoc list
+     at the bottom of the file
+
+  The implementation should follow the existing pipeline patterns exactly.
+  Do NOT modify any existing pipeline classes or their behavior.
+
+setup:
+  source_repo:
+    url: "https://github.com/huggingface/transformers.js.git"
+    ref: "3.8.1"
+  install_command: "npm install"
+  timeout_minutes: 30
+  max_budget_usd: 5.00
+
+evaluation:
+  - type: "file-check"
+    checks:
+      - path: "src/pipelines.js"
+        must_exist: true
+        must_contain:
+          - "ImageTextToTextPipeline"
+          - "image-text-to-text"
+          - "AutoModelForImageTextToText"
+    weight: 0.3
+
+  - type: "build"
+    command: "node -e \"const p = require('./src/pipelines.js'); if (typeof p.ImageTextToTextPipeline !== 'function') { process.exit(1); } console.log('OK')\""
+    expected_output: "OK"
+    weight: 0.3
+
+  - type: "regex"
+    file: "src/pipelines.js"
+    patterns:
+      - pattern: "class ImageTextToTextPipeline"
+        should_match: true
+      - pattern: "async _call\\("
+        should_match: true
+      - pattern: "\"image-text-to-text\":\\s*\\{"
+        should_match: true
+      - pattern: "AutoModelForImageTextToText"
+        should_match: true
+      - pattern: "generate\\("
+        should_match: true
+      - pattern: "@typedef.*ImageTextToText"
+        should_match: true
+    weight: 0.2
+
+  - type: "regex"
+    file: "src/pipelines.js"
+    patterns:
+      - pattern: "\"type\":\\s*\"multimodal\""
+        should_match: true
+      - pattern: "generated_text"
+        should_match: true
+      - pattern: "pixel_values"
+        should_match: true
+    weight: 0.2
