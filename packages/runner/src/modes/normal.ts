@@ -24,7 +24,7 @@ export async function runNormalMode(
       cwd: workDir,
       permissionMode: "bypassPermissions",
       allowDangerouslySkipPermissions: true,
-      maxTurns: 50,
+      maxTurns: 150,
       maxBudgetUsd: task.setup.max_budget_usd,
       model,
     },

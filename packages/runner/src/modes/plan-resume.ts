@@ -62,7 +62,7 @@ export async function runPlanResumeMode(
       resume: sessionId,
       permissionMode: "bypassPermissions",
       allowDangerouslySkipPermissions: true,
-      maxTurns: 50,
+      maxTurns: 150,
       maxBudgetUsd: executeBudget,
       model,
     },

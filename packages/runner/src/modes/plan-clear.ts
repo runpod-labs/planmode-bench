@@ -80,7 +80,7 @@ export async function runPlanClearMode(
       // No `resume` -- brand new session with fresh context
       permissionMode: "bypassPermissions",
       allowDangerouslySkipPermissions: true,
-      maxTurns: 50,
+      maxTurns: 150,
       maxBudgetUsd: executeBudget,
       model,
     },
