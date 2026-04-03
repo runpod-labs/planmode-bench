@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "task_id": "refactoring/extract-service-layer",
+  "task_name": "Extract Service Layer from Route Handlers",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-03T22:56:05.754Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 206484,
+    "duration_api_ms": 233287,
+    "num_turns": 21,
+    "total_cost_usd": 0.5022221,
+    "input_tokens": 22,
+    "output_tokens": 11713,
+    "cache_read_tokens": 280726,
+    "cache_creation_tokens": 35397,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 131528,
+    "plan_api_ms": 160901,
+    "plan_tokens_in": 8,
+    "plan_tokens_out": 6215,
+    "plan_cost_usd": 0.2903828,
+    "plan_content": "Here's the complete plan I've developed after reading all 8 relevant files:\n\n---\n\n## Plan Overview\n\n### What's changing\n\n| File | Change |\n|------|--------|\n| `src/types.ts` | Add 6 new typed interfaces for service return values |\n| `src/routes/products.ts` | Refactor — strip logic, delegate to service |\n| `src/routes/orders.ts` | Refactor — strip logic, delegate to service |\n| `src/services/product-service.ts` | **Create new** — `ServiceError` class + 3 functions |\n| `src/services/order-service.ts` | **Create new** — 4 functions |\n| `src/app.ts`, `src/data.ts`, both test files | **Unchanged** |\n\n### Service functions\n\n**`product-service.ts`**\n- `listProducts({ category?, minPrice?, maxPrice? })` → filtered list + summary stats\n- `getProductById(id)` → product with `isLowStock` + `inventoryValue`\n- `adjustProductStock(id, adjustment)` → validates new stock ≥ 0, mutates, returns enriched product\n\n**`order-service.ts`**\n- `listOrders({ userId?, status? })` → filtered list + revenue summary\n- `getOrderById(id)` → order with items enriched with `productName`\n- `createOrder(input)` → validates, deducts stock, creates & persists order\n- `updateOrderStatus(id, status)` → validates status value + transition rules, mutates\n\n### Error strategy\nServices throw `ServiceError(message, statusCode)` for domain errors (404s, 400s). Routes catch it and respond with `res.status(err.statusCode).json({ error: err.message })`. This keeps every route handler to 3–5 lines.\n\n### Verification\n`npm test` — all existing integration tests pass unchanged (they test HTTP responses end-to-end via supertest, so they fully validate the refactor).",
+    "execute_duration_ms": 74956,
+    "execute_api_ms": 72386,
+    "execute_tokens_in": 14,
+    "execute_tokens_out": 5498,
+    "execute_cost_usd": 0.2118393
+  },
+  "evaluation": {
+    "overall_score": 0.8,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775256755669-miwdr2\n\n ✓ tests/products.test.ts (5 tests) 14ms\n ✓ tests/orders.test.ts (9 tests) 24ms\n\n Test Files  2 passed (2)\n      Tests  14 passed (14)\n   Start at  00:56:04\n   Duration  268ms (transform 53ms, setup 0ms, collect 183ms, tests 39ms, environment 0ms, prepare 68ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/services/product-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/services/order-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/products.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/orders.ts",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*product",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*order",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1457
+  },
+  "session_id": "30cac387-e6c7-4d4a-95f3-5d933610c793"
+}

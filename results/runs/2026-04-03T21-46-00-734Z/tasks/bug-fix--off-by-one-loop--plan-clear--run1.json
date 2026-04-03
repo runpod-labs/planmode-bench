@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "task_id": "bug-fix/off-by-one-loop",
+  "task_name": "Fix Off-by-One Error in Loop",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-03T21:52:15.351Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 71236,
+    "duration_api_ms": 68163,
+    "num_turns": 13,
+    "total_cost_usd": 0.15673175,
+    "input_tokens": 18,
+    "output_tokens": 2647,
+    "cache_read_tokens": 146340,
+    "cache_creation_tokens": 13371,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 43368,
+    "plan_api_ms": 42365,
+    "plan_tokens_in": 8,
+    "plan_tokens_out": 1357,
+    "plan_cost_usd": 0.08181680000000001,
+    "plan_content": "## Plan Summary\n\n**Root cause:** Off-by-one error in `src/utils.ts`, line 7.\n\n```typescript\n// ❌ Bug — stops one index short, skips the last item\nfor (let i = 0; i < items.length - 1; i++) {\n\n// ✅ Fix — iterates over all indices\nfor (let i = 0; i < items.length; i++) {\n```\n\n**Single change needed:** Remove the `- 1` from the loop condition.\n\n**Why it broke:** For an array of length `n`, valid indices are `0` through `n-1`. The condition `i < n - 1` only reaches index `n-2`, permanently skipping the last element. This affects all non-empty arrays — even a single-element array returns `[]` instead of the processed value.\n\n**Verification:** All 4 existing tests in `tests/utils.test.ts` (empty array, 1 item, 2 items, 3 items) will pass after the fix with `npx vitest run`.",
+    "execute_duration_ms": 27868,
+    "execute_api_ms": 25798,
+    "execute_tokens_in": 10,
+    "execute_tokens_out": 1290,
+    "execute_cost_usd": 0.07491494999999998
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 1,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775253060341-dknc7g\n\n ✓ tests/utils.test.ts (6 tests) 2ms\n\n Test Files  1 passed (1)\n      Tests  6 passed (6)\n   Start at  23:52:14\n   Duration  164ms (transform 20ms, setup 0ms, collect 18ms, tests 2ms, environment 0ms, prepare 29ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "src/utils.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/utils.ts",
+              "check": "not contains \"i < items.length - 1\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1152
+  },
+  "session_id": "7bd2189d-f9b0-4871-9274-dda47aed5ef3"
+}

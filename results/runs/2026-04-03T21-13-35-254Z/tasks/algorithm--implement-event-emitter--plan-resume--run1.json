@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "task_id": "algorithm/implement-event-emitter",
+  "task_name": "Implement Full-Featured Event Emitter",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-03T21:16:52.474Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 126620,
+    "duration_api_ms": 123316,
+    "num_turns": 9,
+    "total_cost_usd": 0.30981645,
+    "input_tokens": 14,
+    "output_tokens": 6479,
+    "cache_read_tokens": 133658,
+    "cache_creation_tokens": 33024,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 103064,
+    "plan_api_ms": 101819,
+    "plan_tokens_in": 9,
+    "plan_tokens_out": 5376,
+    "plan_cost_usd": 0.21304275000000003,
+    "plan_content": "Here's the plan for implementing the `EventEmitter` class.\n\n## Core data structure\nA single private field:\n```typescript\nprivate _listeners: Map<string, Listener[]> = new Map();\n```\nEach event name maps to an ordered array of listener functions. Empty arrays are **deleted** from the map (never left behind), so `eventNames()` can just return `Array.from(this._listeners.keys())` without any filtering.\n\n## Method-by-method plan\n\n1. **`on(event, listener)`** — push to the array (init if needed), return `() => this.off(event, listener)` as the unsubscribe closure.\n\n2. **`once(event, listener)`** — create a `wrapper` that calls `this.off(event, wrapper)` then the original `listener`, and register `wrapper` via `on`. This means `listenerCount` naturally decreases after first fire.\n\n3. **`emit(event, ...args)`** — check `listeners.length > 0` first (sets the return value), then iterate over a **snapshot copy** (`[...listeners]`) rather than the live array. The snapshot is the key trick for all self-removal edge cases — it guarantees no crash if any listener calls `off` mid-emit.\n\n4. **`off(event, listener)`** — silent no-op if event/listener not found; `splice` the first matching index; **delete** the map entry if the array becomes empty.\n\n5. **`removeAllListeners(event?)`** — `this._listeners.clear()` with no arg, `this._listeners.delete(event)` otherwise.\n\n6. **`listenerCount(event)`** — `this._listeners.get(event)?.length ?? 0`.\n\n7. **`eventNames()`** — `Array.from(this._listeners.keys())`.\n\n## Key edge cases covered\n- Listener removes itself during emit → snapshot prevents crash, \"after\" listener still fires ✓  \n- `off` on non-existent event/listener → early return, no throw ✓  \n- `once` return value: snapshot is taken *before* the wrapper self-removes, so `emit` still returns `true` on the first call ✓  \n- `eventNames` cleanup: empty map entries are always deleted, so every key returned has ≥1 listener ✓",
+    "execute_duration_ms": 23556,
+    "execute_api_ms": 21497,
+    "execute_tokens_in": 5,
+    "execute_tokens_out": 1103,
+    "execute_cost_usd": 0.0967737
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 1,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-algorithm-implement-event-emitter-vedYNJ\n\n ✓ tests/event-emitter.test.ts (29 tests) 5ms\n\n Test Files  1 passed (1)\n      Tests  29 passed (29)\n   Start at  23:16:51\n   Duration  186ms (transform 30ms, setup 0ms, collect 30ms, tests 5ms, environment 0ms, prepare 30ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/event-emitter.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"on(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"emit(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"once(\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1361
+  },
+  "session_id": "8226db99-1497-4ac1-9cd5-959c9a73b4e9"
+}

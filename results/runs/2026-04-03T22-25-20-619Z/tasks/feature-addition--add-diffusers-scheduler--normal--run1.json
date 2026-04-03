@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-diffusers-scheduler",
+  "task_name": "Add Cosine Annealing Noise Scheduler to Diffusers",
+  "mode": "normal",
+  "run_number": 1,
+  "timestamp": "2026-04-03T22:34:30.927Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 228686,
+    "duration_api_ms": 211997,
+    "num_turns": 29,
+    "total_cost_usd": 0.6922329499999998,
+    "input_tokens": 27,
+    "output_tokens": 11833,
+    "cache_read_tokens": 806565,
+    "cache_creation_tokens": 38219,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775255404421-mr6nvi/.venv/bin/activate && python3 -m pytest tests/test_cosine_scheduler.py -v",
+          "tests_passed": 8,
+          "tests_failed": 0,
+          "tests_total": 8,
+          "output": "============================= test session starts ==============================\nplatform darwin -- Python 3.14.2, pytest-9.0.2, pluggy-1.6.0 -- /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-bases/feature-addition-add-diffusers-scheduler/.venv/bin/python3\ncachedir: .pytest_cache\nrootdir: /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775255404421-mr6nvi\nconfigfile: pyproject.toml\nplugins: jaxtyping-0.3.9, xdist-3.8.0, timeout-2.4.0, requests-mock-1.10.0, anyio-4.13.0\ncollecting ... collected 8 items\n\ntests/test_cosine_scheduler.py::TestCosineAnnealingScheduler::test_import PASSED [ 12%]\ntests/test_cosine_scheduler.py::TestCosineAnnealingScheduler::test_config PASSED [ 25%]\ntests/test_cosine_scheduler.py::TestCosineAnnealingScheduler::test_set_timesteps PASSED [ 37%]\ntests/test_cosine_scheduler.py::TestCosineAnnealingScheduler::test_betas_are_cosine PASSED [ 50%]\ntests/test_cosine_scheduler.py::TestCosineAnnealingScheduler::test_alphas_cumprod_decreasing PASSED [ 62%]\ntests/test_cosine_scheduler.py::TestCosineAnnealingScheduler::test_step_returns_scheduler_output PASSED [ 75%]\ntests/test_cosine_scheduler.py::TestCosineAnnealingScheduler::test_add_noise PASSED [ 87%]\ntests/test_cosine_scheduler.py::TestCosineAnnealingScheduler::test_step_reduces_noise PASSED [100%]\n\n============================== 8 passed in 0.02s ===============================\n"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 6,
+          "check_details": [
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"CosineAnnealingScheduler\"",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"SchedulerMixin\"",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"cosine\"",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"step\"",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"add_noise\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775255404421-mr6nvi/.venv/bin/activate && python3 -c 'from diffusers import CosineAnnealingScheduler; print(\"Import OK\")'",
+          "exit_code": 0,
+          "output": "Import OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "class CosineAnnealingScheduler",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "register_to_config",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "def step",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 36224
+  },
+  "session_id": "8698fd05-a31c-4a66-9361-a6241ad8edbd"
+}

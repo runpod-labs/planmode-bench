@@ -4,6 +4,7 @@ import { validateTask } from "./commands/validate.js";
 import { runCommand } from "./commands/run.js";
 import { scaffoldTask } from "./commands/scaffold.js";
 import { reportCommand } from "./commands/report.js";
+import { prepareCommand } from "./commands/prepare.js";
 
 const program = new Command();
 
@@ -47,5 +48,12 @@ program
   .command("report [run-id]")
   .description("Generate a report from results (defaults to latest)")
   .action(reportCommand);
+
+program
+  .command("prepare")
+  .description("Pre-setup task bases (clone repos, install deps)")
+  .option("-t, --tasks <tasks>", "Comma-separated task IDs, or 'all'", "all")
+  .option("--concurrency <n>", "Parallel preparations", "5")
+  .action(prepareCommand);
 
 program.parse();

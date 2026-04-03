@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "Add REST API Client Generator to Prisma",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-03T22:52:35.245Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 810194,
+    "duration_api_ms": 925453,
+    "num_turns": 49,
+    "total_cost_usd": 1.8381895499999998,
+    "input_tokens": 47,
+    "output_tokens": 44595,
+    "cache_read_tokens": 1325014,
+    "cache_creation_tokens": 92389,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 506916,
+    "plan_api_ms": 623790,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 26758,
+    "plan_cost_usd": 1.0483548999999999,
+    "plan_content": "Here's a summary of the plan I've put together after thoroughly exploring the codebase:\n\n---\n\n## Plan: `@prisma/generator-rest-client`\n\n### What I found\n\n- Generators are Node.js child processes communicating with the Prisma CLI over **JSON-RPC 2.0 via stdin/stderr**\n- `@prisma/generator-helper` provides `generatorHandler({ onManifest, onGenerate })` which abstracts the entire protocol — that's the only runtime dependency needed\n- `GeneratorOptions.dmmf.datamodel.models` gives full DMMF model/field metadata; `options.generator.output?.value` gives the user-specified output path\n- All packages follow the same build pattern: `helpers/build.ts` → `adapterConfig` → dual CJS+ESM output via esbuild\n- `tsconfig.build.bundle.json` needs a new path alias for IDE go-to-definition\n\n### 7 files to create + 1 to modify\n\n| File | Purpose |\n|------|---------|\n| `packages/generator-rest-client/package.json` | Package config with `bin` entry so Prisma can invoke it |\n| `packages/generator-rest-client/tsconfig.json` | Extends monorepo root |\n| `packages/generator-rest-client/tsconfig.build.json` | Extends `tsconfig.build.regular.json` |\n| `packages/generator-rest-client/helpers/build.ts` | `build(adapterConfig)` — standard dual-format build |\n| `packages/generator-rest-client/src/index.ts` | Calls `generatorHandler` with `onManifest` + `onGenerate` |\n| `packages/generator-rest-client/src/generator.ts` | Reads DMMF, resolves output dir, writes `rest-client.ts` |\n| `packages/generator-rest-client/src/template.ts` | Pure string helpers: type mapping, interface rendering, CRUD factory generation |\n| `tsconfig.build.bundle.json` | Add `\"@prisma/generator-rest-client\"` path alias |\n\n### Key design decisions\n- **Only dependency**: `@prisma/generator-helper` (re-exports DMMF types + generator types)\n- **`bin` field**: `\"prisma-generator-rest-client\": \"dist/index.js\"` — required for schema's `provider = \"prisma-generator-rest-client\"` resolution\n- **Generated output**: Single `rest-client.ts` with model interfaces, `CreateInput`/`UpdateInput`/`WhereUniqueInput` types, a `RestClient` interface, and `createXxxRestClient(baseUrl)` factory functions using `fetch`\n- **Type mapping**: DMMF scalars → TS primitives, enums → string unions, relations → other model types",
+    "execute_duration_ms": 303278,
+    "execute_api_ms": 301663,
+    "execute_tokens_in": 30,
+    "execute_tokens_out": 17837,
+    "execute_cost_usd": 0.78983465
+  },
+  "evaluation": {
+    "overall_score": 0.5700000000000001,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.8,
+        "weight": 0.4,
+        "weighted_score": 0.32000000000000006,
+        "passed": false,
+        "details": {
+          "checks_passed": 8,
+          "checks_total": 10,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"prisma\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"generator\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"generatorHandler\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"onGenerate\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"dmmf\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"findMany\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"create\"",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 1,
+          "output": "node:internal/modules/cjs/loader:1228\n  throw err;\n  ^\n\nError: Cannot find module '/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775255936886-os7bhu/node_modules/typescript/bin/tsc'\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)\n    at Function._load (node:internal/modules/cjs/loader:1055:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)\n    at node:internal/main/run_main_module:36:49 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: []\n}\n\nNode.js v22.14.0\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.6666666666666666,
+        "weight": 0.15,
+        "weighted_score": 0.09999999999999999,
+        "passed": false,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "findUnique|findMany",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "model|Model",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "interface|type",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "generatorHandler",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "onGenerate|onManifest",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 361
+  },
+  "session_id": "dd1314af-9ab2-4b32-a75b-162a75ca8eb5"
+}

@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "task_id": "algorithm/implement-event-emitter",
+  "task_name": "Implement Full-Featured Event Emitter",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-03T22:29:08.590Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 169573,
+    "duration_api_ms": 165647,
+    "num_turns": 14,
+    "total_cost_usd": 0.3486691,
+    "input_tokens": 17,
+    "output_tokens": 8645,
+    "cache_read_tokens": 148787,
+    "cache_creation_tokens": 35850,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 98059,
+    "plan_api_ms": 96927,
+    "plan_tokens_in": 8,
+    "plan_tokens_out": 4283,
+    "plan_cost_usd": 0.168916,
+    "plan_content": "Here's the plan I've designed after reading all the relevant files:\n\n---\n\n## Implementation Plan for `EventEmitter`\n\n**Only file to modify:** `src/event-emitter.ts`\n\n### Data Structure\nA single private field: `private listeners = new Map<string, Listener[]>()` — event names mapped to ordered listener arrays. Empty arrays are always deleted from the map immediately (keeps `eventNames()` clean).\n\n### Method Breakdown\n\n| Method | Key logic |\n|---|---|\n| **`on`** | Push to array (create if absent), return `() => this.off(event, listener)` |\n| **`once`** | Create a wrapper that calls `off(event, wrapper)` then the original; tag the wrapper with `wrapper._originalListener = listener` |\n| **`emit`** | Snapshot the array first; iterate the snapshot but check each fn still exists in the *live* array before calling it; `return true` is decided before iteration starts |\n| **`off`** | `findIndex` matching `l === listener` OR `l._originalListener === listener`; splice out; delete map entry if array becomes empty |\n| **`removeAllListeners`** | `delete` one key (if arg given) or `clear()` the whole map |\n| **`listenerCount`** | `this.listeners.get(event)?.length ?? 0` |\n| **`eventNames`** | `[...this.listeners.keys()]` |\n\n### Key Edge Cases\n- **Self-removal during emit:** Snapshot + live-array `includes` check prevents crashes and skipping valid listeners\n- **Listener removed by earlier listener:** Same snapshot/live-check handles this\n- **`off` with non-registered listener:** `findIndex` returns `-1` → silent no-op\n- **`emit` return value after single `once` fires:** `return true` is set before the iteration that causes removal\n- **`off` on a `once`-registered listener:** `_originalListener` tag on the wrapper lets `off` find and remove the right function",
+    "execute_duration_ms": 71514,
+    "execute_api_ms": 68720,
+    "execute_tokens_in": 9,
+    "execute_tokens_out": 4362,
+    "execute_cost_usd": 0.1797531
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 1,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775255174427-b43fr0\n\n ✓ tests/event-emitter.test.ts (29 tests) 5ms\n\n Test Files  1 passed (1)\n      Tests  29 passed (29)\n   Start at  00:29:07\n   Duration  233ms (transform 60ms, setup 0ms, collect 56ms, tests 5ms, environment 0ms, prepare 40ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/event-emitter.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"on(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"emit(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"once(\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1492
+  },
+  "session_id": "dad784fc-afe1-4278-90b8-b5070a6f87f0"
+}
