@@ -9,7 +9,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine,
 } from "recharts";
 
 interface ModeResult {
@@ -31,23 +30,35 @@ interface TaskResult {
 }
 
 const COLORS = {
-  normal: "#3B82F6",
-  "plan-resume": "#8B5CF6",
-  "plan-clear": "#10B981",
+  normalExec: "#3B82F6",
+  planResumePlan: "#C4B5FD",
+  planResumeExec: "#8B5CF6",
+  planClearPlan: "#6EE7B7",
+  planClearExec: "#10B981",
 };
 
-export default function ScoreBarChart({ tasks }: { tasks: TaskResult[] }) {
+export default function CostBreakdownChart({
+  tasks,
+}: {
+  tasks: TaskResult[];
+}) {
   const data = tasks.map((t) => ({
     name: t.name.length > 20 ? t.name.slice(0, 18) + "..." : t.name,
     fullName: t.name,
-    Normal: Math.round(t.results.normal.score * 100),
-    "Plan+Resume": Math.round(t.results["plan-resume"].score * 100),
-    "Plan+Clear": Math.round(t.results["plan-clear"].score * 100),
+    "Normal": t.results.normal.totalCost,
+    "P+R Plan": t.results["plan-resume"].planCost,
+    "P+R Exec": t.results["plan-resume"].execCost,
+    "P+C Plan": t.results["plan-clear"].planCost,
+    "P+C Exec": t.results["plan-clear"].execCost,
   }));
 
   return (
     <div className="rounded-xl border border-border bg-surface-raised p-6">
-      <h2 className="mb-4 text-lg font-semibold">Scores by Task</h2>
+      <h2 className="mb-1 text-lg font-semibold">Cost Breakdown by Task</h2>
+      <p className="mb-4 text-xs text-text-muted">
+        Plan modes add planning cost on top of execution cost. Normal mode has no
+        planning phase.
+      </p>
       <ResponsiveContainer width="100%" height={400}>
         <BarChart data={data} barCategoryGap="15%">
           <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" />
@@ -61,10 +72,10 @@ export default function ScoreBarChart({ tasks }: { tasks: TaskResult[] }) {
             height={80}
           />
           <YAxis
-            domain={[0, 100]}
             tick={{ fill: "#9898b0", fontSize: 13 }}
             axisLine={{ stroke: "#2a2a3a" }}
             tickLine={false}
+            tickFormatter={(v: number) => `$${v.toFixed(1)}`}
           />
           <Tooltip
             contentStyle={{
@@ -72,34 +83,28 @@ export default function ScoreBarChart({ tasks }: { tasks: TaskResult[] }) {
               border: "1px solid #2a2a3a",
               borderRadius: "8px",
               color: "#f0f0f5",
-              fontSize: "13px",
+              fontSize: "12px",
             }}
+            formatter={(value: number) => [`$${value.toFixed(2)}`, undefined]}
           />
-          <Legend wrapperStyle={{ fontSize: "13px", color: "#9898b0" }} />
-          <ReferenceLine
-            y={90}
-            stroke="#5a5a72"
-            strokeDasharray="3 3"
-            label={{
-              value: "90",
-              fill: "#5a5a72",
-              fontSize: 11,
-              position: "right",
-            }}
-          />
+          <Legend wrapperStyle={{ fontSize: "12px", color: "#9898b0" }} />
           <Bar
             dataKey="Normal"
-            fill={COLORS.normal}
+            fill={COLORS.normalExec}
             radius={[4, 4, 0, 0]}
           />
+          <Bar dataKey="P+R Plan" stackId="pr" fill={COLORS.planResumePlan} />
           <Bar
-            dataKey="Plan+Resume"
-            fill={COLORS["plan-resume"]}
+            dataKey="P+R Exec"
+            stackId="pr"
+            fill={COLORS.planResumeExec}
             radius={[4, 4, 0, 0]}
           />
+          <Bar dataKey="P+C Plan" stackId="pc" fill={COLORS.planClearPlan} />
           <Bar
-            dataKey="Plan+Clear"
-            fill={COLORS["plan-clear"]}
+            dataKey="P+C Exec"
+            stackId="pc"
+            fill={COLORS.planClearExec}
             radius={[4, 4, 0, 0]}
           />
         </BarChart>

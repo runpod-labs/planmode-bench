@@ -1,0 +1,63 @@
+id: "feature-addition/add-vllm-sampler"
+name: "Add Top-A Sampling Strategy to vLLM"
+version: 1
+category: "feature-addition"
+difficulty: "expert"
+estimated_time_minutes: 25
+tags: ["python", "ml", "sampling", "vllm", "real-codebase", "large-repo"]
+author: "runpod-labs"
+created_at: "2026-04-04"
+
+prompt: |
+  Add a "Top-A" sampling method to the vLLM inference engine. Top-A sampling
+  keeps only tokens whose probability is at least `a * max_probability`, then
+  renormalizes.
+
+  Study the existing sampling code in `vllm/` (look at how top_p and top_k
+  are implemented in the sampling parameters and sampler layers).
+
+  Requirements:
+  1. Add a `top_a` float parameter to the sampling params class (default 0.0 = disabled)
+  2. Add validation: 0.0 <= top_a <= 1.0
+  3. Document the parameter in the docstring
+  4. Add the Top-A filtering logic in the appropriate sampler file:
+     - Find max probability for each sequence
+     - Mask tokens where p(token) < top_a * max_p
+     - When top_a == 0.0, skip filtering (no-op)
+  5. Thread the top_a value through any intermediate data structures
+
+  Do NOT try to run or install vLLM. Only modify source files.
+
+setup:
+  source_repo:
+    url: "https://github.com/vllm-project/vllm.git"
+    ref: "v0.9.2"
+  install_command: "echo 'source-only task'"
+  timeout_minutes: 25
+  max_budget_usd: 5.00
+
+evaluation:
+  - type: "file-check"
+    checks:
+      - path: "vllm/sampling_params.py"
+        must_exist: true
+        must_contain:
+          - "top_a"
+    weight: 0.35
+  - type: "regex"
+    file: "vllm/sampling_params.py"
+    patterns:
+      - pattern: "top_a.*float|float.*top_a"
+        should_match: true
+      - pattern: "0\\.0.*top_a|top_a.*0\\.0"
+        should_match: true
+    weight: 0.25
+  - type: "build"
+    command: "python3 -c 'import ast; ast.parse(open(\"vllm/sampling_params.py\").read()); print(\"Syntax OK\")'"
+    weight: 0.2
+  - type: "regex"
+    file: "vllm/sampling_params.py"
+    patterns:
+      - pattern: "top_a"
+        should_match: true
+    weight: 0.2

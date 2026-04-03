@@ -1,64 +1,55 @@
 "use client";
 
-interface ModeResult {
-  score: number;
-  maxScore: number;
-  pass: boolean;
-  cost: number;
+interface OverallStats {
+  avgScore: number;
+  medianScore: number;
+  successRate: number;
+  avgCost: number;
+  avgTokens: number;
+  avgTurns: number;
 }
 
-interface TaskResult {
-  results: {
-    normal: ModeResult;
-    "plan-resume": ModeResult;
-    "plan-clear": ModeResult;
-  };
+interface OverallData {
+  normal: OverallStats;
+  "plan-resume": OverallStats;
+  "plan-clear": OverallStats;
 }
 
-function avg(nums: number[]): number {
-  return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
-}
+const MODES = ["normal", "plan-resume", "plan-clear"] as const;
 
-function avgCost(nums: number[]): string {
-  return (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(3);
-}
+const labels: Record<string, string> = {
+  normal: "Normal",
+  "plan-resume": "Plan + Resume",
+  "plan-clear": "Plan + Clear",
+};
 
-function pct(nums: boolean[]): number {
-  return Math.round((nums.filter(Boolean).length / nums.length) * 100);
-}
+const colors: Record<string, string> = {
+  normal: "border-normal/30 bg-normal/5",
+  "plan-resume": "border-plan-resume/30 bg-plan-resume/5",
+  "plan-clear": "border-plan-clear/30 bg-plan-clear/5",
+};
 
-export default function StatsCards({ tasks }: { tasks: TaskResult[] }) {
-  const modes = ["normal", "plan-resume", "plan-clear"] as const;
+const textColors: Record<string, string> = {
+  normal: "text-normal",
+  "plan-resume": "text-plan-resume",
+  "plan-clear": "text-plan-clear",
+};
 
-  const stats = modes.map((mode) => ({
+export default function StatsCards({ overall }: { overall: OverallData }) {
+  const stats = MODES.map((mode) => ({
     mode,
-    avgScore: avg(tasks.map((t) => t.results[mode].score)),
-    avgCost: avgCost(tasks.map((t) => t.results[mode].cost)),
-    successRate: pct(tasks.map((t) => t.results[mode].pass)),
+    avgScore: overall[mode].avgScore,
+    avgCost: overall[mode].avgCost,
+    successRate: overall[mode].successRate,
+    avgTurns: overall[mode].avgTurns,
   }));
 
-  const labels: Record<string, string> = {
-    normal: "Normal",
-    "plan-resume": "Plan + Resume",
-    "plan-clear": "Plan + Clear",
-  };
+  const normalCost = stats[0].avgCost;
+  const planResumeCost = stats[1].avgCost;
+  const planClearCost = stats[2].avgCost;
 
-  const colors: Record<string, string> = {
-    normal: "border-normal/30 bg-normal/5",
-    "plan-resume": "border-plan-resume/30 bg-plan-resume/5",
-    "plan-clear": "border-plan-clear/30 bg-plan-clear/5",
-  };
-
-  const textColors: Record<string, string> = {
-    normal: "text-normal",
-    "plan-resume": "text-plan-resume",
-    "plan-clear": "text-plan-clear",
-  };
-
-  const costDelta =
-    ((parseFloat(stats[2].avgCost) - parseFloat(stats[0].avgCost)) /
-      parseFloat(stats[0].avgCost)) *
-    100;
+  const planResumeOverhead = ((planResumeCost - normalCost) / normalCost) * 100;
+  const planClearOverhead = ((planClearCost - normalCost) / normalCost) * 100;
 
   return (
     <div className="space-y-4">
@@ -70,44 +61,50 @@ export default function StatsCards({ tasks }: { tasks: TaskResult[] }) {
           >
             <div className="text-sm text-text-secondary">{labels[s.mode]}</div>
             <div className={`mt-1 text-3xl font-bold ${textColors[s.mode]}`}>
-              {s.avgScore}
+              {(s.avgScore * 100).toFixed(1)}
             </div>
-            <div className="mt-0.5 text-xs text-text-muted">avg score / 100</div>
+            <div className="mt-0.5 text-xs text-text-muted">
+              avg score / 100
+            </div>
             <div className="mt-3 flex items-center justify-between text-xs text-text-secondary">
-              <span>Avg cost: ${s.avgCost}</span>
-              <span>Pass: {s.successRate}%</span>
+              <span>Avg cost: ${s.avgCost.toFixed(2)}</span>
+              <span>Avg turns: {s.avgTurns}</span>
             </div>
           </div>
         ))}
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-surface-raised p-5">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-normal/20 bg-normal/5 p-5">
           <div className="text-sm text-text-secondary">
-            Score delta (Plan+Clear vs Normal)
+            Normal wins on both quality and cost
           </div>
-          <div className="mt-1 text-2xl font-bold text-plan-clear">
-            +{stats[2].avgScore - stats[0].avgScore} pts
+          <div className="mt-1 text-2xl font-bold text-normal">
+            Best value
           </div>
           <div className="mt-0.5 text-xs text-text-muted">
-            {(
-              ((stats[2].avgScore - stats[0].avgScore) / stats[0].avgScore) *
-              100
-            ).toFixed(1)}
-            % improvement
+            Highest score at lowest cost
           </div>
         </div>
         <div className="rounded-xl border border-border bg-surface-raised p-5">
           <div className="text-sm text-text-secondary">
-            Cost delta (Plan+Clear vs Normal)
+            Plan+Resume overhead
           </div>
-          <div
-            className={`mt-1 text-2xl font-bold ${costDelta > 0 ? "text-amber-400" : "text-plan-clear"}`}
-          >
-            {costDelta > 0 ? "+" : ""}
-            {costDelta.toFixed(1)}%
+          <div className="mt-1 text-2xl font-bold text-amber-400">
+            +{planResumeOverhead.toFixed(0)}%
           </div>
           <div className="mt-0.5 text-xs text-text-muted">
-            ${stats[0].avgCost} vs ${stats[2].avgCost} per task
+            ${normalCost.toFixed(2)} vs ${planResumeCost.toFixed(2)} per task
+          </div>
+        </div>
+        <div className="rounded-xl border border-border bg-surface-raised p-5">
+          <div className="text-sm text-text-secondary">
+            Plan+Clear overhead
+          </div>
+          <div className="mt-1 text-2xl font-bold text-amber-400">
+            +{planClearOverhead.toFixed(0)}%
+          </div>
+          <div className="mt-0.5 text-xs text-text-muted">
+            ${normalCost.toFixed(2)} vs ${planClearCost.toFixed(2)} per task
           </div>
         </div>
       </div>

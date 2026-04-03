@@ -1,0 +1,46 @@
+id: "feature-addition/add-unsloth-adapter"
+name: "Add ONNX LoRA Adapter Export to Unsloth"
+version: 1
+category: "feature-addition"
+difficulty: "expert"
+estimated_time_minutes: 25
+tags: ["python", "ml", "lora", "unsloth", "real-codebase", "large-repo"]
+author: "runpod-labs"
+created_at: "2026-04-04"
+
+prompt: |
+  Add ONNX export support for LoRA adapters in unsloth. Study how existing
+  save/export methods work (look at how GGUF export, merged model saving,
+  and adapter saving are implemented in the codebase).
+
+  Requirements:
+  1. Find the main model/save module(s) where adapters are saved
+  2. Add an `export_to_onnx` method that:
+     - Extracts LoRA adapter weights (A and B matrices)
+     - Creates an ONNX-compatible representation
+     - Saves to a specified output directory
+     - Includes metadata (rank, alpha, target modules)
+  3. The method should accept parameters: output_dir, opset_version (default 17)
+  4. Add appropriate docstrings and type hints
+  5. Register/expose the new export method alongside existing save methods
+
+  Do NOT try to run or install unsloth. Only modify source files.
+
+setup:
+  source_repo:
+    url: "https://github.com/unslothai/unsloth.git"
+    ref: "September-2025-v3"
+  install_command: "echo 'source-only task'"
+  timeout_minutes: 25
+  max_budget_usd: 5.00
+
+evaluation:
+  - type: "build"
+    command: "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt"
+    weight: 0.4
+  - type: "build"
+    command: "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt"
+    weight: 0.3
+  - type: "build"
+    command: "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt"
+    weight: 0.3
