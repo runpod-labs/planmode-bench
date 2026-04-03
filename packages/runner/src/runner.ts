@@ -186,9 +186,13 @@ export async function run(options: RunOptions): Promise<RunSummaryType> {
   let running = 0;
   const queue = [...pendingJobs];
 
+  // Create logs directory for session logs
+  const logsDir = path.join(runDir, "logs");
+  await mkdir(logsDir, { recursive: true });
+
   async function processJob(job: Job): Promise<void> {
     try {
-      const result = await executeTask({
+      const { runResult, messages } = await executeTask({
         task: job.task,
         mode: job.mode,
         runNumber: job.runNumber,
@@ -199,13 +203,23 @@ export async function run(options: RunOptions): Promise<RunSummaryType> {
       // Persist result immediately
       await writeFile(
         path.join(tasksOutputDir, job.filename),
-        JSON.stringify(result, null, 2)
+        JSON.stringify(runResult, null, 2)
       );
 
-      allResults.push(result);
+      // Save session log for debugging/analysis
+      const logFilename = job.filename.replace(".json", ".log.json");
+      const logMessages = messages
+        .filter((m) => m.type === "assistant" || m.type === "user" || m.type === "result")
+        .map((m) => ({ type: m.type, ...(m as any) }));
+      await writeFile(
+        path.join(logsDir, logFilename),
+        JSON.stringify(logMessages, null, 2)
+      );
+
+      allResults.push(runResult);
       completed++;
       console.log(
-        `  [${completed}/${totalJobs}] ${job.task.id} ${job.mode} run${job.runNumber}: ${result.evaluation.overall_score.toFixed(2)} ($${result.metrics.total_cost_usd.toFixed(4)})`
+        `  [${completed}/${totalJobs}] ${job.task.id} ${job.mode} run${job.runNumber}: ${runResult.evaluation.overall_score.toFixed(2)} ($${runResult.metrics.total_cost_usd.toFixed(4)})`
       );
     } catch (error) {
       completed++;

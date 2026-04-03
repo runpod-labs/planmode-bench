@@ -4,6 +4,7 @@ import type {
   RunResultType,
   RunnerConfigType,
 } from "@planmode-bench/schema";
+import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { evaluate } from "@planmode-bench/evaluator";
 import { runNormalMode } from "./modes/normal.js";
 import { runPlanResumeMode } from "./modes/plan-resume.js";
@@ -18,7 +19,13 @@ export interface ExecuteOptions {
   config: RunnerConfigType;
 }
 
-export async function executeTask(options: ExecuteOptions): Promise<RunResultType> {
+export interface ExecuteResult {
+  runResult: RunResultType;
+  /** Full SDK message log for debugging/analysis */
+  messages: SDKMessage[];
+}
+
+export async function executeTask(options: ExecuteOptions): Promise<ExecuteResult> {
   const { task, mode, runNumber, tasksDir, config } = options;
 
   console.log(
@@ -31,12 +38,14 @@ export async function executeTask(options: ExecuteOptions): Promise<RunResultTyp
     let metrics;
     let planMetrics;
     let sessionId;
+    let messages: SDKMessage[] = [];
 
     switch (mode) {
       case "normal": {
         const result = await runNormalMode(task, workspace.dir, config.model);
         metrics = result.metrics;
         sessionId = result.sessionId;
+        messages = result.messages;
         break;
       }
       case "plan-resume": {
@@ -49,6 +58,7 @@ export async function executeTask(options: ExecuteOptions): Promise<RunResultTyp
         metrics = result.metrics;
         planMetrics = result.planMetrics;
         sessionId = result.sessionId;
+        messages = result.messages;
         break;
       }
       case "plan-clear": {
@@ -61,6 +71,7 @@ export async function executeTask(options: ExecuteOptions): Promise<RunResultTyp
         metrics = result.metrics;
         planMetrics = result.planMetrics;
         sessionId = result.sessionId;
+        messages = result.messages;
         break;
       }
     }
@@ -86,7 +97,7 @@ export async function executeTask(options: ExecuteOptions): Promise<RunResultTyp
       `  [${mode}] run ${runNumber} score: ${evaluation.overall_score.toFixed(2)} (${metrics.total_cost_usd.toFixed(4)} USD, ${metrics.duration_ms}ms)`
     );
 
-    return runResult;
+    return { runResult, messages };
   } finally {
     await workspace.cleanup();
   }

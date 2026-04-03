@@ -1,4 +1,4 @@
-import { query, type SDKResultMessage } from "@anthropic-ai/claude-agent-sdk";
+import { query, type SDKResultMessage, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import type { Task, RunMetricsType, PlanMetricsType } from "@planmode-bench/schema";
 import { extractMetrics, mergeMetrics } from "../metrics.js";
 
@@ -6,16 +6,14 @@ export interface PlanResumeResult {
   metrics: RunMetricsType;
   planMetrics: PlanMetricsType;
   sessionId?: string;
+  messages: SDKMessage[];
 }
 
 /**
  * Plan+Resume mode: Two phases, same session.
- * Phase 1: Plan -- All tools available, but prompted to only explore and plan.
- *   Uses `permissionMode: "plan"` which is the real plan mode behavior in
- *   Claude Code (read-only, no edits).
- * Phase 2: Execute -- Resume same session with full permissions.
- *
- * Context is preserved -- all exploration tokens stay in the session.
+ * Phase 1: Plan -- permissionMode: "plan" (real plan mode)
+ * Phase 2: Execute -- resume same session with full permissions.
+ * Context is preserved.
  */
 export async function runPlanResumeMode(
   task: Task,
@@ -25,8 +23,9 @@ export async function runPlanResumeMode(
 ): Promise<PlanResumeResult> {
   const planBudget = task.setup.max_budget_usd * planBudgetRatio;
   const executeBudget = task.setup.max_budget_usd * (1 - planBudgetRatio);
+  const allMessages: SDKMessage[] = [];
 
-  // Phase 1: Plan (real plan mode -- Claude can read/explore but not edit)
+  // Phase 1: Plan
   let planResult: SDKResultMessage | null = null;
 
   for await (const message of query({
@@ -34,11 +33,12 @@ export async function runPlanResumeMode(
     options: {
       cwd: workDir,
       permissionMode: "plan",
-      maxTurns: 20,
+      maxTurns: 30,
       maxBudgetUsd: planBudget,
       model,
     },
   })) {
+    allMessages.push(message);
     if (message.type === "result") {
       planResult = message;
     }
@@ -67,6 +67,7 @@ export async function runPlanResumeMode(
       model,
     },
   })) {
+    allMessages.push(message);
     if (message.type === "result") {
       executeResult = message;
     }
@@ -94,5 +95,6 @@ export async function runPlanResumeMode(
       execute_cost_usd: executeMetricsRaw.total_cost_usd,
     },
     sessionId,
+    messages: allMessages,
   };
 }

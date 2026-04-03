@@ -1,10 +1,11 @@
-import { query, type SDKResultMessage } from "@anthropic-ai/claude-agent-sdk";
+import { query, type SDKResultMessage, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import type { Task, RunMetricsType } from "@planmode-bench/schema";
 import { extractMetrics } from "../metrics.js";
 
 export interface NormalModeResult {
   metrics: RunMetricsType;
   sessionId?: string;
+  messages: SDKMessage[];
 }
 
 /**
@@ -17,6 +18,7 @@ export async function runNormalMode(
   model: string
 ): Promise<NormalModeResult> {
   let resultMessage: SDKResultMessage | null = null;
+  const messages: SDKMessage[] = [];
 
   for await (const message of query({
     prompt: task.prompt,
@@ -29,6 +31,7 @@ export async function runNormalMode(
       model,
     },
   })) {
+    messages.push(message);
     if (message.type === "result") {
       resultMessage = message;
     }
@@ -41,5 +44,6 @@ export async function runNormalMode(
   return {
     metrics: extractMetrics(resultMessage),
     sessionId: resultMessage.session_id,
+    messages,
   };
 }

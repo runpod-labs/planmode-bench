@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import path from "node:path";
-import { query, type SDKResultMessage } from "@anthropic-ai/claude-agent-sdk";
+import { query, type SDKResultMessage, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import type { Task, RunMetricsType, PlanMetricsType } from "@planmode-bench/schema";
 import { extractMetrics, mergeMetrics } from "../metrics.js";
 
@@ -12,19 +12,14 @@ export interface PlanClearResult {
   metrics: RunMetricsType;
   planMetrics: PlanMetricsType;
   sessionId?: string;
+  messages: SDKMessage[];
 }
 
 /**
  * Plan+Clear mode: Two phases, FRESH session for execution.
- * Phase 1: Plan -- Uses `permissionMode: "plan"` (real plan mode). Claude
- *   explores the codebase and produces a plan saved to PLAN.md.
- * Phase 2: Execute -- Brand NEW session with full permissions. Gets the
- *   original task prompt + reference to PLAN.md. Context is cleared.
- *
- * This simulates the real user workflow:
- * 1. Enter plan mode -> Claude explores, creates plan
- * 2. Accept plan -> context clears
- * 3. Fresh session implements from plan + original requirements
+ * Phase 1: Plan -- permissionMode: "plan", saves plan to PLAN.md
+ * Phase 2: Execute -- brand new session with full permissions.
+ * Context is cleared.
  */
 export async function runPlanClearMode(
   task: Task,
@@ -34,8 +29,9 @@ export async function runPlanClearMode(
 ): Promise<PlanClearResult> {
   const planBudget = task.setup.max_budget_usd * planBudgetRatio;
   const executeBudget = task.setup.max_budget_usd * (1 - planBudgetRatio);
+  const allMessages: SDKMessage[] = [];
 
-  // Phase 1: Plan (real plan mode -- Claude can read/explore but not edit)
+  // Phase 1: Plan
   let planResult: SDKResultMessage | null = null;
 
   for await (const message of query({
@@ -43,11 +39,12 @@ export async function runPlanClearMode(
     options: {
       cwd: workDir,
       permissionMode: "plan",
-      maxTurns: 20,
+      maxTurns: 30,
       maxBudgetUsd: planBudget,
       model,
     },
   })) {
+    allMessages.push(message);
     if (message.type === "result") {
       planResult = message;
     }
@@ -60,24 +57,20 @@ export async function runPlanClearMode(
   const planMetricsRaw = extractMetrics(planResult);
   const planContent = planResult.subtype === "success" ? planResult.result : "";
 
-  // Save plan to file in workspace
+  // Save plan to file
   const planPath = path.join(workDir, "PLAN.md");
   await writeFile(planPath, planContent, "utf-8");
-
-  // Commit the plan file so it's part of the repo
   await execAsync("git add PLAN.md && git commit -m 'add implementation plan'", {
     cwd: workDir,
   });
 
-  // Phase 2: Execute in a FRESH session (no resume -- context is cleared)
-  // Include the ORIGINAL task prompt so Claude knows the full requirements.
+  // Phase 2: Execute in FRESH session
   let executeResult: SDKResultMessage | null = null;
 
   for await (const message of query({
     prompt: `${task.prompt}\n\nAn implementation plan has been prepared for you in the file PLAN.md. Read it first, then execute the plan step by step, making all the necessary code changes.`,
     options: {
       cwd: workDir,
-      // No `resume` -- brand new session with fresh context
       permissionMode: "bypassPermissions",
       allowDangerouslySkipPermissions: true,
       maxTurns: 150,
@@ -85,6 +78,7 @@ export async function runPlanClearMode(
       model,
     },
   })) {
+    allMessages.push(message);
     if (message.type === "result") {
       executeResult = message;
     }
@@ -112,5 +106,6 @@ export async function runPlanClearMode(
       execute_cost_usd: executeMetricsRaw.total_cost_usd,
     },
     sessionId: executeResult.session_id,
+    messages: allMessages,
   };
 }
