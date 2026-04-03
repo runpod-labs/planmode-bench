@@ -219,11 +219,15 @@ export async function prepareAllBases(
   console.log(`Preparing ${tasks.length} task base(s) (concurrency: ${concurrency})...\n`);
   for (let i = 0; i < tasks.length; i += concurrency) {
     const batch = tasks.slice(i, i + concurrency);
-    await Promise.all(
+    await Promise.allSettled(
       batch.map(async (task) => {
-        console.log(`  [${task.id}] starting...`);
-        await getBaseDir(task, tasksDir);
-        console.log(`  [${task.id}] ready`);
+        try {
+          console.log(`  [${task.id}] starting...`);
+          await getBaseDir(task, tasksDir);
+          console.log(`  [${task.id}] ready`);
+        } catch (error) {
+          console.error(`  [${task.id}] FAILED: ${(error as Error).message}`);
+        }
       })
     );
   }
