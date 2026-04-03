@@ -1,0 +1,78 @@
+id: "feature-addition/add-rate-limiter"
+name: "Add Rate Limiting Middleware to FastAPI App"
+version: 1
+
+category: "feature-addition"
+difficulty: "hard"
+estimated_time_minutes: 25
+tags: ["python", "fastapi", "middleware", "rate-limiting", "real-codebase", "large-repo"]
+author: "runpod-labs"
+created_at: "2026-04-03"
+
+prompt: |
+  Add a rate limiting middleware to this FastAPI application. Study the existing
+  middleware patterns in the codebase (look at how CORSMiddleware and other middleware
+  are implemented in fastapi/middleware/).
+
+  Create a new file `fastapi/middleware/rate_limit.py` that implements:
+
+  1. A `RateLimitMiddleware` class that follows FastAPI/Starlette middleware patterns
+  2. Configuration: `requests_per_minute` (int, default 60), `burst_size` (int, default 10)
+  3. Uses a token bucket algorithm for rate limiting
+  4. Rate limits are per-client IP address
+  5. Returns HTTP 429 (Too Many Requests) with a JSON body when limit is exceeded:
+     {"detail": "Rate limit exceeded", "retry_after": <seconds>}
+  6. Adds these response headers to ALL responses:
+     - X-RateLimit-Limit: the requests_per_minute value
+     - X-RateLimit-Remaining: remaining requests in current window
+     - X-RateLimit-Reset: seconds until the bucket refills
+  7. Export the middleware from `fastapi/middleware/__init__.py`
+
+  Also create a simple test app at `tests/test_apps/test_rate_limit_app.py` that
+  demonstrates the middleware usage.
+
+  All existing FastAPI tests should still pass. The new rate limit tests should pass.
+
+setup:
+  source_repo:
+    url: "https://github.com/fastapi/fastapi.git"
+    ref: "0.135.3"
+  install_command: "pip3 install -e '.[all,dev,test]'"
+  pre_commands:
+    - "pip3 install httpx"
+  timeout_minutes: 30
+  max_budget_usd: 5.00
+
+evaluation:
+  - type: "test-suite"
+    command: "python3 -m pytest tests/test_rate_limiter.py -v"
+    weight: 0.35
+
+  - type: "test-integrity"
+    weight: 0.05
+
+  - type: "file-check"
+    checks:
+      - path: "fastapi/middleware/rate_limit.py"
+        must_exist: true
+        must_contain:
+          - "RateLimitMiddleware"
+          - "token_bucket"
+          - "429"
+          - "X-RateLimit"
+    weight: 0.3
+
+  - type: "build"
+    command: "python3 -c 'from fastapi.middleware.rate_limit import RateLimitMiddleware; print(\"Import OK\")'"
+    weight: 0.2
+
+  - type: "regex"
+    file: "fastapi/middleware/rate_limit.py"
+    patterns:
+      - pattern: "class RateLimitMiddleware"
+        should_match: true
+      - pattern: "requests_per_minute"
+        should_match: true
+      - pattern: "retry_after"
+        should_match: true
+    weight: 0.1

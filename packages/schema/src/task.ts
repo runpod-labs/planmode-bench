@@ -75,8 +75,14 @@ export const EvaluationStrategy = z.discriminatedUnion("type", [
 
 export type EvaluationStrategyType = z.infer<typeof EvaluationStrategy>;
 
+export const SourceRepo = z.object({
+  url: z.string(),
+  ref: z.string(),
+});
+
 export const TaskSetup = z.object({
   node_version: z.string().optional(),
+  source_repo: SourceRepo.optional(),
   install_command: z.string().optional(),
   pre_commands: z.array(z.string()).optional(),
   timeout_minutes: z.number().default(10),
