@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "Add New AI Image Provider to Vercel AI SDK",
+  "mode": "normal",
+  "run_number": 1,
+  "timestamp": "2026-04-04T06:50:29.610Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 59020,
+    "duration_api_ms": 20545238,
+    "num_turns": 7,
+    "total_cost_usd": 3.832142,
+    "input_tokens": 9,
+    "output_tokens": 3528,
+    "cache_read_tokens": 552046,
+    "cache_creation_tokens": 9099,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 0.5,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.875,
+        "weight": 0.4,
+        "weighted_score": 0.35000000000000003,
+        "passed": false,
+        "details": {
+          "checks_passed": 7,
+          "checks_total": 8,
+          "check_details": [
+            {
+              "path": "packages/pixelart/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/index.ts",
+              "check": "contains \"createPixelArt\"",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-provider.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-provider.ts",
+              "check": "contains \"pixelart\"",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "contains \"generateImage\"",
+              "passed": false
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "contains \"pixelDensity\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/pixelart && npx tsc --noEmit",
+          "exit_code": 1,
+          "output": "\n\u001b[41m                                                                               \u001b[0m\n\u001b[41m\u001b[37m                This is not the tsc command you are looking for                \u001b[0m\n\u001b[41m                                                                               \u001b[0m\n\nTo get access to the TypeScript compiler, \u001b[34mtsc\u001b[0m, from the command line either:\n\n- Use \u001b[1mnpm install typescript\u001b[0m to first add TypeScript to your project \u001b[1mbefore\u001b[0m using npx\n- Use \u001b[1myarn\u001b[0m to avoid accidentally running code from un-installed packages\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.15,
+        "weighted_score": 0.075,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "export.*createPixelArt",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "PixelArtProvider",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.15,
+        "weighted_score": 0.075,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "pixel.*8bit|8bit.*pixel|style",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "api\\.pixelart\\.ai",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1569
+  },
+  "session_id": "ae8b14be-d770-4abf-b7c3-f345287d2ca4"
+}

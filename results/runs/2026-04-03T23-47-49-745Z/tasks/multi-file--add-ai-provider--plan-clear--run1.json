@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "Add New AI Image Provider to Vercel AI SDK",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-04T06:52:12.774Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 18200641,
+    "duration_api_ms": 20091674,
+    "num_turns": 96,
+    "total_cost_usd": 2.6463016500000003,
+    "input_tokens": 439,
+    "output_tokens": 22614,
+    "cache_read_tokens": 3119120,
+    "cache_creation_tokens": 94533,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 15677091,
+    "plan_api_ms": 17571467,
+    "plan_tokens_in": 9,
+    "plan_tokens_out": 2530,
+    "plan_cost_usd": 1.05315015,
+    "plan_content": "Here's a summary of the plan I've designed after thorough exploration of the codebase:\n\n---\n\n## Plan: `@ai-sdk/pixelart` Provider\n\n**Primary reference:** `packages/fal/` — the leanest image-focused provider in the monorepo.\n\n### Files to create in `packages/pixelart/`\n\n| File | Purpose |\n|------|---------|\n| `package.json` | Package metadata — mirrors `@ai-sdk/fal`, name `@ai-sdk/pixelart` v1.0.0 |\n| `tsconfig.json` | Composite TS build, references `../provider` and `../provider-utils` |\n| `tsconfig.build.json` | Build variant (disables composite for tsup) |\n| `tsup.config.ts` | Dual CJS+ESM output with `.d.ts` declarations |\n| `turbo.json` | Turbo tasks config |\n| `src/version.ts` | `export const VERSION = '1.0.0'` |\n| `src/pixelart-image-settings.ts` | `PixelArtImageModelId` type + `PixelArtImageSettings` interface |\n| `src/pixelart-image-model.ts` | `PixelArtImageModel` implementing `ImageModelV3` |\n| `src/pixelart-provider.ts` | `createPixelArt()` factory + `PixelArtProvider` interface |\n| `src/index.ts` | Re-exports all public types and values |\n\n**Plus:** Add `{ \"path\": \"packages/pixelart\" }` to root `tsconfig.json` references.\n\n### Key design decisions\n- **`ImageModelV3`** from `@ai-sdk/provider` is the only model interface implemented\n- `languageModel()` and `embeddingModel()` throw `NoSuchModelError` (required by `ProviderV3`)\n- `postJsonToApi` POSTs to `https://api.pixelart.ai/v1/images/generations` with `response_format: 'b64_json'`\n- `size`, `style`, `pixelDensity` come from `providerOptions.pixelart` (via `parseProviderOptions` + Zod schema); `size` also falls back to the standard `options.size`\n- Unsupported standard params (`aspectRatio`, `seed`, `files`, `mask`) generate `SharedV3Warning` entries\n- API key loaded from `options.apiKey` or `PIXELART_API_KEY` env variable",
+    "execute_duration_ms": 2523550,
+    "execute_api_ms": 2520207,
+    "execute_tokens_in": 430,
+    "execute_tokens_out": 20084,
+    "execute_cost_usd": 1.5931515000000003
+  },
+  "evaluation": {
+    "overall_score": 0.575,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.875,
+        "weight": 0.4,
+        "weighted_score": 0.35000000000000003,
+        "passed": false,
+        "details": {
+          "checks_passed": 7,
+          "checks_total": 8,
+          "check_details": [
+            {
+              "path": "packages/pixelart/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/index.ts",
+              "check": "contains \"createPixelArt\"",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-provider.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-provider.ts",
+              "check": "contains \"pixelart\"",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "contains \"generateImage\"",
+              "passed": false
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "contains \"pixelDensity\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/pixelart && npx tsc --noEmit",
+          "exit_code": 1,
+          "output": "\n\u001b[41m                                                                               \u001b[0m\n\u001b[41m\u001b[37m                This is not the tsc command you are looking for                \u001b[0m\n\u001b[41m                                                                               \u001b[0m\n\nTo get access to the TypeScript compiler, \u001b[34mtsc\u001b[0m, from the command line either:\n\n- Use \u001b[1mnpm install typescript\u001b[0m to first add TypeScript to your project \u001b[1mbefore\u001b[0m using npx\n- Use \u001b[1myarn\u001b[0m to avoid accidentally running code from un-installed packages\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "export.*createPixelArt",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "PixelArtProvider",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.15,
+        "weighted_score": 0.075,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "pixel.*8bit|8bit.*pixel|style",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "api\\.pixelart\\.ai",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1555
+  },
+  "session_id": "911f6eb3-b617-47ef-b6cf-1a024b7c6382"
+}

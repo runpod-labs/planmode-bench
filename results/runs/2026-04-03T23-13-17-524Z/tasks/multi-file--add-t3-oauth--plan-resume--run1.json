@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-t3-oauth",
+  "task_name": "Add GitHub OAuth Provider to T3 Stack App",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-03T23:38:47.552Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 452300,
+    "duration_api_ms": 582060,
+    "num_turns": 37,
+    "total_cost_usd": 1.4721887000000002,
+    "input_tokens": 22,
+    "output_tokens": 14937,
+    "cache_read_tokens": 498655,
+    "cache_creation_tokens": 93018,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 384370,
+    "plan_api_ms": 514179,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 9662,
+    "plan_cost_usd": 1.1361708500000003,
+    "plan_content": "Here's a summary of the plan — **7 total file changes** (6 edits, 1 new file) and **3 files confirmed to need no changes**:\n\n---\n\n## What Was Found\n\n**Good news — less work than expected.** Three things the existing codebase already handles correctly:\n\n- **Prisma schema** → `Account` model uses generic `provider`/`providerAccountId` strings with `@@unique([provider, providerAccountId])`. Adding GitHub requires zero schema changes.\n- **tRPC context** → `auth-prisma-context.ts` already passes the full NextAuth `session` including `user.image` (the GitHub avatar). No changes needed.\n- **Type definitions** → `next-auth.d.ts` already exposes `id` + all `DefaultSession[\"user\"]` fields (`name`, `email`, `image`). No augmentation needed.\n\n---\n\n## The 7 Changes\n\n| # | Action | File |\n|---|--------|------|\n| 1 | Edit | `template/addons/next-auth/api-handler.ts` — add `GithubProvider` import + providers entry |\n| 2 | Edit | `template/addons/next-auth/api-handler-prisma.ts` — same addition, Prisma variant |\n| 3 | Edit | `template/addons/env/auth-schema.mjs` — add `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET` to Zod schema |\n| 4 | Edit | `template/addons/env/auth-prisma-schema.mjs` — same two keys in combined schema |\n| 5 | Edit | `template/base/.env-example` — add `# Next Auth GitHub Provider` block |\n| 6 | Edit | `template/addons/trpc/protected-example-router.ts` — append `getProfile` query returning `{id, name, email, image}` |\n| 7 | **Create** | `template/page-studs/profile/with-auth-trpc-tw.tsx` — new profile page showing GitHub avatar + username, with unauthenticated fallback |\n\n`GithubProvider` ships inside the `next-auth` package already installed — **no new npm dependencies required**.",
+    "execute_duration_ms": 67930,
+    "execute_api_ms": 67881,
+    "execute_tokens_in": 7,
+    "execute_tokens_out": 5275,
+    "execute_cost_usd": 0.33601785
+  },
+  "evaluation": {
+    "overall_score": 0,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.4,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'github\\|GitHub' cli/template/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": "grep: cli/template/: No such file or directory\n"
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'GITHUB_CLIENT' cli/template/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": "grep: cli/template/: No such file or directory\n"
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'GithubProvider\\|GitHubProvider' cli/template/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": "grep: cli/template/: No such file or directory\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 32
+  },
+  "session_id": "5f497610-9a5d-4c6f-b651-9c0eea9c8435"
+}

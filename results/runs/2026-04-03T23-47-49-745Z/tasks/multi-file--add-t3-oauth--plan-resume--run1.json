@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-t3-oauth",
+  "task_name": "Add GitHub OAuth Provider to T3 Stack App",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-04T06:50:31.140Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 12230540,
+    "duration_api_ms": 13204232,
+    "num_turns": 51,
+    "total_cost_usd": 1.8577331500000003,
+    "input_tokens": 671,
+    "output_tokens": 13069,
+    "cache_read_tokens": 1145181,
+    "cache_creation_tokens": 94207,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 12084244,
+    "plan_api_ms": 13058082,
+    "plan_tokens_in": 648,
+    "plan_tokens_out": 3244,
+    "plan_cost_usd": 1.2032609500000002,
+    "plan_content": "## Here's the complete implementation plan\n\nAfter thoroughly exploring the codebase, here's what I found and what needs to change:\n\n---\n\n### Key Discovery\nThis is the **`create-t3-app` CLI repo** — the \"application\" lives in the `template/` folder. The Prisma schema (`auth-schema.prisma`) already has the correct Account/Session/User/VerificationToken models — they're provider-agnostic. The tRPC context already passes session data through `getServerSession` — no changes needed there either.\n\n---\n\n### 5 Files to Modify\n\n| File | Change |\n|---|---|\n| `template/addons/next-auth/api-handler.ts` | `DiscordProvider` → `GitHubProvider`; env vars `DISCORD_*` → `GITHUB_*` |\n| `template/addons/next-auth/api-handler-prisma.ts` | Same swap (Prisma-variant) |\n| `template/addons/env/auth-schema.mjs` | `DISCORD_CLIENT_ID/SECRET` → `GITHUB_CLIENT_ID/SECRET` in zod schema |\n| `template/addons/env/auth-prisma-schema.mjs` | Same swap |\n| `template/base/.env-example` | Update comment and placeholder var names |\n| `template/page-studs/index/with-auth-trpc-tw.tsx` | Import & use `<GitHubSignInButton />` instead of generic button |\n\n### 2 Files to Create\n\n| File | Contents |\n|---|---|\n| `template/addons/next-auth/github-sign-in-button.tsx` | Reusable button with inline GitHub SVG icon + Tailwind + `signIn(\"github\")` |\n| `template/page-studs/profile.tsx` | Profile page showing avatar (`user.image`) + name (`user.name`) + email, uses `trpc.useQuery([\"auth.getSession\"])` to demonstrate session passthrough, redirects unauthenticated users home |\n\n### Nothing to Change\n- `template/addons/prisma/auth-schema.prisma` — already generic (Account model uses `provider`/`providerAccountId` fields)\n- `template/addons/trpc/auth-prisma-context.ts` — `getServerSession` is already provider-agnostic\n- `template/addons/next-auth/next-auth.d.ts` — `DefaultSession[\"user\"]` already includes `name`, `email`, `image` (avatar)",
+    "execute_duration_ms": 146296,
+    "execute_api_ms": 146150,
+    "execute_tokens_in": 23,
+    "execute_tokens_out": 9825,
+    "execute_cost_usd": 0.6544722000000001
+  },
+  "evaluation": {
+    "overall_score": 0,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.4,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'github\\|GitHub' cli/template/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": "grep: cli/template/: No such file or directory\n"
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'GITHUB_CLIENT' cli/template/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": "grep: cli/template/: No such file or directory\n"
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'GithubProvider\\|GitHubProvider' cli/template/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": "grep: cli/template/: No such file or directory\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 33
+  },
+  "session_id": "fdeafd9f-2933-4898-b9ea-0b36d3f88530"
+}

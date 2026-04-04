@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "Add JSON Path Constraint to SGLang",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-03T23:25:16.764Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 275116,
+    "duration_api_ms": 647795,
+    "num_turns": 23,
+    "total_cost_usd": 1.76406405,
+    "input_tokens": 21,
+    "output_tokens": 11064,
+    "cache_read_tokens": 480684,
+    "cache_creation_tokens": 46959,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 262544,
+    "plan_api_ms": 341782,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 10394,
+    "plan_cost_usd": 0.8861739999999999,
+    "plan_content": "Here's the full plan I've developed after thoroughly reading the codebase:\n\n---\n\n## How SGLang Constraints Work\n\nSGLang constraints flow through a 6-layer stack:\n1. **User API** (`gen()` in `api.py`) → `SglGen` IR node\n2. **IR** (`SglSamplingParams` in `ir.py`) → `to_srt_kwargs()` dict\n3. **Server params** (`SamplingParams` in `sampling_params.py`)\n4. **Grammar manager** (`grammar_manager.py`) → `(\"type\", string)` key\n5. **Backend dispatch** (`base_grammar_backend.py` `_init_value_dispatch`) → grammar object\n6. **Grammar backends** (Outlines/XGrammar/LLGuidance) → vocabulary mask → logits\n\n---\n\n## Design Decision\n\n**JSONPath → JSON Schema conversion**, not a new FSM backend. The key insight: a JSONPath like `$.store.book[*].author` implies a required structural schema, which can be expressed as JSON Schema. By converting at dispatch time and delegating to the existing `dispatch_json()`, **all three grammar backends get JSONPath support for free with zero backend changes.**\n\n---\n\n## What Gets Changed (6 files, 1 created)\n\n| File | What changes |\n|---|---|\n| **NEW** `python/sglang/srt/constrained/json_path_backend.py` | `json_path_to_json_schema()` converter using regex parsing of `.key`, `[*]`, `[N]` fragments |\n| `python/sglang/srt/constrained/base_grammar_backend.py` | Add `dispatch_json_path()` method (converts → delegates to `dispatch_json`); add `\"json_path\"` branch in `_init_value_dispatch()` |\n| `python/sglang/srt/constrained/grammar_manager.py` | Add `json_path` to condition + key dispatch in `process_req_with_grammar()` |\n| `python/sglang/srt/sampling/sampling_params.py` | Add `json_path: Optional[str]` field + exclusivity check in `verify()` |\n| `python/sglang/lang/ir.py` | Add `json_path` to `SglSamplingParams`, `SglGen.__init__`, `to_srt_kwargs()` |\n| `python/sglang/lang/api.py` | Add `json_path` param to `gen()` + early validation call |\n\n---\n\n## JSONPath Conversion Example\n\n`$.store.book[*].author` →\n```json\n{\"type\":\"object\",\"required\":[\"store\"],\"properties\":{\"store\":\n  {\"type\":\"object\",\"required\":[\"book\"],\"properties\":{\"book\":\n    {\"type\":\"array\",\"items\":\n      {\"type\":\"object\",\"required\":[\"author\"],\"properties\":{\"author\":{}}}}}}}}\n```",
+    "execute_duration_ms": 12572,
+    "execute_api_ms": 306013,
+    "execute_tokens_in": 3,
+    "execute_tokens_out": 670,
+    "execute_cost_usd": 0.8778900500000002
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 377
+  },
+  "session_id": "9787b050-5138-4ac0-9457-850ac70d2aec"
+}

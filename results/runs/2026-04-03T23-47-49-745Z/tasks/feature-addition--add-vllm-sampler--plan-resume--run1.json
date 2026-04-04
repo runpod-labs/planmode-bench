@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "Add Top-A Sampling Strategy to vLLM",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-04T05:36:21.847Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 20118356,
+    "duration_api_ms": 20163037,
+    "num_turns": 68,
+    "total_cost_usd": 4.02325365,
+    "input_tokens": 100,
+    "output_tokens": 18740,
+    "cache_read_tokens": 2844270,
+    "cache_creation_tokens": 268160,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 11379221,
+    "plan_api_ms": 11424265,
+    "plan_tokens_in": 61,
+    "plan_tokens_out": 6573,
+    "plan_cost_usd": 1.0776047999999996,
+    "plan_content": "Here's the complete implementation plan I've produced after reading all the relevant source files:\n\n---\n\n## Plan: Add `top_a` Sampling Parameter\n\n### Key Finding: Two Independent Sampling Paths\n\nvLLM has a **V0 path** (`model_executor/layers/sampler.py`) using tensor-per-param arrays, and a **V1 path** (`v1/sample/`) using a logits-processor architecture. The closest analog to `top_a` in V1 is `min_p`, which is implemented as a `MinPLogitsProcessor` class — that's the pattern we follow for V1.\n\n### Files to Modify (4 source files)\n\n| # | File | Change |\n|---|------|--------|\n| 1 | `vllm/sampling_params.py` | Add `top_a: float = 0.0` field, docstring, validation `[0,1]`, greedy reset, `from_optional()` wiring |\n| 2 | `vllm/model_executor/sampling_metadata.py` | Add `top_as: torch.Tensor` to `SamplingTensors`; thread `top_as` list and `do_top_a` bool through `from_sampling_metadata()` (4-tuple → 5-tuple return) and `from_lists()` |\n| 3 | `vllm/model_executor/layers/sampler.py` | Add `_apply_top_a()` function (identical structure to `_apply_min_p`); unpack `do_top_a` in `_init_sampling_tensors()`; apply after `do_min_p` block in `forward()` |\n| 4 | `vllm/v1/sample/logits_processor.py` | Add `TopALogitsProcessor` class mirroring `MinPLogitsProcessor`; register in `build_logitsproc_manager()` `argmax_invariant` list |\n\n`vllm/v1/sample/metadata.py` requires **no changes** — V1 routes `top_a` through the logits-processor mechanism (like `min_p`), not through `SamplingMetadata` fields.\n\n### Core Filter Logic (`_apply_top_a`, V0)\n```python\ndef _apply_top_a(logits, top_a):\n    probs = torch.softmax(logits, dim=-1)\n    top_probs, _ = probs.max(dim=-1, keepdim=True)\n    threshold = top_a.unsqueeze_(dim=1) * top_probs\n    tokens_to_remove = probs < threshold\n    return logits.masked_fill_(tokens_to_remove, -float(\"inf\"))\n```\n\nThis is structurally identical to `_apply_min_p` — both compute `threshold = param × max_prob` and mask tokens below it.\n\n### Validation (in `_verify_args`)\n```python\nif not 0.0 <= self.top_a <= 1.0:\n    raise ValueError(\"top_a must be in [0, 1], got {self.top_a}.\")\n```",
+    "execute_duration_ms": 8739135,
+    "execute_api_ms": 8738772,
+    "execute_tokens_in": 39,
+    "execute_tokens_out": 12167,
+    "execute_cost_usd": 2.9456488500000004
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "contains \"top_a\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "top_a.*float|float.*top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "0\\.0.*top_a|top_a.*0\\.0",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "python3 -c 'import ast; ast.parse(open(\"vllm/sampling_params.py\").read()); print(\"Syntax OK\")'",
+          "exit_code": 0,
+          "output": "Syntax OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 58
+  },
+  "session_id": "1e1dc54c-3b64-4b39-8fdc-f7affc4ff8bb"
+}

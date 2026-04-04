@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "Add REST API Client Generator to Prisma",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-03T23:59:10.320Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 518056,
+    "duration_api_ms": 623569,
+    "num_turns": 39,
+    "total_cost_usd": 1.7145150000000002,
+    "input_tokens": 38,
+    "output_tokens": 27386,
+    "cache_read_tokens": 1632691,
+    "cache_creation_tokens": 102444,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 303655,
+    "plan_api_ms": 410227,
+    "plan_tokens_in": 10,
+    "plan_tokens_out": 12734,
+    "plan_cost_usd": 0.81544695,
+    "plan_content": "## Plan: `@prisma/generator-rest-client`\n\nHere's the full implementation plan based on thorough exploration of `packages/generator-helper/`, the two existing generator packages, and the monorepo build/tsconfig conventions.\n\n---\n\n### Architecture choice\n\nThis uses the **external subprocess generator** pattern — `generatorHandler` from `@prisma/generator-helper` handles the JSON-RPC stdin/stderr protocol. This is correct for a standalone generator (not the built-in `GeneratorRegistry`/in-process pattern used by `client-generator-js`).\n\n---\n\n### New files (7)\n\n| File | Key detail |\n|------|-----------|\n| `package.json` | `name: \"@prisma/generator-rest-client\"`, `bin: { \"prisma-generator-rest-client\": \"dist/index.js\" }` — **the `bin` entry is what lets Prisma CLI find and spawn the generator** |\n| `tsconfig.json` | Extends `../../tsconfig.json`, includes `./**/*` |\n| `tsconfig.build.json` | Extends `../../tsconfig.build.regular.json`, `outDir: \"dist\"` |\n| `helpers/build.ts` | Single bundled CJS, `banner: { js: '#!/usr/bin/env node' }`, `@prisma/generator-helper` marked external |\n| `src/index.ts` | Calls `generatorHandler({ onManifest, onGenerate })` — pure wiring, no logic |\n| `src/generator.ts` | Reads `options.generator.output.value`, iterates `options.dmmf.datamodel.models`, assembles and writes `rest-client.ts` |\n| `src/template.ts` | Pure helpers: `prismaTypeToTs`, `fieldTypeAnnotation`, `renderModelInterface`, `renderCreateInput`, `renderUpdateInput`, `renderModelProperty` |\n\n### Modified files (2)\n\n- **`tsconfig.build.bundle.json`** — add `\"@prisma/generator-rest-client\": [\"./packages/generator-rest-client/src\"]` to `paths`\n- **`.github/workflows/test-template.yml`** — add test step to the `others` job\n\n---\n\n### Key design decisions\n\n1. **`renderCreateInput`** excludes fields with `isId && hasDefaultValue` (auto-increments), `isUpdatedAt`, `isReadOnly`, and all `kind === 'object'` relation fields\n2. **`renderUpdateInput`** uses the same exclusions but makes every field optional (`?`)\n3. **`renderModelProperty`** derives the REST path via `modelName.toLowerCase() + 's'` and uses the `@id` field's TypeScript type for `findUnique`/`update`/`delete` parameters\n4. Only `node:fs/promises` and `node:path` needed for I/O — no extra npm dependencies",
+    "execute_duration_ms": 214401,
+    "execute_api_ms": 213342,
+    "execute_tokens_in": 28,
+    "execute_tokens_out": 14652,
+    "execute_cost_usd": 0.8990680500000002
+  },
+  "evaluation": {
+    "overall_score": 0.5700000000000001,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.8,
+        "weight": 0.4,
+        "weighted_score": 0.32000000000000006,
+        "passed": false,
+        "details": {
+          "checks_passed": 8,
+          "checks_total": 10,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"prisma\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"generator\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"generatorHandler\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"onGenerate\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"dmmf\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"findMany\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"create\"",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 2,
+          "output": "../generator-helper/src/GeneratorProcess.ts(6,23): error TS2307: Cannot find module 'cross-spawn' or its corresponding type declarations.\n../generator-helper/src/GeneratorProcess.ts(86,7): error TS2532: Object is possibly 'undefined'.\n../generator-helper/src/GeneratorProcess.ts(101,7): error TS2532: Object is possibly 'undefined'.\n../generator-helper/src/GeneratorProcess.ts(103,7): error TS2532: Object is possibly 'undefined'.\n../generator-helper/src/GeneratorProcess.ts(125,16): error TS2532: Object is possibly 'undefined'.\n../generator-helper/src/GeneratorProcess.ts(142,7): error TS2532: Object is possibly 'undefined'.\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.6666666666666666,
+        "weight": 0.15,
+        "weighted_score": 0.09999999999999999,
+        "passed": false,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "findUnique|findMany",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "model|Model",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "interface|type",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "generatorHandler",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "onGenerate|onManifest",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1502
+  },
+  "session_id": "c71967dc-2729-42f8-b962-bb4af788d5eb"
+}

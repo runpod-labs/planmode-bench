@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-03T23:23:24.587Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 588342,
+    "duration_api_ms": 746482,
+    "num_turns": 40,
+    "total_cost_usd": 1.6814839500000005,
+    "input_tokens": 43,
+    "output_tokens": 31280,
+    "cache_read_tokens": 913890,
+    "cache_creation_tokens": 82141,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 362090,
+    "plan_api_ms": 530575,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 18024,
+    "plan_cost_usd": 1.1594737500000003,
+    "plan_content": "Here's the full plan I've designed after thoroughly reading the codebase:\n\n---\n\n## Summary\n\n**Only one file to modify: `unsloth/save.py`**\n\nThe implementation adds 6 targeted changes, all following unsloth's exact existing patterns:\n\n### What gets added\n\n| # | What | Where in `save.py` |\n|---|------|--------------------|\n| 1 | `import json` | ~line 27, stdlib block |\n| 2 | `_LoRADeltaModule` — `nn.Module` wrapping LoRA delta math | ~line 2562, before `patch_saving_functions` |\n| 3 | `export_lora_to_onnx(model, output_dir, opset_version=17)` | after `_LoRADeltaModule` |\n| 4 | `unsloth_save_pretrained_onnx(self, output_dir, opset_version=17)` | after `export_lora_to_onnx` |\n| 5 | Register `model.save_pretrained_onnx` in `patch_saving_functions()` | lines 2658–2668 (both vision + non-vision branches) |\n| 6 | `\"export_lora_to_onnx\"` in `__all__` | line 48 |\n\n### Key design decisions\n\n- **LoRA-only export** (no model merge) — exports just the A/B delta matrices as ONNX initializers, letting runtimes apply them on top of a separately-deployed base model\n- **One ONNX file per adapter module** — e.g. `model_model_layers_0_self_attn_q_proj.onnx` with dynamic batch/seq axes\n- **`torch.onnx.export()`** via a thin `_LoRADeltaModule` wrapper — simpler and more robust than manual protobuf construction\n- **`adapter_metadata.json`** alongside the ONNX files capturing rank, alpha, target_modules, and per-layer info from `model.peft_config`\n- **Reuses** existing `get_lora_parameters_bias()` (already imported) and `gc.collect()` patterns\n- **Deferred `onnx` import** — users without ONNX installed get a clean error with a pip hint, not a module-level crash",
+    "execute_duration_ms": 226252,
+    "execute_api_ms": 215907,
+    "execute_tokens_in": 28,
+    "execute_tokens_out": 13256,
+    "execute_cost_usd": 0.5220102000000001
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 86
+  },
+  "session_id": "e22c5aef-60aa-4d42-b059-b06e8ba8b63e"
+}

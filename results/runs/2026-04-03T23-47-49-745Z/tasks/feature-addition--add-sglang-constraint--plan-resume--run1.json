@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "Add JSON Path Constraint to SGLang",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-04T00:50:36.837Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 3361392,
+    "duration_api_ms": 3523423,
+    "num_turns": 76,
+    "total_cost_usd": 3.7066938499999997,
+    "input_tokens": 68,
+    "output_tokens": 31769,
+    "cache_read_tokens": 4086725,
+    "cache_creation_tokens": 241428,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 279921,
+    "plan_api_ms": 442197,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 11937,
+    "plan_cost_usd": 1.3094106500000002,
+    "plan_content": "Here's a summary of the full implementation plan:\n\n---\n\n## Plan: `json_path` Constraint for SGLang\n\n### Core Design\n\nThe key insight is that **no changes are needed to xgrammar, outlines, or llguidance backends**. The `json_path` constraint is converted to a JSON Schema at dispatch time, then the existing JSON schema infrastructure handles all token masking, caching, and async compilation.\n\n### 1 New File\n- **`python/sglang/srt/constrained/json_path_constraint.py`** — A standalone module with `validate_json_path(path)` and `json_path_to_schema(path) -> str`. Parses JSONPath and builds a nested JSON Schema that enforces the path structure. Supports `.key`, `['key']`, `[*]`, `[N]`; raises `ValueError` for `..` and `[?...]`.\n\n### 7 Modified Files\n\n| File | What changes |\n|------|-------------|\n| `srt/constrained/base_grammar_backend.py` | Add `dispatch_json_path()` (converts path→schema, calls `dispatch_json`) + route in `_init_value_dispatch` |\n| `srt/constrained/grammar_manager.py` | Detect `json_path` param; create `(\"json_path\", …)` cache key |\n| `srt/sampling/sampling_params.py` | Add `json_path` field; add to mutual-exclusivity check in `verify()` |\n| `lang/ir.py` | Add `json_path` to `SglSamplingParams`, `SglGen.__init__`, `clone()`, `to_srt_kwargs()` |\n| `lang/api.py` | Add `json_path` param to `gen()` with upfront validation |\n| `lang/interpreter.py` | Add `\"json_path\"` to `_resolve_sampling_params` items list |\n| `srt/entrypoints/openai/protocol.py` | Add `json_path` field to request model + pass through to sampling params |\n\n### Usage After Implementation\n```python\nimport sglang as sgl\n\n@sgl.function\ndef extract_authors(s):\n    s += \"Generate a book store JSON:\"\n    s += sgl.gen(\"result\", max_tokens=256, json_path=\"$.store.book[*].author\")\n```",
+    "execute_duration_ms": 3081471,
+    "execute_api_ms": 3081226,
+    "execute_tokens_in": 48,
+    "execute_tokens_out": 19832,
+    "execute_cost_usd": 2.3972831999999995
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 421
+  },
+  "session_id": "7b34626a-fb04-40ce-a6f1-8e2fea987d66"
+}

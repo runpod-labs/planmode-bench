@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-transformersjs-pipeline",
+  "task_name": "Add Image-Text-to-Text Pipeline to Transformers.js",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-04T06:52:08.419Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1507568,
+    "duration_api_ms": 1546760,
+    "num_turns": 20,
+    "total_cost_usd": 0.7989464,
+    "input_tokens": 23,
+    "output_tokens": 11712,
+    "cache_read_tokens": 423013,
+    "cache_creation_tokens": 59793,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1446668,
+    "plan_api_ms": 1485983,
+    "plan_tokens_in": 11,
+    "plan_tokens_out": 8010,
+    "plan_cost_usd": 0.5268368,
+    "plan_content": "Here's the complete plan for adding the `image-text-to-text` pipeline:\n\n---\n\n## Summary\n\nOnly **`src/pipelines.js`** needs to be modified. Four targeted edits:\n\n### 1. Add import (~line 40)\nAdd `AutoModelForImageTextToText` to the destructured import from `'./models.js'` — it's currently missing from `pipelines.js` even though the class is fully defined and exported from `models.js`.\n\n### 2. Add class + JSDoc (after line 2779 — end of `DocumentQuestionAnsweringPipeline`)\nInsert `ImageTextToTextPipeline` with the standard 4-part JSDoc pattern (output typedef → options typedef → callback typedef → composite type typedef → class doc with example → class).\n\nThe `_call(image, text, generate_kwargs)` method:\n1. `prepareImages(image)[0]` → `this.processor(...)` → `image_inputs` (contains `pixel_values`)\n2. `this.tokenizer(text, { padding, truncation })` → `text_inputs` (contains `input_ids`, `attention_mask`)\n3. `this.model.generate({ ...image_inputs, ...text_inputs, ...generate_kwargs })`\n4. `this.tokenizer.batch_decode(output, { skip_special_tokens: true }).map(x => ({ generated_text: x.trim() }))`\n5. Returns the decoded array directly (always an array, per requirements)\n\nThe spread-both approach is the correct generic pattern for decoder-style VLMs (Florence-2, LLaVA, Qwen2-VL, etc.).\n\n### 3. Add `SUPPORTED_TASKS` entry (after line 3341)\n```js\n\"image-text-to-text\": {\n    \"tokenizer\": AutoTokenizer,\n    \"pipeline\": ImageTextToTextPipeline,\n    \"model\": AutoModelForImageTextToText,\n    \"processor\": AutoProcessor,\n    \"default\": { \"model\": \"onnx-community/Florence-2-base-ft\" },\n    \"type\": \"multimodal\",\n},\n```\n\n### 4. Add one line to `pipeline()` factory JSDoc (~line 3435)\n```\n *  - `\"image-text-to-text\"`: will return a `ImageTextToTextPipeline`.\n```\n\nThe class automatically becomes a public export via `export class` + `export * from './pipelines.js'` in `transformers.js`. No other files need changes.",
+    "execute_duration_ms": 60900,
+    "execute_api_ms": 60777,
+    "execute_tokens_in": 12,
+    "execute_tokens_out": 3702,
+    "execute_cost_usd": 0.2721096
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/pipelines.js",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/pipelines.js",
+              "check": "contains \"ImageTextToTextPipeline\"",
+              "passed": true
+            },
+            {
+              "path": "src/pipelines.js",
+              "check": "contains \"image-text-to-text\"",
+              "passed": true
+            },
+            {
+              "path": "src/pipelines.js",
+              "check": "contains \"AutoModelForImageTextToText\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "node -e \"const p = require('./src/pipelines.js'); if (typeof p.ImageTextToTextPipeline !== 'function') { process.exit(1); } console.log('OK')\"",
+          "exit_code": 0,
+          "output": "OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 6,
+          "patterns_total": 6,
+          "pattern_results": [
+            {
+              "pattern": "class ImageTextToTextPipeline",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "async _call\\(",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "\"image-text-to-text\":\\s*\\{",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "AutoModelForImageTextToText",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "generate\\(",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "@typedef.*ImageTextToText",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "\"type\":\\s*\"multimodal\"",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "generated_text",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "pixel_values",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 141
+  },
+  "session_id": "496ff609-9b2d-4174-8385-038bbde31f32"
+}

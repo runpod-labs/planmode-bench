@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "task_id": "performance/optimize-data-processing",
+  "task_name": "Optimize Slow Data Processing Pipeline",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-04T06:52:18.205Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 158709,
+    "duration_api_ms": 155524,
+    "num_turns": 23,
+    "total_cost_usd": 0.40130235000000003,
+    "input_tokens": 21,
+    "output_tokens": 8008,
+    "cache_read_tokens": 226531,
+    "cache_creation_tokens": 44908,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 114053,
+    "plan_api_ms": 112830,
+    "plan_tokens_in": 12,
+    "plan_tokens_out": 5277,
+    "plan_cost_usd": 0.27157050000000005,
+    "plan_content": "Here's the complete plan for optimizing `src/pipeline.ts`:\n\n---\n\n## Summary\n\nAll 5 functions have O(n²)–O(n⁴) bottlenecks that can be eliminated with `Map`-based lookups. Only `src/pipeline.ts` needs to be edited.\n\n### Per-function changes\n\n| Function | Current | Optimized | Key change |\n|---|---|---|---|\n| `groupByCategory` | O(n²) | O(n) | `Map<category, CategoryGroup>` replaces `Array.find()` + `reduce()` |\n| `findDuplicates` | O(n⁴) | O(n) | Single-pass `Map<key, Transaction[]>`, filter for `length ≥ 2` — eliminates the nested loops entirely |\n| `calculateRunningBalance` | O(n² log n) | O(n log n) | Filter once, sort once, single accumulation pass — no more re-filtering/re-sorting per position |\n| `topSpenders` | O(n² + m²) | O(n + m log m) | `Map<userId, {total,count}>` in one pass; replace bubble sort with built-in `.sort()` |\n| `searchTransactions` | O(n²) | O(n) | Create `RegExp` once before the loop; remove the unnecessary dedup scan |\n| `processAll` | — | — | No changes needed; inherits all improvements |\n\n### Verification\n```bash\nnpx vitest run\n```\nBoth `tests/pipeline.test.ts` (correctness) and `tests/performance.test.ts` (thresholds) should pass.",
+    "execute_duration_ms": 44656,
+    "execute_api_ms": 42694,
+    "execute_tokens_in": 9,
+    "execute_tokens_out": 2731,
+    "execute_cost_usd": 0.12973185
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775285376587-9tgyo3\n\n ✓ tests/pipeline.test.ts (22 tests) 10ms\n ✓ tests/performance.test.ts (6 tests) 229ms\n\n Test Files  2 passed (2)\n      Tests  28 passed (28)\n   Start at  08:52:17\n   Duration  410ms (transform 44ms, setup 0ms, collect 61ms, tests 239ms, environment 0ms, prepare 67ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "src/pipeline.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/pipeline.ts",
+              "check": "contains \"Map\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1225
+  },
+  "session_id": "a970c01b-5811-4311-bb66-f6d14792fdbf"
+}
