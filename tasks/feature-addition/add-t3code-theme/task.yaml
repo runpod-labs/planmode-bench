@@ -1,0 +1,72 @@
+id: "feature-addition/add-t3code-theme"
+name: "Add Custom Theme System to T3 Code Editor"
+version: 1
+
+category: "feature-addition"
+difficulty: "expert"
+estimated_time_minutes: 30
+tags: ["typescript", "editor", "theming", "monorepo", "turbo", "real-codebase", "large-repo"]
+author: "runpod-labs"
+created_at: "2026-04-04"
+
+prompt: |
+  T3 Code is a code editor built as a Turbo monorepo with apps/web (the web editor),
+  apps/desktop (Tauri desktop app), apps/server, and shared packages.
+
+  Add a custom theme system to the editor. Study the existing codebase structure,
+  especially the apps/web app and packages/shared.
+
+  Requirements:
+  1. Create a theme definition type in `packages/shared/src/themes.ts`:
+     - Theme interface with: id, name, colors (background, foreground, accent,
+       sidebar, editor, terminal, statusBar), fontFamily, fontSize
+     - At least 3 built-in themes: "t3-dark" (default), "t3-light", "t3-midnight"
+     - Export a `getTheme(id)` function and `listThemes()` function
+  2. Create a theme provider/context in the web app that:
+     - Stores the current theme in local storage
+     - Provides a `useTheme()` hook with `theme`, `setTheme`, `availableThemes`
+     - Applies CSS custom properties from the theme to the document root
+  3. Add a theme selector component that shows available themes with preview swatches
+  4. Wire the theme system into the app's existing component structure
+
+  Follow the existing code patterns (TypeScript, React, the project's conventions).
+  Do NOT modify the build configuration or add new dependencies.
+
+setup:
+  source_repo:
+    url: "https://github.com/pingdotgg/t3code.git"
+    ref: "v0.0.9"
+  install_command: "bun install"
+  timeout_minutes: 30
+  max_budget_usd: 5.00
+
+evaluation:
+  - type: "file-check"
+    checks:
+      - path: "packages/shared/src/themes.ts"
+        must_exist: true
+        must_contain:
+          - "t3-dark"
+          - "t3-light"
+          - "getTheme"
+          - "listThemes"
+    weight: 0.35
+
+  - type: "build"
+    command: "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt"
+    weight: 0.25
+
+  - type: "regex"
+    file: "packages/shared/src/themes.ts"
+    patterns:
+      - pattern: "interface.*Theme|type.*Theme"
+        should_match: true
+      - pattern: "background|foreground|accent"
+        should_match: true
+      - pattern: "t3-midnight"
+        should_match: true
+    weight: 0.2
+
+  - type: "build"
+    command: "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'"
+    weight: 0.2
