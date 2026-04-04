@@ -20,17 +20,16 @@ interface TaskResult {
   results: Record<string, ModeResult>;
 }
 
-const MODES = ["normal", "normal-guided", "plan-resume", "plan-clear"] as const;
+const MODES = ["normal", "plan-resume", "plan-clear"] as const;
 type Mode = (typeof MODES)[number];
 
 const MODE_META: Record<
   Mode,
   { label: string; bg: string; text: string; icon: typeof Zap }
 > = {
-  normal: { label: "One-shot", bg: "bg-mode-n/15", text: "text-mode-n", icon: Zap },
-  "normal-guided": { label: "Guided", bg: "bg-mode-g/15", text: "text-mode-g", icon: Compass },
-  "plan-resume": { label: "Plan+Resume", bg: "bg-mode-pr/15", text: "text-mode-pr", icon: BookOpen },
-  "plan-clear": { label: "Plan+Clear", bg: "bg-mode-pc/15", text: "text-mode-pc", icon: Scissors },
+  normal: { label: "one-shot", bg: "bg-mode-n/15", text: "text-mode-n", icon: Zap },
+  "plan-resume": { label: "plan+resume", bg: "bg-mode-pr/15", text: "text-mode-pr", icon: BookOpen },
+  "plan-clear": { label: "plan+clear", bg: "bg-mode-pc/15", text: "text-mode-pc", icon: Scissors },
 };
 
 function getWinner(results: Record<string, ModeResult>): Mode | "tie" {
@@ -98,7 +97,7 @@ export default function TaskTable({ tasks }: { tasks: TaskResult[] }) {
     const active = sortKey === id;
     return (
       <th
-        className={`cursor-pointer select-none whitespace-nowrap pb-2 text-[10px] font-mono font-normal uppercase tracking-widest transition-colors hover:text-foreground ${className} ${active ? "text-muted-foreground" : "text-muted-foreground/40"}`}
+        className={`cursor-pointer select-none whitespace-nowrap pb-2 text-[10px] font-mono font-normal uppercase tracking-widest hover:text-foreground ${className} ${active ? "text-muted-foreground" : "text-muted-foreground/70"}`}
         onClick={() => handleSort(id)}
       >
         {label}
@@ -109,8 +108,8 @@ export default function TaskTable({ tasks }: { tasks: TaskResult[] }) {
 
   return (
     <div>
-      <h2 className="mb-6 text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
-        All results
+      <h2 className="mb-6 text-[11px] font-mono uppercase tracking-widest text-muted-foreground/80">
+        all results
       </h2>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -148,7 +147,7 @@ export default function TaskTable({ tasks }: { tasks: TaskResult[] }) {
                   <Th label="Time" id={`${m}-time` as SortKey} className="text-right px-1.5" />
                 </Fragment>
               ))}
-              <th className="pb-2 pl-2 text-right text-[10px] font-mono font-normal uppercase tracking-widest text-muted-foreground/40">
+              <th className="pb-2 pl-2 text-right text-[10px] font-mono font-normal uppercase tracking-widest text-muted-foreground/70">
                 Best
               </th>
             </tr>
@@ -165,7 +164,7 @@ export default function TaskTable({ tasks }: { tasks: TaskResult[] }) {
               return (
                 <tr
                   key={task.id}
-                  className="border-b border-border/40 hover:bg-card/30 transition-colors"
+                  className="border-b border-border/40 hover:bg-card/30"
                 >
                   <td className="py-3 pr-3 min-w-[200px] max-w-[280px]">
                     <span className="text-foreground text-xs leading-snug line-clamp-2">
@@ -191,7 +190,7 @@ export default function TaskTable({ tasks }: { tasks: TaskResult[] }) {
                         </span>
                       </a>
                     ) : (
-                      <span className="text-[11px] text-muted-foreground/30">&mdash;</span>
+                      <span className="text-[11px] text-muted-foreground">&mdash;</span>
                     )}
                   </td>
                   <td className="py-3 pr-3">
@@ -205,13 +204,13 @@ export default function TaskTable({ tasks }: { tasks: TaskResult[] }) {
                     const isTop = hasData && r.score === maxScore && maxScore > 0;
                     return (
                       <Fragment key={m}>
-                        <td className={`py-3 px-1.5 text-right font-mono text-xs tabular-nums ${isTop ? "text-foreground font-medium" : hasData ? "text-muted-foreground" : "text-muted-foreground/20"}`}>
+                        <td className={`py-3 px-1.5 text-right font-mono text-xs tabular-nums ${isTop ? "text-foreground font-medium" : hasData ? "text-muted-foreground" : "text-muted-foreground/80"}`}>
                           {hasData ? (r.score * 100).toFixed(0) : "—"}
                         </td>
-                        <td className={`py-3 px-1.5 text-right font-mono text-xs tabular-nums ${hasData ? "text-muted-foreground" : "text-muted-foreground/20"}`}>
+                        <td className={`py-3 px-1.5 text-right font-mono text-xs tabular-nums ${hasData ? "text-muted-foreground" : "text-muted-foreground/80"}`}>
                           {hasData ? `$${r.totalCost.toFixed(2)}` : "—"}
                         </td>
-                        <td className={`py-3 px-1.5 text-right font-mono text-xs tabular-nums ${hasData ? "text-muted-foreground/60" : "text-muted-foreground/20"}`}>
+                        <td className={`py-3 px-1.5 text-right font-mono text-xs tabular-nums ${hasData ? "text-muted-foreground" : "text-muted-foreground/80"}`}>
                           {hasData ? formatDuration(r.durationMs) : "—"}
                         </td>
                       </Fragment>
@@ -219,7 +218,7 @@ export default function TaskTable({ tasks }: { tasks: TaskResult[] }) {
                   })}
                   <td className="py-3 pl-2 text-right">
                     {winner === "tie" ? (
-                      <span className="text-[10px] text-muted-foreground/30">tie</span>
+                      <span className="text-[10px] text-muted-foreground">tie</span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                         {(() => {

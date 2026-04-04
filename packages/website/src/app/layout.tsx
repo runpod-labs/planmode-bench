@@ -46,7 +46,7 @@ export default function RootLayout({
           <div className="mx-auto flex max-w-5xl items-center justify-between">
             <a
               href="/"
-              className="font-mono text-sm font-medium tracking-tight text-muted-foreground hover:text-foreground transition-colors"
+              className="font-mono text-sm font-medium tracking-tight text-muted-foreground hover:text-foreground"
             >
               plan mode bench
             </a>
@@ -55,9 +55,9 @@ export default function RootLayout({
                 href="https://github.com/runpod-labs/planmode-bench"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-foreground transition-colors"
+                className="hover:text-foreground"
               >
-                GitHub
+                github
               </a>
             </div>
           </div>
@@ -70,7 +70,7 @@ export default function RootLayout({
             href="https://github.com/runpod-labs"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-mono text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+            className="text-xs font-mono text-muted-foreground/80 hover:text-muted-foreground"
           >
             Runpod Labs
           </a>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Trophy, DollarSign, Clock, Hash, Zap, Compass, BookOpen, Scissors } from "lucide-react";
+import { Trophy, DollarSign, Clock, Hash, Zap, BookOpen, Scissors } from "lucide-react";
 
 interface Stats {
   avgScore: number;
@@ -14,28 +14,27 @@ interface Stats {
 interface Props {
   overall: {
     normal: Stats;
-    "normal-guided": Stats;
+    "normal-guided"?: Stats;
     "plan-resume": Stats;
     "plan-clear": Stats;
   };
 }
 
 const MODES = [
-  { key: "normal" as const, label: "One-shot", bg: "bg-mode-n/15", text: "text-mode-n", icon: Zap },
-  { key: "normal-guided" as const, label: "Guided", bg: "bg-mode-g/15", text: "text-mode-g", icon: Compass },
-  { key: "plan-resume" as const, label: "Plan + Resume", bg: "bg-mode-pr/15", text: "text-mode-pr", icon: BookOpen },
-  { key: "plan-clear" as const, label: "Plan + Clear", bg: "bg-mode-pc/15", text: "text-mode-pc", icon: Scissors },
+  { key: "normal" as const, label: "one-shot", bg: "bg-mode-n/15", text: "text-mode-n", barColor: "bg-mode-n", icon: Zap },
+  { key: "plan-resume" as const, label: "plan + resume", bg: "bg-mode-pr/15", text: "text-mode-pr", barColor: "bg-mode-pr", icon: BookOpen },
+  { key: "plan-clear" as const, label: "plan + clear", bg: "bg-mode-pc/15", text: "text-mode-pc", barColor: "bg-mode-pc", icon: Scissors },
 ];
 
 function pct(value: number, baseline: number): string {
-  if (baseline === 0) return "—";
+  if (baseline === 0) return "";
   const diff = ((value - baseline) / baseline) * 100;
-  if (Math.abs(diff) < 1) return "same";
+  if (Math.abs(diff) < 1) return "";
   return `${diff > 0 ? "+" : ""}${diff.toFixed(0)}%`;
 }
 
 function pctColor(value: number, baseline: number, lowerIsBetter: boolean): string {
-  if (baseline === 0) return "text-muted-foreground/40";
+  if (baseline === 0) return "text-muted-foreground";
   const diff = ((value - baseline) / baseline) * 100;
   if (Math.abs(diff) < 1) return "text-muted-foreground";
   if (lowerIsBetter) return diff < 0 ? "text-emerald-400" : "text-red-400";
@@ -47,90 +46,73 @@ function formatDuration(ms: number): string {
   return `${(ms / 60000).toFixed(1)}m`;
 }
 
+
 export default function KeyNumbers({ overall }: Props) {
   const baseline = overall.normal;
+  const active = MODES.filter((m) => overall[m.key]?.n);
+
+  const maxScore = Math.max(...active.map((m) => overall[m.key]!.avgScore));
+  const maxCost = Math.max(...active.map((m) => overall[m.key]!.avgCost));
+  const maxDuration = Math.max(...active.map((m) => overall[m.key]!.avgDurationMs));
+  const maxTurns = Math.max(...active.map((m) => overall[m.key]!.avgTurns));
+
+  const metrics = [
+    { label: "score", icon: Trophy, getValue: (s: Stats) => (s.avgScore * 100).toFixed(1) + "%", getRaw: (s: Stats) => s.avgScore, max: maxScore, lowerIsBetter: false },
+    { label: "cost/task", icon: DollarSign, getValue: (s: Stats) => "$" + s.avgCost.toFixed(2), getRaw: (s: Stats) => s.avgCost, max: maxCost, lowerIsBetter: true },
+    { label: "duration", icon: Clock, getValue: (s: Stats) => formatDuration(s.avgDurationMs), getRaw: (s: Stats) => s.avgDurationMs, max: maxDuration, lowerIsBetter: true },
+    { label: "turns", icon: Hash, getValue: (s: Stats) => String(Math.round(s.avgTurns)), getRaw: (s: Stats) => s.avgTurns, max: maxTurns, lowerIsBetter: true },
+  ];
 
   return (
     <div>
-      <h2 className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50 mb-6">
-        Results at a glance
+      <h2 className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/80 mb-8">
+        results at a glance
       </h2>
-      <div className="overflow-x-auto">
-        <div className="min-w-[640px]">
-          {/* Header */}
-          <div className="grid grid-cols-[1fr_100px_100px_100px_100px] gap-3 pb-3 border-b border-border">
-            <div />
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
-              <Trophy className="h-3.5 w-3.5" /> Score
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
-              <DollarSign className="h-3.5 w-3.5" /> Cost/task
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
-              <Clock className="h-3.5 w-3.5" /> Duration
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
-              <Hash className="h-3.5 w-3.5" /> Turns
-            </div>
-          </div>
 
-          {MODES.map((m) => {
-            const s = overall[m.key];
-            if (s.n === 0) return null;
-            const isBaseline = m.key === "normal";
-            const Icon = m.icon;
-
-            return (
-              <div key={m.key} className="grid grid-cols-[1fr_100px_100px_100px_100px] gap-3 items-center border-b border-border/40 py-4">
-                <div className="flex items-center gap-2.5">
-                  <span className={`flex items-center justify-center h-6 w-6 rounded-md ${m.bg} ${m.text} shrink-0`}>
-                    <Icon className="h-3.5 w-3.5" />
-                  </span>
-                  <span className="text-sm font-medium">{m.label}</span>
-                  {isBaseline && (
-                    <span className="text-[10px] font-mono text-muted-foreground/40">baseline</span>
-                  )}
-                </div>
-
-                <div>
-                  <div className="text-sm font-mono font-semibold tabular-nums">{(s.avgScore * 100).toFixed(1)}%</div>
-                  {!isBaseline && (
-                    <div className={`text-[11px] font-mono tabular-nums ${pctColor(s.avgScore, baseline.avgScore, false)}`}>
-                      {pct(s.avgScore, baseline.avgScore)}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <div className="text-sm font-mono tabular-nums">${s.avgCost.toFixed(2)}</div>
-                  {!isBaseline && (
-                    <div className={`text-[11px] font-mono tabular-nums ${pctColor(s.avgCost, baseline.avgCost, true)}`}>
-                      {pct(s.avgCost, baseline.avgCost)}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <div className="text-sm font-mono tabular-nums">{formatDuration(s.avgDurationMs)}</div>
-                  {!isBaseline && (
-                    <div className={`text-[11px] font-mono tabular-nums ${pctColor(s.avgDurationMs, baseline.avgDurationMs, true)}`}>
-                      {pct(s.avgDurationMs, baseline.avgDurationMs)}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <div className="text-sm font-mono tabular-nums">{Math.round(s.avgTurns)}</div>
-                  {!isBaseline && (
-                    <div className={`text-[11px] font-mono tabular-nums ${pctColor(s.avgTurns, baseline.avgTurns, true)}`}>
-                      {pct(s.avgTurns, baseline.avgTurns)}
-                    </div>
-                  )}
-                </div>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {metrics.map((metric) => {
+          const MetricIcon = metric.icon;
+          return (
+            <div key={metric.label} className="rounded-xl border border-border bg-card/30 p-5">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-5">
+                <MetricIcon className="h-4 w-4" />
+                {metric.label}
               </div>
-            );
-          })}
-        </div>
+
+              <div className="space-y-4">
+                {active.map((m) => {
+                  const s = overall[m.key]!;
+                  const Icon = m.icon;
+                  const isBaseline = m.key === "normal";
+                  const raw = metric.getRaw(s);
+                  const baselineRaw = metric.getRaw(baseline);
+                  const diffLabel = isBaseline ? "" : pct(raw, baselineRaw);
+                  const diffColor = pctColor(raw, baselineRaw, metric.lowerIsBetter);
+
+                  return (
+                    <div key={m.key} className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className={`flex items-center justify-center h-4 w-4 rounded ${m.bg} ${m.text} shrink-0`}>
+                          <Icon className="h-2.5 w-2.5" />
+                        </span>
+                        <span className="text-xs text-muted-foreground flex-1">{m.label}</span>
+                        <span className="text-sm font-mono font-medium tabular-nums text-right">{metric.getValue(s)}</span>
+                      </div>
+                      <div className="relative h-7 w-full rounded-md bg-muted/20 overflow-hidden">
+                        <div className={`h-full rounded-md ${m.barColor} opacity-80`} style={{ width: `${metric.max > 0 ? (raw / metric.max) * 100 : 0}%` }} />
+                        {diffLabel && (
+                          <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-mono font-semibold tabular-nums text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]`}>
+                            {diffLabel}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

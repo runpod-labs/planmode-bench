@@ -13,16 +13,16 @@ interface TaskResult {
 }
 
 const DIFFICULTY_LABEL: Record<string, string> = {
-  easy: "Easy",
-  medium: "Medium",
-  hard: "Hard",
-  expert: "Expert",
+  easy: "easy",
+  medium: "medium",
+  hard: "hard",
+  expert: "hard",
 };
 
 const DIFFICULTY_COLOR: Record<string, string> = {
-  easy: "text-muted-foreground/60",
-  medium: "text-muted-foreground/60",
-  hard: "text-muted-foreground/60",
+  easy: "text-muted-foreground",
+  medium: "text-muted-foreground",
+  hard: "text-muted-foreground",
 };
 
 export default function ProjectShowcase({
@@ -36,19 +36,19 @@ export default function ProjectShowcase({
 
   return (
     <div>
-      <h2 className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50 mb-2">
-        Benchmark tasks
+      <h2 className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/80 mb-2">
+        benchmark tasks
       </h2>
       <p className="text-sm text-muted-foreground mb-8">
         {tasks.length} tasks across real-world codebases and self-contained
-        challenges.
+        challenges
       </p>
 
       {/* Real-world projects */}
       {realWorld.length > 0 && (
         <div className="mb-8">
           <h3 className="text-xs font-medium text-muted-foreground mb-4">
-            Real-world codebases
+            real-world codebases
           </h3>
           <div className="grid gap-px bg-border rounded-lg overflow-hidden border border-border sm:grid-cols-2 lg:grid-cols-3">
             {realWorld.map((task) => (
@@ -84,7 +84,7 @@ export default function ProjectShowcase({
                       {DIFFICULTY_LABEL[task.difficulty] || task.difficulty}
                     </span>
                     {task.repoRef && (
-                      <span className="text-[10px] font-mono text-muted-foreground/40">
+                      <span className="text-[10px] font-mono text-muted-foreground/70">
                         @{task.repoRef}
                       </span>
                     )}
@@ -100,7 +100,7 @@ export default function ProjectShowcase({
       {selfContained.length > 0 && (
         <div>
           <h3 className="text-xs font-medium text-muted-foreground mb-4">
-            Self-contained challenges
+            self-contained challenges
           </h3>
           <div className="grid gap-px bg-border rounded-lg overflow-hidden border border-border sm:grid-cols-2 lg:grid-cols-3">
             {selfContained.map((task) => (
@@ -109,10 +109,10 @@ export default function ProjectShowcase({
                   {task.name}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[10px] font-mono text-muted-foreground/60">
+                  <span className="text-[10px] font-mono text-muted-foreground">
                     {task.category}
                   </span>
-                  <span className="text-muted-foreground/20">&middot;</span>
+                  <span className="text-muted-foreground/80">&middot;</span>
                   <span
                     className={`text-[10px] font-mono font-medium ${DIFFICULTY_COLOR[task.difficulty] || "text-muted-foreground"}`}
                   >
