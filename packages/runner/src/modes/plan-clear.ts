@@ -60,7 +60,7 @@ export async function runPlanClearMode(
   // Save plan to file
   const planPath = path.join(workDir, "PLAN.md");
   await writeFile(planPath, planContent, "utf-8");
-  await execAsync("git add PLAN.md && git commit -m 'add implementation plan'", {
+  await execAsync("git add PLAN.md && git commit --no-verify -m 'add implementation plan'", {
     cwd: workDir,
   });
 
