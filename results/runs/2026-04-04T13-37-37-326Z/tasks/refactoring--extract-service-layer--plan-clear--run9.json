@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "task_id": "refactoring/extract-service-layer",
+  "task_name": "Extract Service Layer from Route Handlers",
+  "mode": "plan-clear",
+  "run_number": 9,
+  "timestamp": "2026-04-04T22:44:03.702Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 416761,
+    "duration_api_ms": 405145,
+    "num_turns": 21,
+    "total_cost_usd": 0.7818516999999998,
+    "input_tokens": 24,
+    "output_tokens": 18222,
+    "cache_read_tokens": 304529,
+    "cache_creation_tokens": 43366,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 313840,
+    "plan_api_ms": 304350,
+    "plan_tokens_in": 11,
+    "plan_tokens_out": 9738,
+    "plan_cost_usd": 0.5317464999999999,
+    "plan_content": "## Plan: Extract Service Layer\n\nHere's what I found and what I'm proposing:\n\n---\n\n### Current problem\nBoth route files mix HTTP parsing with business rules — filtering, stock math, total calculations, validation, and state machine transitions all live directly inside request handlers.\n\n---\n\n### 3 new files to create\n\n| File | Contains |\n|---|---|\n| `src/services/service-error.ts` | `ServiceError(message, status)` — shared typed error class |\n| `src/services/product-service.ts` | `listProducts()`, `getProductById()`, `adjustStock()` |\n| `src/services/order-service.ts` | `listOrders()`, `getOrderById()`, `createOrder()`, `updateOrderStatus()` |\n\n### 2 route files to refactor\n\nBoth routes become thin HTTP adapters: parse inputs → call service → catch `ServiceError` → send response. All business logic moves out.\n\n---\n\n### Error propagation\nService functions **throw `ServiceError(message, status)`** for every business rule violation (404 not found, 400 bad input, insufficient stock, invalid status transitions, etc.). Route handlers catch it with:\n```typescript\ncatch (err) {\n  if (err instanceof ServiceError) res.status(err.status).json({ error: err.message });\n  else throw err; // re-throw unexpected errors\n}\n```\nThis keeps HTTP status codes authoritative in the service, not the route — without any business-rule knowledge leaking back up.\n\n---\n\n### One nuance: `typeof adjustment !== \"number\"` stays in the route\nThis is a wire-format guard (checking raw JSON body), not a business rule. It stays in the route handler. Everything else moves to the service.\n\n---\n\n### Verification\n```bash\nnpx vitest run  # all 11 existing tests must pass unchanged\n```\n\nNo test files, `types.ts`, `data.ts`, or `app.ts` are modified.",
+    "execute_duration_ms": 102921,
+    "execute_api_ms": 100795,
+    "execute_tokens_in": 13,
+    "execute_tokens_out": 8484,
+    "execute_cost_usd": 0.25010519999999997
+  },
+  "evaluation": {
+    "overall_score": 0.8,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775342220384-tq3oj1\n\n ✓ tests/products.test.ts (5 tests) 14ms\n ✓ tests/orders.test.ts (9 tests) 23ms\n\n Test Files  2 passed (2)\n      Tests  14 passed (14)\n   Start at  00:44:02\n   Duration  280ms (transform 61ms, setup 0ms, collect 196ms, tests 37ms, environment 0ms, prepare 88ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/services/product-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/services/order-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/products.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/orders.ts",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*product",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*order",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1361
+  },
+  "session_id": "e28cdb09-ef63-4feb-8c6b-1e74e76bbe97"
+}

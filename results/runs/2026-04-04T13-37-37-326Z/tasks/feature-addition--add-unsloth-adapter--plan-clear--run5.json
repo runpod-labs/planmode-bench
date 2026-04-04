@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-04T19:24:05.774Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 826382,
+    "duration_api_ms": 900649,
+    "num_turns": 38,
+    "total_cost_usd": 1.7661381,
+    "input_tokens": 45,
+    "output_tokens": 37143,
+    "cache_read_tokens": 839996,
+    "cache_creation_tokens": 82825,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 589341,
+    "plan_api_ms": 665261,
+    "plan_tokens_in": 21,
+    "plan_tokens_out": 22271,
+    "plan_cost_usd": 1.2108009,
+    "plan_content": "Here's the complete implementation plan:\n\n---\n\n## Plan: ONNX Export for LoRA Adapters\n\n### One file, three surgical changes — all in `unsloth/save.py`\n\n---\n\n### What gets exported\n\nThis is an **adapter-only** export (not a full model ONNX conversion). The output is a single `lora_adapters.onnx` file containing all LoRA A/B weight tensors as named initializers, plus a `metadata.json` with rank, alpha, and target_modules. This mirrors how `save_pretrained_ggml` exports adapters without the base model.\n\n---\n\n### Change 1 — `__all__` (line 48–54)\nAdd `\"export_lora_to_onnx\"` so it's re-exported via `unsloth/__init__.py`'s `from .save import *`.\n\n---\n\n### Change 2 — Two new functions before `patch_saving_functions()` (~line 2564)\n\n**`export_lora_to_onnx(model, output_dir, opset_version=17)`** — core function:\n1. Lazily imports `onnx` (with helpful `pip install onnx` error if missing)\n2. Reads `model.peft_config[\"default\"]` for rank, lora_alpha, target_modules\n3. Walks `model.named_modules()`, filtering to `Peft_Linear` / `Peft_Linear4bit` instances that have `lora_A` — these are the exact types already imported at lines 18–19\n4. Extracts `.lora_A[adapter].weight` and `.lora_B[adapter].weight`, detached/float/CPU\n5. Builds an ONNX graph: each tensor becomes an `initializer` + an `Identity` node → output (this pattern is needed because bare initializers fail `onnx.checker`; Identity nodes make it a valid graph)\n6. Embeds rank/alpha/target_modules/opset into `model_proto.metadata_props`\n7. Calls `onnx.checker.check_model()`, then saves `.onnx` + `metadata.json`\n\n**`unsloth_save_pretrained_onnx(self, output_dir, opset_version=17)`** — thin method wrapper that calls `export_lora_to_onnx(self, ...)` and runs `gc.collect()`, identical pattern to `unsloth_save_pretrained_torchao`.\n\n---\n\n### Change 3 — `patch_saving_functions()` (line ~2663)\nAdd one line inside the `if not vision: if hasattr(model, \"config\"):` block:\n```python\nmodel.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)\n```\nVision models excluded (consistent with GGUF being `not_implemented_save` for vision).\n\n---\n\n### Key design decisions\n- **Lazy `onnx` import** — mirrors how llama.cpp is imported; no hard new dependency\n- **`ir_version = 8`** — required for opset 17\n- **`Identity` nodes** — makes the weight-only graph pass `onnx.checker.check_model()`\n- **No base model weights** — adapter-only keeps files tiny and matches the task framing",
+    "execute_duration_ms": 237041,
+    "execute_api_ms": 235388,
+    "execute_tokens_in": 24,
+    "execute_tokens_out": 14872,
+    "execute_cost_usd": 0.5553372000000001
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 91
+  },
+  "session_id": "25cab311-6a92-4616-9cbc-93ecf3aa6fe5"
+}

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "Add JSON Path Constraint to SGLang",
+  "mode": "normal",
+  "run_number": 10,
+  "timestamp": "2026-04-04T17:29:46.046Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1259690,
+    "duration_api_ms": 1255092,
+    "num_turns": 46,
+    "total_cost_usd": 2.07832785,
+    "input_tokens": 40,
+    "output_tokens": 33407,
+    "cache_read_tokens": 2437025,
+    "cache_creation_tokens": 85547,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 338
+  },
+  "session_id": "361d86ee-36c7-402e-8b27-43f08f27fb2e"
+}

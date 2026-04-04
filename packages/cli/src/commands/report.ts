@@ -52,13 +52,14 @@ export async function reportCommand(runId?: string): Promise<void> {
   console.log();
 
   // Overall comparison
-  const modes = ["normal", "plan-resume", "plan-clear"] as const;
+  const modes = Object.keys(summary.overall) as string[];
   const col = 18;
 
   console.log(`${"─".repeat(70)}`);
   console.log(`  OVERALL COMPARISON`);
   console.log(`${"─".repeat(70)}`);
-  console.log(["Metric", "Normal", "Plan+Resume", "Plan+Clear"].map((h) => h.padEnd(col)).join(""));
+  const modeLabels: Record<string, string> = { normal: "Normal", "normal-guided": "Guided", "plan-resume": "Plan+Resume", "plan-clear": "Plan+Clear" };
+  console.log(["Metric", ...modes.map((m) => modeLabels[m] ?? m)].map((h) => h.padEnd(col)).join(""));
   console.log("─".repeat(70));
 
   const o = summary.overall;
@@ -91,7 +92,7 @@ export async function reportCommand(runId?: string): Promise<void> {
     );
     console.log("─".repeat(70));
 
-    for (const mode of ["plan-resume", "plan-clear"] as const) {
+    for (const mode of modes.filter((m) => m.startsWith("plan-"))) {
       const modeResults = allResults.filter((r) => r.mode === mode && r.plan_metrics);
       if (modeResults.length === 0) continue;
 
@@ -146,7 +147,8 @@ export async function reportCommand(runId?: string): Promise<void> {
     console.log(`\n  ${task.task_id}: winner=${task.winner}${sig}`);
 
     for (const mode of modes) {
-      const data = task[mode] as any;
+      const data = (task as any).modes?.[mode] ?? (task as any)[mode];
+      if (!data) continue;
       const scoreStr = `avg=${data.avg.toFixed(3)}`;
       const ciStr = data.ci_lower != null && data.ci_upper != null
         ? ` CI=[${data.ci_lower.toFixed(3)}, ${data.ci_upper.toFixed(3)}]`

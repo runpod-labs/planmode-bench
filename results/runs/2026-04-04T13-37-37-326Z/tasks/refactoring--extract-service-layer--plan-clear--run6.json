@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "task_id": "refactoring/extract-service-layer",
+  "task_name": "Extract Service Layer from Route Handlers",
+  "mode": "plan-clear",
+  "run_number": 6,
+  "timestamp": "2026-04-04T22:40:49.159Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 355304,
+    "duration_api_ms": 370597,
+    "num_turns": 27,
+    "total_cost_usd": 0.69654715,
+    "input_tokens": 25,
+    "output_tokens": 24550,
+    "cache_read_tokens": 329005,
+    "cache_creation_tokens": 39341,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 279106,
+    "plan_api_ms": 296276,
+    "plan_tokens_in": 11,
+    "plan_tokens_out": 18957,
+    "plan_cost_usd": 0.50706955,
+    "plan_content": "Here's the full plan:\n\n---\n\n## Implementation Plan: Extract Service Layer\n\n### Overview\n5 files touched (2 new, 3 modified). No test files touched. All 13 existing tests remain green.\n\n---\n\n### Error handling approach\nA `ServiceError` class (added to `src/types.ts`) carries a `statusCode` + `message`. Services throw it for all domain errors. Routes catch it in a uniform pattern:\n```ts\ntry { res.json(service(...)); }\ncatch (err) {\n  if (err instanceof ServiceError) { res.status(err.statusCode).json({ error: err.message }); return; }\n  throw err;\n}\n```\n\n---\n\n### Step 1 — `src/types.ts` (modify)\nAppend a `ServiceError` class with a `statusCode` field. This is the shared error contract between services and routes.\n\n### Step 2 — `src/services/product-service.ts` (create)\nExports 3 typed functions with their own return-type interfaces:\n- **`listProducts(filters)`** — filtering by category/price + computes `totalInventoryValue` / `averagePrice` summary\n- **`getProductById(id)`** — finds product, computes `isLowStock` / `inventoryValue`; throws `ServiceError(404)` if missing\n- **`adjustProductStock(id, adjustment)`** — validates stock won't go negative, mutates `product.stock`; throws `ServiceError(404/400)`\n\n### Step 3 — `src/services/order-service.ts` (create)\nExports 4 typed functions with their own return-type interfaces:\n- **`listOrders(filters)`** — filtering by userId/status + computes `totalRevenue` summary\n- **`getOrderById(id)`** — finds order, enriches items with `productName` from products; throws `ServiceError(404)` if missing\n- **`createOrder(input)`** — full validation (userId, items array, product existence, stock), deducts inventory, creates and pushes new order; throws `ServiceError(400)` for any failure\n- **`updateOrderStatus(id, status)`** — validates status string, enforces the `pending→confirmed→shipped→delivered` state machine; throws `ServiceError(404/400)`\n\n### Step 4 — `src/routes/products.ts` (full rewrite)\nHandlers only: parse query strings/body, call product service, translate `ServiceError` → HTTP response.\n\n### Step 5 — `src/routes/orders.ts` (full rewrite)\nSame pattern — handlers only delegate to order service.\n\n---\n\n### Verification\n```bash\nnpm test   # all 13 tests must pass\n```",
+    "execute_duration_ms": 76198,
+    "execute_api_ms": 74321,
+    "execute_tokens_in": 14,
+    "execute_tokens_out": 5593,
+    "execute_cost_usd": 0.18947759999999997
+  },
+  "evaluation": {
+    "overall_score": 0.8,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775342089658-gs8bd3\n\n ✓ tests/products.test.ts (5 tests) 15ms\n ✓ tests/orders.test.ts (9 tests) 26ms\n\n Test Files  2 passed (2)\n      Tests  14 passed (14)\n   Start at  00:40:48\n   Duration  334ms (transform 129ms, setup 0ms, collect 266ms, tests 41ms, environment 0ms, prepare 75ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/services/product-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/services/order-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/products.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/orders.ts",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*product",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*order",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1583
+  },
+  "session_id": "57176982-148d-4f3f-b320-80d7a5e3aee0"
+}

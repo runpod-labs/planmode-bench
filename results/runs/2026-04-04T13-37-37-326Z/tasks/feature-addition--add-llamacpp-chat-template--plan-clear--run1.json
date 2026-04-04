@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "Add Mistral Instruct v3 Chat Template to llama.cpp",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-04T15:18:43.095Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 218962,
+    "duration_api_ms": 274141,
+    "num_turns": 22,
+    "total_cost_usd": 0.5887754999999999,
+    "input_tokens": 23,
+    "output_tokens": 9617,
+    "cache_read_tokens": 319132,
+    "cache_creation_tokens": 44107,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 159794,
+    "plan_api_ms": 215063,
+    "plan_tokens_in": 10,
+    "plan_tokens_out": 6305,
+    "plan_cost_usd": 0.40245269999999994,
+    "plan_content": "Here's the full implementation plan:\n\n---\n\n## Plan: Add `mistral-instruct-v3` Template Handler\n\n**Only `common/chat.cpp` needs to change** — two additions, no other files touched.\n\n---\n\n### Change 1 — New handler function (~line 1517)\n\nInsert `common_chat_params_init_mistral_instruct_v3()` right after `common_chat_params_init_gigachat_v3`'s closing `}` (line 1517), before `namespace workaround`:\n\n```cpp\nstatic common_chat_params common_chat_params_init_mistral_instruct_v3(\n        const common_chat_template &          tmpl,\n        const autoparser::generation_params & inputs) {\n    common_chat_params data;\n\n    std::string system_prompt;\n    bool        is_first_user_msg = true;\n\n    data.prompt = \"<s>\";\n\n    for (const auto & msg : inputs.messages) {\n        auto role    = msg.value(\"role\", \"\");\n        auto content = msg.value(\"content\", \"\");\n\n        if (role == \"system\") {\n            system_prompt = content;\n        } else if (role == \"user\") {\n            data.prompt += \"[INST] \";\n            if (is_first_user_msg && !system_prompt.empty()) {\n                data.prompt += system_prompt + \"\\n\";\n                is_first_user_msg = false;\n            }\n            data.prompt += content + \" [/INST]\";\n        } else if (role == \"assistant\") {\n            data.prompt += \" \" + content + \"</s>\";\n        }\n    }\n\n    data.format = COMMON_CHAT_FORMAT_CONTENT_ONLY;\n    return data;\n}\n```\n\n- Builds `data.prompt` manually (no Jinja rendering needed)\n- System message captured and prepended (with `\\n`) only to the **first** user turn\n- Produces: `<s>[INST] {system}\\n{user1} [/INST] {assistant1}</s>[INST] {user2} [/INST]`\n\n---\n\n### Change 2 — Template detection (inside `common_chat_try_specialized_template()`, ~line 1644)\n\nInsert after the Ministral-3 block, before the GPT-OSS check:\n\n```cpp\n    // Mistral Instruct v0.3 - uses [INST]/[/INST] markers without [SYSTEM_PROMPT]\n    // Note: [SYSTEM_PROMPT] absence distinguishes this from Ministral/Magistral Large 3\n    if (src.find(\"[INST]\") != std::string::npos &&\n        src.find(\"[/INST]\") != std::string::npos &&\n        src.find(\"[SYSTEM_PROMPT]\") == std::string::npos) {\n        LOG_DBG(\"Using specialized template: Mistral Instruct v3\\n\");\n        return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n    }\n```\n\n- **Two positive markers** (`[INST]`, `[/INST]`) identify v0.3 format\n- **One negative marker** (`[SYSTEM_PROMPT]` absent) prevents collision with the existing Ministral-3 handler\n- Positioned after Ministral-3 check as an extra safety layer",
+    "execute_duration_ms": 59168,
+    "execute_api_ms": 59078,
+    "execute_tokens_in": 13,
+    "execute_tokens_out": 3312,
+    "execute_cost_usd": 0.18632279999999998
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 6,
+          "check_details": [
+            {
+              "path": "common/chat.cpp",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"mistral_instruct_v3\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"common_chat_params_init_mistral_instruct_v3\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"[INST]\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"[/INST]\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"COMMON_CHAT_FORMAT_CONTENT_ONLY\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 4,
+          "patterns_total": 4,
+          "pattern_results": [
+            {
+              "pattern": "static common_chat_params common_chat_params_init_mistral_instruct_v3",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "\\[INST\\].*\\[/INST\\]",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "LOG_DBG.*[Mm]istral [Ii]nstruct v3",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "common_chat_params_init_mistral_instruct_v3\\(tmpl, params\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -c 'mistral_instruct_v3' common/chat.cpp",
+          "exit_code": 0,
+          "output": "2\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 6
+  },
+  "session_id": "a63a6d6f-f5eb-4774-995e-1adda91bbb58"
+}

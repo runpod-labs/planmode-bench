@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "task_id": "refactoring/extract-service-layer",
+  "task_name": "Extract Service Layer from Route Handlers",
+  "mode": "plan-clear",
+  "run_number": 7,
+  "timestamp": "2026-04-04T22:40:13.085Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 299693,
+    "duration_api_ms": 292109,
+    "num_turns": 30,
+    "total_cost_usd": 0.5894502,
+    "input_tokens": 29,
+    "output_tokens": 16515,
+    "cache_read_tokens": 375089,
+    "cache_creation_tokens": 37704,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 175344,
+    "plan_api_ms": 169917,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 6567,
+    "plan_cost_usd": 0.2978622,
+    "plan_content": "Here's the complete plan:\n\n---\n\n## Plan: Extract Service Layer\n\n### New files\n| File | Exports |\n|---|---|\n| `src/services/product-service.ts` | `listProducts`, `getProductById`, `adjustProductStock` |\n| `src/services/order-service.ts` | `listOrders`, `getOrderById`, `createOrder`, `updateOrderStatus` |\n\n### Modified files\n| File | Change |\n|---|---|\n| `src/types.ts` | Add `ServiceResult<T>`, `EnrichedProduct`, `EnrichedOrder`, `EnrichedOrderItem` |\n| `src/routes/products.ts` | Strip logic, delegate to product service |\n| `src/routes/orders.ts` | Strip logic, delegate to order service |\n| `src/data.ts`, `src/app.ts`, `tests/` | **Unchanged** |\n\n---\n\n### Key design: `ServiceResult<T>`\nService functions that can fail return a discriminated union — the route handler checks `result.ok` and either sends the data or the error response:\n```ts\ntype ServiceResult<T> =\n  | { ok: true; data: T }\n  | { ok: false; status: number; error: string };\n```\nFunctions that always succeed (`listProducts`, `listOrders`) return their result type directly — no union needed.\n\n---\n\n### What stays in route handlers (HTTP concerns)\n- Parsing/coercing `req.query` strings to typed values\n- Raw type-checking of request body fields (e.g., `typeof adjustment !== \"number\"`)\n- Calling `res.json()` / `res.status().json()`\n\n### What moves to services (business logic)\n- Filtering arrays, computing summary stats\n- Derived field calculations (`isLowStock`, `inventoryValue`, `productName` enrichment)\n- Stock validation and mutation\n- Order creation, total calculation, status transition validation\n\n---\n\n### Verification\n1. `npm test` — all existing tests pass without modification (they test via HTTP/Supertest, so the contract is identical)\n2. `npm run build` — TypeScript compiles cleanly (strict mode is enabled)",
+    "execute_duration_ms": 124349,
+    "execute_api_ms": 122192,
+    "execute_tokens_in": 14,
+    "execute_tokens_out": 9948,
+    "execute_cost_usd": 0.291588
+  },
+  "evaluation": {
+    "overall_score": 0.8,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775342105086-tj3zmr\n\n ✓ tests/products.test.ts (5 tests) 14ms\n ✓ tests/orders.test.ts (9 tests) 26ms\n\n Test Files  2 passed (2)\n      Tests  14 passed (14)\n   Start at  00:40:11\n   Duration  323ms (transform 59ms, setup 0ms, collect 258ms, tests 41ms, environment 0ms, prepare 70ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/services/product-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/services/order-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/products.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/orders.ts",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*product",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*order",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1438
+  },
+  "session_id": "882fe560-5eae-4d75-bd3e-1899ac83d887"
+}

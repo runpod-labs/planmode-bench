@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-resume",
+  "run_number": 9,
+  "timestamp": "2026-04-04T19:13:01.981Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 525554,
+    "duration_api_ms": 664280,
+    "num_turns": 31,
+    "total_cost_usd": 1.7361202000000002,
+    "input_tokens": 28,
+    "output_tokens": 22417,
+    "cache_read_tokens": 821436,
+    "cache_creation_tokens": 111617,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 434734,
+    "plan_api_ms": 573503,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 16863,
+    "plan_cost_usd": 1.2900250000000002,
+    "plan_content": "Here is the complete implementation plan:\n\n---\n\n## Plan: ONNX Export for LoRA Adapters\n\n**One file modified:** `unsloth/save.py`\n\n### 4 targeted changes:\n\n**Change 1 — `__all__` (line 53):** Add `\"export_lora_to_onnx\"` as the 6th entry so the function is importable from the package.\n\n**Change 2 — `export_lora_to_onnx(model, output_dir, opset_version=17)` standalone function** inserted at line ~2562 (after `unsloth_save_pretrained_torchao`, before `not_implemented_save`):\n- Lazy-imports `onnx` and `numpy` inside the function body (consistent with TorchAO export pattern — no hard dependency)\n- Reads `model.peft_config[\"default\"]` for rank, alpha, and target_modules metadata\n- Walks `model.named_modules()` looking for modules with `lora_A`/`lora_B`/`scaling` dicts\n- Guards against already-merged adapters via `module.merged`\n- Resolves active adapter name via `active_adapters` / `active_adapter` (mirrors `get_lora_parameters` in `kernels/utils.py`)\n- Builds an ONNX graph with **no runtime inputs** — A and B matrices are ONNX `initializer` constants. For each layer: `Transpose(A) → MatMul(B, A_T) → Mul(scale)` → one output `delta_W` of shape `(out_features, in_features)`\n- Embeds metadata (`rank`, `lora_alpha`, `target_modules`, `num_lora_layers`, `adapter_name`, `opset_version`) in `model_proto.metadata_props`\n- Calls `onnx.checker.check_model()` before saving to fail fast on any graph errors\n- Saves to `{output_dir}/lora_adapters.onnx`, prints progress in `\"Unsloth: ...\"` style, calls `gc.collect()`\n\n**Change 3 — `unsloth_save_pretrained_onnx(self, output_dir, opset_version=17)` bound method wrapper** inserted immediately after, delegating to the standalone function. Includes full docstring and usage example.\n\n**Change 4 — `patch_saving_functions()` (~line 2667):** One new line in the non-vision `if hasattr(model, \"config\"):` block:\n```python\nmodel.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)\n```\n\n### Key design note on matrix shapes:\n`lora_A.weight` is `(rank, in_features)` and `lora_B.weight` is `(out_features, rank)`. ONNX `MatMul` requires `(M,K) @ (K,N)`, so a `Transpose` node on A is needed so that `B(out×rank) @ A_T(rank×in) → delta_W(out×in)` is correct.",
+    "execute_duration_ms": 90820,
+    "execute_api_ms": 90777,
+    "execute_tokens_in": 10,
+    "execute_tokens_out": 5554,
+    "execute_cost_usd": 0.44609519999999997
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 82
+  },
+  "session_id": "aa270b4a-2c4b-465b-8483-81dc9c4ef21b"
+}

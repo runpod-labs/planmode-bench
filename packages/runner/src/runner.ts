@@ -323,12 +323,18 @@ function generateSummary(
   results: RunResultType[],
   totalDuration: number
 ): RunSummaryType {
-  const modes: Mode[] = ["normal", "plan-resume", "plan-clear"];
-  const resultsByMode = (mode: Mode) => results.filter((r) => r.mode === mode);
+  const modes = config.modes;
+  // Exclude infra errors (worktree failures, budget caps) from scoring
+  const validResults = results.filter((r) => !r.metrics.is_error);
+  const errorCount = results.length - validResults.length;
+  if (errorCount > 0) {
+    console.log(`  Excluding ${errorCount} error run(s) from aggregation`);
+  }
+  const resultsByMode = (mode: Mode) => validResults.filter((r) => r.mode === mode);
 
   const overallByMode = Object.fromEntries(
     modes.map((mode) => [mode, aggregateResults(resultsByMode(mode))])
-  ) as Record<Mode, ReturnType<typeof aggregateResults>>;
+  );
 
   const categories = [...new Set(tasks.map((t) => t.category))];
   const byCategory = Object.fromEntries(
@@ -339,7 +345,7 @@ function generateSummary(
         Object.fromEntries(
           modes.map((mode) => [
             mode,
-            aggregateResults(results.filter((r) => r.mode === mode && taskIds.includes(r.task_id))),
+            aggregateResults(validResults.filter((r) => r.mode === mode && taskIds.includes(r.task_id))),
           ])
         ),
       ];
@@ -355,7 +361,7 @@ function generateSummary(
         Object.fromEntries(
           modes.map((mode) => [
             mode,
-            aggregateResults(results.filter((r) => r.mode === mode && taskIds.includes(r.task_id))),
+            aggregateResults(validResults.filter((r) => r.mode === mode && taskIds.includes(r.task_id))),
           ])
         ),
       ];
@@ -363,7 +369,7 @@ function generateSummary(
   );
 
   const perTask = tasks.map((task) => {
-    const taskResults = results.filter((r) => r.task_id === task.id);
+    const taskResults = validResults.filter((r) => r.task_id === task.id);
     const modeScores = Object.fromEntries(
       modes.map((mode) => {
         const scores = taskResults.filter((r) => r.mode === mode).map((r) => r.evaluation.overall_score);
@@ -377,22 +383,29 @@ function generateSummary(
           success_rate: scores.length > 0 ? scores.filter((s) => s >= 0.5).length / scores.length : 0,
         }];
       })
-    ) as Record<Mode, { scores: number[]; avg: number; std: number; ci_lower: number; ci_upper: number; success_rate: number }>;
+    ) as Record<string, { scores: number[]; avg: number; std: number; ci_lower: number; ci_upper: number; success_rate: number }>;
 
     const modeAvgs = modes.map((m) => ({ mode: m, avg: modeScores[m].avg }));
     modeAvgs.sort((a, b) => b.avg - a.avg);
     const winner = modeAvgs[0].avg - modeAvgs[1].avg < 0.01 ? "tie" : modeAvgs[0].mode;
 
-    const normalScores = modeScores["normal"].scores;
-    const bestPlanMode =
-      modeScores["plan-clear"].avg >= modeScores["plan-resume"].avg ? "plan-clear" : "plan-resume";
-    const bestPlanScores = modeScores[bestPlanMode].scores;
-    const p_value = welchTTest(normalScores, bestPlanScores);
+    const normalScores = modeScores["normal"]?.scores ?? [];
+    const planModes = modes.filter((m) => m.startsWith("plan-"));
+    let p_value: number | undefined;
+    if (normalScores.length >= 2 && planModes.length > 0) {
+      const bestPlanMode = planModes.reduce((best, m) =>
+        (modeScores[m]?.avg ?? 0) >= (modeScores[best]?.avg ?? 0) ? m : best
+      , planModes[0]);
+      const bestPlanScores = modeScores[bestPlanMode]?.scores ?? [];
+      if (bestPlanScores.length >= 2) {
+        p_value = welchTTest(normalScores, bestPlanScores);
+      }
+    }
 
     return {
       task_id: task.id,
-      ...modeScores,
-      winner: winner as "normal" | "plan-resume" | "plan-clear" | "tie",
+      modes: modeScores,
+      winner,
       p_value,
     };
   });
@@ -407,9 +420,9 @@ function generateSummary(
     total_runs: results.length,
     total_cost_usd: results.reduce((sum, r) => sum + r.metrics.total_cost_usd, 0),
     total_duration_ms: totalDuration,
-    overall: overallByMode as any,
-    by_category: byCategory as any,
-    by_difficulty: byDifficulty as any,
+    overall: overallByMode,
+    by_category: byCategory,
+    by_difficulty: byDifficulty,
     per_task: perTask,
   };
 }
@@ -419,14 +432,15 @@ function transformForWebsite(
   allResults: RunResultType[],
   tasks: Task[]
 ): object {
-  const modes = ["normal", "plan-resume", "plan-clear"] as const;
+  const modes = Object.keys(summary.overall);
 
-  function modeStats(stats: { avg_score: number; median_score: number; success_rate: number; avg_cost_usd: number; avg_tokens: number; avg_turns: number; ci_lower?: number; ci_upper?: number; n?: number }) {
+  function modeStats(stats: Record<string, any>) {
     return {
       avgScore: stats.avg_score,
       medianScore: stats.median_score,
       successRate: stats.success_rate,
       avgCost: stats.avg_cost_usd,
+      avgDurationMs: stats.avg_duration_ms,
       avgTokens: stats.avg_tokens,
       avgTurns: stats.avg_turns,
       ciLower: stats.ci_lower,
@@ -441,37 +455,46 @@ function transformForWebsite(
       timestamp: summary.timestamp,
       claudeModel: summary.model,
       totalTasks: summary.total_tasks,
-      modes: [...modes],
+      modes,
     },
     overall: Object.fromEntries(
       modes.map((m) => [m, modeStats(summary.overall[m])])
     ),
     tasks: tasks.map((task) => {
-      const taskPerMode = (mode: typeof modes[number]) => {
+      const taskPerMode = (mode: string) => {
         const modeResults = allResults.filter(
-          (r) => r.task_id === task.id && r.mode === mode
+          (r) => r.task_id === task.id && r.mode === mode && !r.metrics.is_error
         );
         if (modeResults.length === 0) {
-          return { score: 0, planCost: 0, execCost: 0, totalCost: 0 };
+          return { score: 0, planCost: 0, execCost: 0, totalCost: 0, durationMs: 0 };
         }
-        const avgScore = modeResults.reduce((s, r) => s + r.evaluation.overall_score, 0) / modeResults.length;
-        const avgPlanCost = modeResults.reduce((s, r) => s + (r.plan_metrics?.plan_cost_usd ?? 0), 0) / modeResults.length;
-        const avgExecCost = modeResults.reduce((s, r) => s + (r.plan_metrics?.execute_cost_usd ?? r.metrics.total_cost_usd), 0) / modeResults.length;
-        const avgTotalCost = modeResults.reduce((s, r) => s + r.metrics.total_cost_usd, 0) / modeResults.length;
+        const avg = (fn: (r: RunResultType) => number) =>
+          modeResults.reduce((s, r) => s + fn(r), 0) / modeResults.length;
         return {
-          score: avgScore,
-          planCost: avgPlanCost,
-          execCost: avgExecCost,
-          totalCost: avgTotalCost,
+          score: avg((r) => r.evaluation.overall_score),
+          planCost: avg((r) => r.plan_metrics?.plan_cost_usd ?? 0),
+          execCost: avg((r) => r.plan_metrics?.execute_cost_usd ?? r.metrics.total_cost_usd),
+          totalCost: avg((r) => r.metrics.total_cost_usd),
+          durationMs: avg((r) => r.metrics.duration_ms),
         };
       };
+
+      // Extract repo info from source_repo URL if available
+      const repoUrl = task.setup.source_repo?.url?.replace(/\.git$/, "");
+      const repoRef = task.setup.source_repo?.ref;
+      const repoMatch = repoUrl?.match(/github\.com\/([^/]+)\/([^/]+)/);
+      const repoOrg = repoMatch?.[1];
+      const repoName = repoMatch?.[2];
 
       return {
         id: task.id,
         name: task.name,
         category: task.category,
-        project: "self-contained",
+        project: repoName ?? "self-contained",
         difficulty: task.difficulty,
+        ...(repoUrl && { repoUrl }),
+        ...(repoOrg && { repoOrg }),
+        ...(repoRef && { repoRef }),
         results: Object.fromEntries(
           modes.map((m) => [m, taskPerMode(m)])
         ),

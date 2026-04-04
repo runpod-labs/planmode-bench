@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-04T19:16:59.860Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 443517,
+    "duration_api_ms": 440431,
+    "num_turns": 37,
+    "total_cost_usd": 0.8960448,
+    "input_tokens": 42,
+    "output_tokens": 18303,
+    "cache_read_tokens": 712618,
+    "cache_creation_tokens": 53351,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 341155,
+    "plan_api_ms": 339391,
+    "plan_tokens_in": 22,
+    "plan_tokens_out": 12175,
+    "plan_cost_usd": 0.6545979,
+    "plan_content": "Here is the complete plan — all changes land in **one file**: `unsloth/save.py`.\n\n---\n\n## What the exploration found\n\n| Aspect | Finding |\n|---|---|\n| All export methods | Defined as standalone functions in `save.py`, bound to models at load time via `types.MethodType()` inside `patch_saving_functions` |\n| LoRA layer types | `Peft_Linear` and `Peft_Linear4bit` — **already imported** at lines 18–19 |\n| Adapter weight access | `module.lora_A[adapter_name].weight` (shape `[r, in_features]`), `.lora_B[adapter_name].weight` (shape `[out_features, r]`), `.scaling[adapter_name]` (float) |\n| PEFT metadata | `model.peft_config[\"default\"]` → `.r`, `.lora_alpha`, `.target_modules` |\n| Public API exposure | `__init__.py` uses `from .save import *`, so adding to `__all__` is sufficient |\n\n---\n\n## 4 changes, all in `unsloth/save.py`\n\n**Step 1 — `__all__`** (line 48): add `\"unsloth_export_to_onnx\"`\n\n**Step 2 — `_LoRAAdapterModule` class** (insert before `patch_saving_functions`): a tiny `torch.nn.Module` that holds A, B, scaling as `float32` buffers and computes `(x @ A.T @ B.T) * scaling` — needed so `torch.onnx.export` can trace it\n\n**Step 3 — `unsloth_export_to_onnx(self, output_dir, opset_version=17)`** (insert after the class):\n- Validates PEFT config present; reads rank/alpha/target_modules\n- Iterates `self.named_modules()`, detects unmerged `Peft_Linear` / `Peft_Linear4bit`\n- For each: wraps A/B/scaling in `_LoRAAdapterModule`, calls `torch.onnx.export` with dynamic batch axis\n- Saves `adapter_metadata.json` with the full map of module-path → ONNX filename\n\n**Step 4 — `patch_saving_functions`** (line ~2667): add one binding line alongside the existing seven:\n```python\nmodel.export_to_onnx = types.MethodType(unsloth_export_to_onnx, model)\n```\n\n---\n\n**Key design choices:** one `.onnx` file per adapter layer (mirrors GGML pattern), `float32` for ONNX dtype stability, JSON sidecar for metadata, `Bnb_Linear4bit` excluded (its base weight needs dequantization first — `Peft_Linear4bit` still has float A/B matrices so it's safe to export).",
+    "execute_duration_ms": 102362,
+    "execute_api_ms": 101040,
+    "execute_tokens_in": 20,
+    "execute_tokens_out": 6128,
+    "execute_cost_usd": 0.24144690000000002
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 102
+  },
+  "session_id": "b9354883-d2ef-4c78-937d-0c238031adc0"
+}

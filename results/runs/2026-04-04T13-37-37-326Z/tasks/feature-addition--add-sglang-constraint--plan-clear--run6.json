@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "Add JSON Path Constraint to SGLang",
+  "mode": "plan-clear",
+  "run_number": 6,
+  "timestamp": "2026-04-04T17:46:15.886Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 954326,
+    "duration_api_ms": 1043922,
+    "num_turns": 49,
+    "total_cost_usd": 2.12374265,
+    "input_tokens": 45,
+    "output_tokens": 53561,
+    "cache_read_tokens": 1516921,
+    "cache_creation_tokens": 90426,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 619697,
+    "plan_api_ms": 711998,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 29037,
+    "plan_cost_usd": 1.258298,
+    "plan_content": "Here is the complete plan for implementing the `json_path` constraint in SGLang:\n\n---\n\n## Plan Summary\n\n### Key Architectural Decision\n`json_path` is a **post-generation validation** constraint — fundamentally different from `regex`/`json_schema`/`ebnf` which guide token-by-token generation via grammar backends. It validates after the LLM produces output that: (1) the output is valid JSON, and (2) the JSONPath expression resolves to at least one value. This means **no changes** to `grammar_manager.py`, `base_grammar_backend.py`, `sampling_params.py`, or any grammar backend.\n\n### 5 Files to Touch\n\n**1. NEW — `python/sglang/lang/json_path_constraint.py`**  \nSelf-contained JSONPath parser + evaluator (zero external deps). Supports `$`, `.key`, `['key']`, `[N]`, `[*]`, `..key`. Public surface:\n- `json_path_constraint(path)` — user-facing helper, validates syntax eagerly, returns the path string\n- `validate_jsonpath_syntax(path)` — raises `JsonPathConstraintError` on bad syntax\n- `evaluate_jsonpath(data, path)` — evaluates path against parsed JSON, returns list of matches\n- `check_json_path(output, path) → (bool, msg)` — validates raw text against a path\n\n**2. `python/sglang/lang/ir.py`**  \n- Add `json_path: Optional[str] = None` to `SglSamplingParams` (after `regex`)\n- Fix `clone()` to use `dataclasses.replace(self)` (also fixes an existing bug where `dtype`/`regex` weren't cloned)\n- Add `json_path` parameter to `SglGen.__init__()` and its `SglSamplingParams()` call\n- `json_path` is **not** included in `to_srt_kwargs()` — it's frontend-only\n\n**3. `python/sglang/lang/api.py`**  \n- Add `json_path: Optional[str] = None` to `gen()` signature (after `json_schema`)\n- Call `validate_jsonpath_syntax()` early (alongside the existing regex validation)\n- Pass `json_path` to `SglGen()`\n\n**4. `python/sglang/lang/interpreter.py`**  \n- Add `\"json_path\"` to the propagation list in `_resolve_sampling_params()`\n- In `_execute_gen()`: call `check_json_path()` after both streaming and non-streaming generation; raise `ValueError` on constraint failure\n\n**5. `python/sglang/__init__.py`**  \n- Import and export `json_path_constraint` in `__all__`",
+    "execute_duration_ms": 334629,
+    "execute_api_ms": 331924,
+    "execute_tokens_in": 29,
+    "execute_tokens_out": 24524,
+    "execute_cost_usd": 0.86544465
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 375
+  },
+  "session_id": "c1abbcb3-1489-4bb1-beca-280a887eb689"
+}

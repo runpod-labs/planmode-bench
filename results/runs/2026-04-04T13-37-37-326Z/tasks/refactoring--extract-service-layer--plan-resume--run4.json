@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "task_id": "refactoring/extract-service-layer",
+  "task_name": "Extract Service Layer from Route Handlers",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-04T22:37:35.327Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 538072,
+    "duration_api_ms": 490414,
+    "num_turns": 27,
+    "total_cost_usd": 1.05555815,
+    "input_tokens": 25,
+    "output_tokens": 24930,
+    "cache_read_tokens": 561821,
+    "cache_creation_tokens": 70676,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 326187,
+    "plan_api_ms": 310063,
+    "plan_tokens_in": 11,
+    "plan_tokens_out": 11642,
+    "plan_cost_usd": 0.55289075,
+    "plan_content": "Here's the complete plan:\n\n---\n\n## Plan: Extract Business Logic into Service Layer\n\n### 3 new files, 2 rewrites, 0 test changes\n\n**New files:**\n\n1. **`src/services/errors.ts`** — `AppError` class with `message` + `statusCode`. Both services throw it; routes catch it via `handleError`.\n\n2. **`src/services/product-service.ts`** — 3 exported functions with full TypeScript types:\n   - `listProducts(filters)` → filtering + summary stats (count, totalInventoryValue, averagePrice)\n   - `getProductById(id)` → product + `isLowStock` + `inventoryValue`, throws `AppError(404)` if missing\n   - `updateProductStock(id, adjustment)` → validates newStock ≥ 0, mutates, returns enriched product; throws `AppError(404/400)`\n\n3. **`src/services/order-service.ts`** — 4 exported functions:\n   - `listOrders(filters)` → filtering + totalRevenue summary\n   - `getOrderById(id)` → order with items enriched with `productName`, throws `AppError(404)`\n   - `createOrder(input)` → validates items, deducts stock, persists, throws `AppError(400)` on domain failures\n   - `updateOrderStatus(id, status)` → validates status value + transition rules, throws `AppError(404/400)`\n\n**Rewritten files:**\n\n4. **`src/routes/products.ts`** — 3 thin handlers. Each parses the request, calls the service, sends the response. Adds a `handleError(res, err)` helper. **Stays in route:** `typeof adjustment !== \"number\"` guard and NaN guard on query params (HTTP/parsing concerns, not business rules).\n\n5. **`src/routes/orders.ts`** — 4 thin handlers, same pattern. **Stays in route:** `!input.userId || !input.items || !Array.isArray(input.items)` guard (request shape validation). **Moves to service:** `items.length === 0` check (business rule).\n\n**No changes** to `src/app.ts`, `src/types.ts`, `src/data.ts`, or any test files.\n\n**Verification:** `npm test` (all existing tests pass — HTTP contracts are identical) + `npm run build` (TypeScript strict mode compiles cleanly).",
+    "execute_duration_ms": 211885,
+    "execute_api_ms": 180351,
+    "execute_tokens_in": 14,
+    "execute_tokens_out": 13288,
+    "execute_cost_usd": 0.5026674
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775341692317-sajjeq\n\n ✓ tests/products.test.ts (5 tests) 62ms\n ✓ tests/orders.test.ts (9 tests) 111ms\n\n Test Files  2 passed (2)\n      Tests  14 passed (14)\n   Start at  00:37:25\n   Duration  1.29s (transform 336ms, setup 0ms, collect 1.15s, tests 172ms, environment 0ms, prepare 441ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 0.5,
+        "weight": 0.2,
+        "weighted_score": 0.1,
+        "passed": false,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/services/product-service.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "src/services/order-service.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "src/routes/products.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/orders.ts",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*product",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*order",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 12624
+  },
+  "session_id": "78650793-c680-46a3-997f-222fce650ca2"
+}

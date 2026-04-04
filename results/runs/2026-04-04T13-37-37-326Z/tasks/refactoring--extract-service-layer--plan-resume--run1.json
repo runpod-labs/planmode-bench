@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "task_id": "refactoring/extract-service-layer",
+  "task_name": "Extract Service Layer from Route Handlers",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-04T22:32:06.365Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 254647,
+    "duration_api_ms": 244323,
+    "num_turns": 20,
+    "total_cost_usd": 0.5552183,
+    "input_tokens": 18,
+    "output_tokens": 13904,
+    "cache_read_tokens": 285964,
+    "cache_creation_tokens": 46308,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 163017,
+    "plan_api_ms": 157349,
+    "plan_tokens_in": 8,
+    "plan_tokens_out": 6659,
+    "plan_cost_usd": 0.2713643,
+    "plan_content": "Here's my complete plan:\n\n---\n\n## Plan: Extract Service Layer\n\n### What I found\n\nThe codebase is compact: `src/app.ts`, `src/data.ts`, `src/types.ts`, and two route files. No service layer exists. There are 12 integration tests using Vitest + Supertest against the live Express app. The project uses ES modules with `Node16` module resolution, so all imports need `.js` extensions.\n\n### Files to create (3 new files)\n\n| File | Purpose |\n|---|---|\n| `src/errors.ts` | `NotFoundError` and `ValidationError` domain error classes |\n| `src/services/product-service.ts` | `getProducts()`, `getProductById()`, `adjustProductStock()` |\n| `src/services/order-service.ts` | `getOrders()`, `getOrderById()`, `createOrder()`, `updateOrderStatus()` |\n\n### Files to modify (2 files)\n\n`src/routes/products.ts` and `src/routes/orders.ts` — stripped down to HTTP parsing + calling service functions.\n\n### Error handling boundary (key design decision)\n\n- **Services** return `null` for not-found, throw `ValidationError` for domain rule violations\n- **Route handlers** map `null` → 404, catch `ValidationError` → 400\n- Two small pieces of *structural* HTTP input validation stay in the route handlers: `typeof adjustment !== \"number\"` and `!Array.isArray(items)` — these are raw request parsing, not domain logic\n\n### Verification\n\n`npm test` — all 12 existing integration tests pass without modification. Since they exercise the full HTTP stack, they validate the route→service wiring automatically.",
+    "execute_duration_ms": 91630,
+    "execute_api_ms": 86974,
+    "execute_tokens_in": 10,
+    "execute_tokens_out": 7245,
+    "execute_cost_usd": 0.28385400000000005
+  },
+  "evaluation": {
+    "overall_score": 0.8,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775341657673-nqhsiy\n\n ✓ tests/products.test.ts (5 tests) 42ms\n ✓ tests/orders.test.ts (9 tests) 85ms\n\n Test Files  2 passed (2)\n      Tests  14 passed (14)\n   Start at  00:32:03\n   Duration  1.11s (transform 196ms, setup 0ms, collect 728ms, tests 127ms, environment 1ms, prepare 427ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/services/product-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/services/order-service.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/products.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/orders.ts",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*product",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*order",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 3989
+  },
+  "session_id": "fb0f54d3-3d58-49da-8551-fb7685065ca9"
+}

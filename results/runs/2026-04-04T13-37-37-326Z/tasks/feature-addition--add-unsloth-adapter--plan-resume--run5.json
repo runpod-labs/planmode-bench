@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-04T19:14:02.525Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 700666,
+    "duration_api_ms": 845144,
+    "num_turns": 46,
+    "total_cost_usd": 2.3584943999999997,
+    "input_tokens": 45,
+    "output_tokens": 41179,
+    "cache_read_tokens": 2100187,
+    "cache_creation_tokens": 134919,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 552754,
+    "plan_api_ms": 697323,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 31988,
+    "plan_cost_usd": 1.432281,
+    "plan_content": "Here is the complete implementation plan.\n\n---\n\n## Summary\n\nAfter thoroughly exploring the codebase (especially `unsloth/save.py`, `unsloth/kernels/utils.py`, and `unsloth/models/llama.py`), the plan is to make **exactly 5 targeted changes to `unsloth/save.py`**, the single file where all save/export methods live:\n\n### What gets added\n\n1. **`\"export_to_onnx\"` in `__all__`** (line 48–54) — makes the function importable as part of the public API.\n\n2. **`_LoRADeltaModule` class** (~line 2264) — a minimal `torch.nn.Module` that wraps the LoRA delta computation `(x @ A.T @ B.T) * scaling` for use as a `torch.onnx.export` tracing target.\n\n3. **`export_to_onnx(model, output_dir, opset_version=17)`** — the core function. It:\n   - Validates `model.peft_config` exists and `onnx` is installed\n   - Reads rank/alpha/target_modules/dropout from `model.peft_config[adapter_name]`\n   - Iterates `model.named_modules()`, finds all `Peft_Linear`/`Peft_Linear4bit` layers with active un-merged LoRA\n   - Casts A/B weights to float32 (handling 4-bit quant transparently)\n   - Calls `torch.onnx.export` on each, writing one `.onnx` per layer with dynamic batch axis\n   - Writes `lora_metadata.json` with rank, alpha, target_modules, and per-layer file/shape info\n\n4. **`unsloth_save_pretrained_onnx(self, output_dir, opset_version=17)`** — thin `self`-bound wrapper for `types.MethodType` attachment.\n\n5. **Registration in `patch_saving_functions()`** — adds `model.save_pretrained_onnx = types.MethodType(...)` in both the language-model and vision-model branches, consistent with how all other save methods are registered.\n\n### Output structure\n```\nlora_onnx_export/\n  base_model_model_model_layers_0_self_attn_q_proj.onnx  ← one per LoRA layer\n  base_model_model_model_layers_0_self_attn_v_proj.onnx\n  …\n  lora_metadata.json   ← rank, alpha, target_modules, per-layer file/shape info\n```\n\n### Usage\n```python\nmodel.save_pretrained_onnx(\"lora_onnx_export\", opset_version=17)\n# or standalone:\nfrom unsloth.save import export_to_onnx\nexport_to_onnx(model, \"lora_onnx_export\")\n```",
+    "execute_duration_ms": 147912,
+    "execute_api_ms": 147821,
+    "execute_tokens_in": 25,
+    "execute_tokens_out": 9191,
+    "execute_cost_usd": 0.9262133999999999
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 85
+  },
+  "session_id": "afb3c25f-2139-4124-ba11-c4ccdfd5927d"
+}

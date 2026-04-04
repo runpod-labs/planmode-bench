@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "Add Top-A Sampling Strategy to vLLM",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-04T19:58:45.263Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 769987,
+    "duration_api_ms": 851954,
+    "num_turns": 90,
+    "total_cost_usd": 2.59659875,
+    "input_tokens": 214,
+    "output_tokens": 43272,
+    "cache_read_tokens": 3353059,
+    "cache_creation_tokens": 143618,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 432391,
+    "plan_api_ms": 515379,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 20710,
+    "plan_cost_usd": 1.13637665,
+    "plan_content": "Here's a summary of my findings and the complete plan:\n\n---\n\n## What I found\n\nThe vLLM codebase has **two parallel sampling pipelines** that must both be updated:\n- **V0 (legacy):** `SamplingParams → SamplingTensors → Sampler.forward()`\n- **V1 (modern):** `SamplingParams → InputBatch (CPU numpy arrays + GPU tensors) → SamplingMetadata → Sampler.sample()`\n\nTop-A (`keep tokens where prob >= a * max_prob`) is **algorithmically identical to `min_p`** already in the codebase — the tensor math is the same; only the name and parameter differ.\n\n---\n\n## 6 files to change, all surgical edits:\n\n| # | File | What changes |\n|---|------|-------------|\n| 1 | `vllm/sampling_params.py` | Add `top_a: float = 0.0` field, validation `[0,1]`, docstring, greedy reset, `from_optional`, `__repr__` |\n| 2 | `vllm/model_executor/sampling_metadata.py` | Add `top_as: torch.Tensor` to `SamplingTensors`; collect list + `do_top_a` flag; create pinned tensor |\n| 3 | `vllm/model_executor/layers/sampler.py` | New `_apply_top_a()` (clone of `_apply_min_p`); unpack 5-tuple from metadata; call it in `forward()` |\n| 4 | `vllm/v1/sample/metadata.py` | Add `top_a: Optional[torch.Tensor]` field |\n| 5 | `vllm/v1/worker/gpu_input_batch.py` | Add CPU+GPU float32 tensor pair, `top_a_reqs` set, storage in add/remove/swap/condense/make_metadata, `no_top_a` property |\n| 6 | `vllm/v1/sample/sampler.py` | New `apply_top_a()` method; call it in `sample()` before `topk_topp_sampler` |",
+    "execute_duration_ms": 337596,
+    "execute_api_ms": 336575,
+    "execute_tokens_in": 194,
+    "execute_tokens_out": 22562,
+    "execute_cost_usd": 1.4602220999999997
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "contains \"top_a\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "top_a.*float|float.*top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "0\\.0.*top_a|top_a.*0\\.0",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "python3 -c 'import ast; ast.parse(open(\"vllm/sampling_params.py\").read()); print(\"Syntax OK\")'",
+          "exit_code": 0,
+          "output": "Syntax OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 46
+  },
+  "session_id": "c042b50c-31cd-4df3-9e96-506444fdd130"
+}

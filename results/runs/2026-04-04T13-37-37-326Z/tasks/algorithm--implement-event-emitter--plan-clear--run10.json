@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "task_id": "algorithm/implement-event-emitter",
+  "task_name": "Implement Full-Featured Event Emitter",
+  "mode": "plan-clear",
+  "run_number": 10,
+  "timestamp": "2026-04-04T13:46:16.344Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 167841,
+    "duration_api_ms": 164704,
+    "num_turns": 13,
+    "total_cost_usd": 0.30176400000000003,
+    "input_tokens": 543,
+    "output_tokens": 7607,
+    "cache_read_tokens": 138947,
+    "cache_creation_tokens": 22886,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 132508,
+    "plan_api_ms": 131113,
+    "plan_tokens_in": 8,
+    "plan_tokens_out": 5568,
+    "plan_cost_usd": 0.21305355,
+    "plan_content": "Here's my plan for implementing the `EventEmitter` class:\n\n## Design Overview\n\n**Storage**: A single private `Map<string, Listener[]>` — event names map to ordered arrays of listeners. Keys are deleted when arrays empty out (critical for `eventNames()` correctness).\n\n**Self-removal safety**: In `emit()`, snapshot the listeners array before iterating (`[...listeners]`). This lets a listener call `off()` or its unsubscribe function without crashing or skipping subsequent listeners in the same emit cycle.\n\n**`once` implementation**: Register a wrapper closure (not the original). The wrapper calls `this.off(event, wrapper)` first, then invokes the original listener. This naturally handles `listenerCount` decreasing after a `once` fires.\n\n## Method-by-method plan\n\n| Method | Key behavior |\n|---|---|\n| `on` | Push to array, return `() => this.off(event, listener)` |\n| `once` | Create a self-removing wrapper, register it via `on` |\n| `emit` | Snapshot array, iterate, return `true` if listeners existed at check time |\n| `off` | `indexOf` + `splice`; delete Map key if array empties |\n| `removeAllListeners` | `clear()` or `delete(event)` |\n| `listenerCount` | `array?.length ?? 0` |\n| `eventNames` | `[...map.keys()]` |\n\n## Key edge cases\n\n- **Self-removal during emit**: The snapshot (`[...listeners]`) lets every listener in the snapshot fire even if one calls `off()` mid-loop — but the live array is still mutated, so future emits reflect the removal correctly.\n- **`emit` return value for last `once` listener**: The `length` check happens *before* snapshotting/iterating, so it still sees 1 listener and returns `true` for the emit that fires it.\n- **Empty event cleanup**: `off()` deletes the Map key when the array reaches length 0, keeping `eventNames()` accurate.\n\nOnly one file needs to change: **`src/event-emitter.ts`**\n\nVerification: `npm test` → all 28 Vitest tests should pass.",
+    "execute_duration_ms": 35333,
+    "execute_api_ms": 33591,
+    "execute_tokens_in": 535,
+    "execute_tokens_out": 2039,
+    "execute_cost_usd": 0.08871045
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 1,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775310205448-x11wlp\n\n ✓ tests/event-emitter.test.ts (29 tests) 6ms\n\n Test Files  1 passed (1)\n      Tests  29 passed (29)\n   Start at  15:46:15\n   Duration  207ms (transform 32ms, setup 0ms, collect 35ms, tests 6ms, environment 0ms, prepare 38ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/event-emitter.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"on(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"emit(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"once(\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1122
+  },
+  "session_id": "fa2827f2-d534-470d-a262-a9e41024716f"
+}

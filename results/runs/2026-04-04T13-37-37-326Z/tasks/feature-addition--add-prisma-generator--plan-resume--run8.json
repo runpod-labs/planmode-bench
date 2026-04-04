@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "Add REST API Client Generator to Prisma",
+  "mode": "plan-resume",
+  "run_number": 8,
+  "timestamp": "2026-04-04T16:34:47.600Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 481425,
+    "duration_api_ms": 593513,
+    "num_turns": 37,
+    "total_cost_usd": 1.48460525,
+    "input_tokens": 79,
+    "output_tokens": 25899,
+    "cache_read_tokens": 1329302,
+    "cache_creation_tokens": 96362,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 371083,
+    "plan_api_ms": 483258,
+    "plan_tokens_in": 55,
+    "plan_tokens_out": 18972,
+    "plan_cost_usd": 0.8523662,
+    "plan_content": "Here's the complete plan I've researched and documented:\n\n---\n\n## Plan: `packages/generator-rest-client/`\n\n### How generators work in this monorepo\n\nThere are two generator patterns. I'm using the **external/process-based** one (matching the user's request for `generatorHandler`): the generator is a standalone Node.js binary that speaks JSON-RPC over stdin/stderr with the Prisma CLI. The CLI spawns it via `child_process.fork()` when `provider = \"prisma-generator-rest-client\"` appears in a schema.\n\n### Files to create (6 new + 1 edit)\n\n| Path | What it does |\n|------|-------------|\n| `packages/generator-rest-client/package.json` | Declares `@prisma/generator-rest-client`; `bin.prisma-generator-rest-client → dist/index.js`; deps: `generator-helper`, `generator`, `dmmf` |\n| `packages/generator-rest-client/tsconfig.json` | `extends ../../tsconfig.json` — identical to `client-generator-js` |\n| `packages/generator-rest-client/tsconfig.build.json` | `extends ../../tsconfig.build.regular.json`, `outDir: dist` |\n| `packages/generator-rest-client/helpers/build.ts` | `build(adapterConfig)` — exact same 3-liner |\n| `packages/generator-rest-client/src/index.ts` | Calls `generatorHandler({ onManifest, onGenerate })` |\n| `packages/generator-rest-client/src/generator.ts` | Reads `options.dmmf`, iterates models/enums, writes `rest-client.ts` |\n| `packages/generator-rest-client/src/template.ts` | Pure helpers: Prisma→TS type mapping, field rendering, interface/method block generation |\n| **`tsconfig.build.bundle.json`** (edit) | Add `\"@prisma/generator-rest-client\": [\"./packages/generator-rest-client/src\"]` to `paths` (per AGENTS.md requirement) |\n\n### Key design decisions\n- **`bin` entry** is what makes `provider = \"prisma-generator-rest-client\"` discoverable — Prisma CLI looks up the binary by name\n- **`adapterConfig`** produces bundled CJS + ESM outputs; workspace deps are auto-treated as external by esbuild\n- **Type mapping** in `template.ts` covers all 9 Prisma scalars (`String→string`, `Int/Float/Decimal→number`, `Boolean→boolean`, `DateTime→Date`, `BigInt→bigint`, `Json→unknown`, `Bytes→Uint8Array`) plus relations and enums\n- **Per-model output**: `{Model}`, `{Model}CreateInput`, `{Model}UpdateInput`, `{Model}WhereUniqueInput` + top-level `RestClient` interface with camelCased property accessors",
+    "execute_duration_ms": 110342,
+    "execute_api_ms": 110255,
+    "execute_tokens_in": 24,
+    "execute_tokens_out": 6927,
+    "execute_cost_usd": 0.63223905
+  },
+  "evaluation": {
+    "overall_score": 0.5700000000000001,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.8,
+        "weight": 0.4,
+        "weighted_score": 0.32000000000000006,
+        "passed": false,
+        "details": {
+          "checks_passed": 8,
+          "checks_total": 10,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"prisma\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"generator\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"generatorHandler\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"onGenerate\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"dmmf\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"findMany\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"create\"",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 2,
+          "output": "m i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\n../generator-helper/src/GeneratorProcess.ts(108,23): error TS2503: Cannot find namespace 'NodeJS'.\n../generator-helper/src/GeneratorProcess.ts(186,21): error TS2503: Cannot find namespace 'NodeJS'.\n../generator-helper/src/GeneratorProcess.ts(215,21): error TS2503: Cannot find namespace 'NodeJS'.\n../generator-helper/src/GeneratorProcess.ts(216,20): error TS2503: Cannot find namespace 'NodeJS'.\nsrc/generator.ts(1,16): error TS2591: Cannot find name 'node:fs/promises'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nsrc/generator.ts(2,18): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nsrc/template.ts(1,15): error TS2305: Module '\"@prisma/dmmf\"' has no exported member 'DMMF'.\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.6666666666666666,
+        "weight": 0.15,
+        "weighted_score": 0.09999999999999999,
+        "passed": false,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "findUnique|findMany",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "model|Model",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "interface|type",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "generatorHandler",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "onGenerate|onManifest",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 721
+  },
+  "session_id": "2ddf28dd-3802-4eee-83c1-7cc68ef3286a"
+}

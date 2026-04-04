@@ -1,0 +1,270 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-shadcn-stepper",
+  "task_name": "Add Stepper Component to shadcn/ui",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-04T18:16:59.300Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 841545,
+    "duration_api_ms": 856207,
+    "num_turns": 44,
+    "total_cost_usd": 1.4763575500000001,
+    "input_tokens": 37,
+    "output_tokens": 55334,
+    "cache_read_tokens": 841367,
+    "cache_creation_tokens": 75064,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 385527,
+    "plan_api_ms": 400378,
+    "plan_tokens_in": 19,
+    "plan_tokens_out": 22619,
+    "plan_cost_usd": 0.6817006000000001,
+    "plan_content": "Here's a summary of the plan before we proceed:\n\n---\n\n## Plan: Add `Stepper` Compound Component\n\n### What will be created (4 changes total)\n\n**2 new files:**\n1. `apps/v4/registry/new-york-v4/ui/stepper.tsx` — the component\n2. `apps/v4/registry/new-york-v4/examples/stepper-demo.tsx` — the demo\n\n**2 registry edits (append only):**\n3. `ui/_registry.ts` — add `stepper` entry between `spinner` and `switch`\n4. `examples/_registry.ts` — add `stepper-demo` entry between the `spinner-*` entries and `switch-demo`\n\n---\n\n### Architecture of `stepper.tsx`\n\n**Two React contexts** (modeled after `carousel.tsx`):\n- `StepperContext` → provides `activeStep` + `orientation` to all descendants\n- `StepperItemContext` → provides `step` + computed `state` (`\"completed\" | \"active\" | \"pending\"`)\n\n| Component | Element | Key behavior |\n|-----------|---------|-------------|\n| `Stepper` | `<div>` | Root; `flex-row` or `flex-col`; `data-orientation` attr |\n| `StepperItem` | `<div>` | Computes `state`; sets `data-step` + `data-state` |\n| `StepperTrigger` | `<button>` | Shows step number by default; styled per state (solid=completed, outlined=active, muted=pending) |\n| `StepperTitle` | `<p>` | Label text |\n| `StepperDescription` | `<p>` | Muted sub-label |\n| `StepperSeparator` | `<div>` | Lives _inside_ `StepperItem`; highlights when `state === \"completed\"` |\n| `StepperContent` | `<div>` | Returns `null` unless `step === activeStep` |\n\n**Key design decision**: `StepperSeparator` is placed at the end of each `StepperItem` (except the last). This gives it access to `StepperItemContext` so it can highlight automatically when that step is completed — no extra props needed.\n\n**No external npm dependencies** — only React + `cn()`.\n\n---\n\n### Demo\n- 3 steps: Account → Profile → Complete\n- `React.useState(1)` controls active step\n- Previous/Next buttons with boundary guards\n- `StepperContent` panels swap per active step",
+    "execute_duration_ms": 456018,
+    "execute_api_ms": 455829,
+    "execute_tokens_in": 18,
+    "execute_tokens_out": 32715,
+    "execute_cost_usd": 0.79465695
+  },
+  "evaluation": {
+    "overall_score": 0.975,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 10,
+          "checks_total": 10,
+          "check_details": [
+            {
+              "path": "apps/v4/registry/new-york-v4/ui/stepper.tsx",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/ui/stepper.tsx",
+              "check": "contains \"use client\"",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/ui/stepper.tsx",
+              "check": "contains \"Stepper\"",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/ui/stepper.tsx",
+              "check": "contains \"StepperItem\"",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/ui/stepper.tsx",
+              "check": "contains \"StepperTrigger\"",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/ui/stepper.tsx",
+              "check": "contains \"StepperTitle\"",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/ui/stepper.tsx",
+              "check": "contains \"StepperSeparator\"",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/ui/stepper.tsx",
+              "check": "contains \"StepperContent\"",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/ui/stepper.tsx",
+              "check": "contains \"data-slot\"",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/ui/stepper.tsx",
+              "check": "contains \"cn(\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.875,
+        "weight": 0.2,
+        "weighted_score": 0.17500000000000002,
+        "passed": false,
+        "details": {
+          "patterns_matched": 7,
+          "patterns_total": 8,
+          "pattern_results": [
+            {
+              "pattern": "data-slot=\"stepper\"",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "data-slot=\"stepper-item\"",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "data-slot=\"stepper-trigger\"",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "data-slot=\"stepper-separator\"",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "data-slot=\"stepper-content\"",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "createContext|useContext",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "orientation.*horizontal.*vertical|horizontal.*vertical",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "export function Stepper",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 6,
+          "check_details": [
+            {
+              "path": "apps/v4/registry/new-york-v4/examples/stepper-demo.tsx",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/examples/stepper-demo.tsx",
+              "check": "contains \"Stepper\"",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/examples/stepper-demo.tsx",
+              "check": "contains \"StepperItem\"",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/examples/stepper-demo.tsx",
+              "check": "contains \"StepperTrigger\"",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/examples/stepper-demo.tsx",
+              "check": "contains \"StepperContent\"",
+              "passed": true
+            },
+            {
+              "path": "apps/v4/registry/new-york-v4/examples/stepper-demo.tsx",
+              "check": "contains \"useState\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "\"stepper\"",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "registry:ui",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "\"stepper-demo\"",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "registry:example",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "command": "cd apps/v4 && npx tsc --noEmit --strict --jsx react-jsx --moduleResolution bundler --module ESNext --target ES2022 --esModuleInterop --skipLibCheck --paths '{\"@/*\": [\"./\"]}' registry/new-york-v4/ui/stepper.tsx 2>&1 | tail -20",
+          "exit_code": 0,
+          "output": "error TS6064: Option 'paths' can only be specified in 'tsconfig.json' file or set to 'null' on command line.\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 376
+  },
+  "session_id": "4f051f9d-87e1-464f-b368-9e549f18270f"
+}

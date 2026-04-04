@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "Add JSON Path Constraint to SGLang",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-04T17:46:25.722Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 975255,
+    "duration_api_ms": 1067163,
+    "num_turns": 62,
+    "total_cost_usd": 2.2433632,
+    "input_tokens": 46,
+    "output_tokens": 44294,
+    "cache_read_tokens": 1511120,
+    "cache_creation_tokens": 94335,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 518750,
+    "plan_api_ms": 613720,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 19233,
+    "plan_cost_usd": 1.2068485,
+    "plan_content": "## Implementation Plan: `json_path` Constraint for SGLang\n\nAfter thoroughly studying the codebase, here's the complete plan.\n\n---\n\n### Key Design Decision\n\n**JSONPath → JSON Schema conversion.** Rather than implementing a new token-level grammar object, the `json_path` constraint is converted to a minimal JSON Schema that enforces the required structural skeleton. This reuses the *entire* existing grammar pipeline untouched — no grammar backend changes.\n\n```\nsgl.gen(..., json_path=\"$.store.book[*].author\")\n  → SglSamplingParams.json_path\n  → to_srt_kwargs()  → HTTP /generate\n  → GrammarManager: converts to (\"json\", '{\"type\":\"object\",...}')\n  → dispatch_json(...)   ←  existing, unchanged\n```\n\n---\n\n### 1 New File\n\n**`python/sglang/srt/constrained/json_path_constraint.py`**\n\n- `validate_json_path(path: str) → None` — validates JSONPath syntax (must start with `$`, only dot-notation and bracket wildcards)\n- `json_path_to_json_schema(path: str) → dict` — tokenises segments (`\\.key` → object, `[*]`/`[n]` → array) and builds schema from inside-out. Stdlib only (`re`, `json`).\n- `JsonPathConstraint` class — typed, documented wrapper for the path\n- `json_path_constraint(path: str) → str` — public convenience function\n\n**Example conversion**: `\"$.store.book[*].author\"` →\n```json\n{\"type\":\"object\",\"properties\":{\"store\":{\"type\":\"object\",\"properties\":{\n  \"book\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\n    \"properties\":{\"author\":{}},\"required\":[\"author\"]}}},\n  \"required\":[\"book\"]}},\"required\":[\"store\"]}\n```\n\n---\n\n### 6 Files Modified\n\n| File | Change |\n|------|--------|\n| `lang/api.py` | Add `json_path=None` to `gen()`, validate with `validate_json_path()`, pass to `SglGen` |\n| `lang/ir.py` | Add `json_path` field to `SglSamplingParams`, `SglGen.__init__()`, and `to_srt_kwargs()` |\n| `lang/interpreter.py` | Add `\"json_path\"` to `_resolve_sampling_params()` field list (line ~809) |\n| `srt/sampling/sampling_params.py` | Add `json_path` param + include in `verify()` mutual-exclusivity check |\n| `srt/constrained/grammar_manager.py` | Add `json_path` branch: converts path → JSON schema → dispatches as `(\"json\", schema_str)` |\n| `sglang/__init__.py` | Import and export `json_path_constraint` in `__all__` |\n\n---\n\n### Usage\n\n```python\nimport sglang as sgl\n\n@sgl.function\ndef extract(s, data):\n    s += f\"Return JSON for: {data}\\n\"\n    s += sgl.gen(\"result\", max_tokens=256, json_path=\"$.store.book[*].author\")\n\nstate = extract.run(data=\"...\")\n# Or using the convenience function:\nsgl.gen(\"result\", json_path=sgl.json_path_constraint(\"$.store.book[*].author\"))\n```",
+    "execute_duration_ms": 456505,
+    "execute_api_ms": 453443,
+    "execute_tokens_in": 29,
+    "execute_tokens_out": 25061,
+    "execute_cost_usd": 1.0365147
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 363
+  },
+  "session_id": "100a7c9f-773d-436c-be9f-e63148384312"
+}

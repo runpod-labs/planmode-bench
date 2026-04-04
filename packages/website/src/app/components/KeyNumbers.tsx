@@ -12,12 +12,7 @@ interface Stats {
 }
 
 interface Props {
-  overall: {
-    normal: Stats;
-    "normal-guided"?: Stats;
-    "plan-resume": Stats;
-    "plan-clear": Stats;
-  };
+  overall: Record<string, Stats>;
 }
 
 const MODES = [
@@ -57,7 +52,7 @@ export default function KeyNumbers({ overall }: Props) {
   const maxTurns = Math.max(...active.map((m) => overall[m.key]!.avgTurns));
 
   const metrics = [
-    { label: "score", icon: Trophy, getValue: (s: Stats) => (s.avgScore * 100).toFixed(1) + "%", getRaw: (s: Stats) => s.avgScore, max: maxScore, lowerIsBetter: false },
+    { label: "score", icon: Trophy, getValue: (s: Stats) => Math.round(s.avgScore * 100) + "%", getRaw: (s: Stats) => s.avgScore, max: maxScore, lowerIsBetter: false },
     { label: "cost/task", icon: DollarSign, getValue: (s: Stats) => "$" + s.avgCost.toFixed(2), getRaw: (s: Stats) => s.avgCost, max: maxCost, lowerIsBetter: true },
     { label: "duration", icon: Clock, getValue: (s: Stats) => formatDuration(s.avgDurationMs), getRaw: (s: Stats) => s.avgDurationMs, max: maxDuration, lowerIsBetter: true },
     { label: "turns", icon: Hash, getValue: (s: Stats) => String(Math.round(s.avgTurns)), getRaw: (s: Stats) => s.avgTurns, max: maxTurns, lowerIsBetter: true },
@@ -87,7 +82,10 @@ export default function KeyNumbers({ overall }: Props) {
                   const raw = metric.getRaw(s);
                   const baselineRaw = metric.getRaw(baseline);
                   const diffLabel = isBaseline ? "" : pct(raw, baselineRaw);
-                  const diffColor = pctColor(raw, baselineRaw, metric.lowerIsBetter);
+                  const barPct = metric.max > 0 ? (raw / metric.max) * 100 : 0;
+                  const basePct = metric.max > 0 ? (baselineRaw / metric.max) * 100 : 0;
+                  const isMore = raw > baselineRaw;
+                  const deltaPct = Math.abs(barPct - basePct);
 
                   return (
                     <div key={m.key} className="space-y-1.5">
@@ -98,10 +96,34 @@ export default function KeyNumbers({ overall }: Props) {
                         <span className="text-xs text-muted-foreground flex-1">{m.label}</span>
                         <span className="text-sm font-mono font-medium tabular-nums text-right">{metric.getValue(s)}</span>
                       </div>
-                      <div className="relative h-7 w-full rounded-md bg-muted/20 overflow-hidden">
-                        <div className={`h-full rounded-md ${m.barColor} opacity-80`} style={{ width: `${metric.max > 0 ? (raw / metric.max) * 100 : 0}%` }} />
+                      <div className="relative">
+                        <div className="relative h-7 w-full rounded-md bg-muted/20 overflow-hidden">
+                          {isBaseline ? (
+                            <div className={`absolute inset-y-0 left-0 ${m.barColor} opacity-80`} style={{ width: `${barPct}%` }} />
+                          ) : isMore ? (
+                            <>
+                              {/* Baseline reference portion in muted one-shot color */}
+                              <div className="absolute inset-y-0 left-0 bg-mode-n/20" style={{ width: `${basePct}%` }} />
+                              {/* Delta extension in plan mode color */}
+                              <div className={`absolute inset-y-0 ${m.barColor} border-l border-white/10`} style={{ left: `${basePct}%`, width: `${deltaPct}%` }} />
+                            </>
+                          ) : (
+                            <>
+                              {/* Plan mode bar (shorter than baseline) */}
+                              <div className={`absolute inset-y-0 left-0 ${m.barColor} opacity-80`} style={{ width: `${barPct}%` }} />
+                              {/* Subtle deficit area */}
+                              <div className="absolute inset-y-0 bg-foreground/[0.03]" style={{ left: `${barPct}%`, width: `${deltaPct}%` }} />
+                              {/* Baseline reference marker */}
+                              <div className="absolute top-1 bottom-1 w-px bg-mode-n/30" style={{ left: `${basePct}%` }} />
+                            </>
+                          )}
+                        </div>
+                        {/* Delta label centered on the delta segment */}
                         {diffLabel && (
-                          <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-mono font-semibold tabular-nums text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]`}>
+                          <span
+                            className="absolute top-1/2 text-[11px] font-mono font-semibold tabular-nums whitespace-nowrap text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                            style={{ left: `calc(${Math.min(barPct, basePct)}% + 6px)`, transform: 'translateY(-50%)' }}
+                          >
                             {diffLabel}
                           </span>
                         )}

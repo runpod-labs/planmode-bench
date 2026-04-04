@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "Add Custom Theme System to T3 Code Editor",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-04T18:52:33.123Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1035679,
+    "duration_api_ms": 1165914,
+    "num_turns": 40,
+    "total_cost_usd": 2.07741885,
+    "input_tokens": 39,
+    "output_tokens": 55481,
+    "cache_read_tokens": 1115299,
+    "cache_creation_tokens": 115397,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 637196,
+    "plan_api_ms": 772097,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 34523,
+    "plan_cost_usd": 1.2551205500000002,
+    "plan_content": "Here's the complete implementation plan:\n\n---\n\n## Custom Theme System — Plan\n\n### What I found in the codebase\n\n- **Existing `useTheme.ts`**: Stores `\"light\" | \"dark\" | \"system\"` in localStorage key `\"t3code:theme\"`, toggles `.dark` CSS class on `<html>`, and returns `{ theme, setTheme, resolvedTheme }`. Uses `useSyncExternalStore` — the same pattern I'll keep.\n- **CSS architecture**: Tailwind v4 with CSS custom properties in `index.css`. The `:root` block defines all semantic variables; `@variant dark` overrides them when `.dark` is on `<html>`.\n- **Settings page** (`_chat.settings.tsx`): Already has an \"Appearance\" section with a 3-option radio group for light/dark/system — this gets replaced by the new `ThemeSelector` component.\n- **`DiffWorkerPoolProvider`**: Consumes `useTheme().resolvedTheme` — must stay backward-compatible.\n- **`packages/shared`**: Uses explicit subpath exports in `package.json` (e.g. `\"./model\"`, `\"./git\"`). New `themes.ts` follows the same pattern.\n\n---\n\n### 6 files to change (no new dependencies, no build config changes)\n\n| File | Action |\n|---|---|\n| `packages/shared/src/themes.ts` | **CREATE** — Theme interface, 3 built-in themes, `getTheme()`, `listThemes()` |\n| `packages/shared/package.json` | **MODIFY** — add `\"./themes\"` subpath export |\n| `apps/web/src/hooks/useTheme.ts` | **OVERHAUL** — multi-theme system, backward-compat API |\n| `apps/web/src/components/ThemeSelector.tsx` | **CREATE** — visual theme picker with color swatches |\n| `apps/web/src/routes/_chat.settings.tsx` | **MODIFY** — replace Appearance radio group with `<ThemeSelector />` |\n| `apps/web/src/index.css` | **MODIFY** — `font-family: var(--theme-font-family, \"DM Sans\", …)` on body |\n\n### Key design decisions\n\n1. **`Theme` interface** in `packages/shared` has `id`, `name`, `isDark`, `fontFamily`, `fontSize`, and `colors: { background, foreground, accent, sidebar, editor, terminal, statusBar }`. Pure data, no DOM deps.\n\n2. **Three built-in themes**: `t3-dark` (default, matches existing dark CSS), `t3-light` (matches existing light CSS), `t3-midnight` (deep blue-tinted dark with indigo accent — distinct look).\n\n3. **CSS application strategy**: `applyTheme()` in the web hook sets `--background`, `--foreground`, `--primary`, `--ring` (and the new `--t3-sidebar`, `--t3-editor`, `--t3-terminal`, `--t3-status-bar`, font vars) via `style.setProperty` on `document.documentElement`. All other variables (`--card`, `--muted`, `--border`, etc.) are **inherited** from the existing CSS file via the `.dark` class toggle — so `t3-midnight` gets all standard dark defaults + only overrides what it customizes.\n\n4. **Backward compat**: `resolvedTheme: \"light\" | \"dark\"` (derived from `theme.isDark`) is still returned so `DiffWorkerPoolProvider` works unchanged.\n\n5. **Storage migration**: Old `\"light\"` → `\"t3-light\"`, old `\"dark\"` or `\"system\"` → `\"t3-dark\"`.\n\n6. **No system-preference mode**: Dropped in favour of explicit named themes (system detection was tied to the old 3-option model).",
+    "execute_duration_ms": 398483,
+    "execute_api_ms": 393817,
+    "execute_tokens_in": 26,
+    "execute_tokens_out": 20958,
+    "execute_cost_usd": 0.8222982999999998
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 5,
+          "checks_total": 5,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"t3-dark\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"t3-light\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"getTheme\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"listThemes\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "interface.*Theme|type.*Theme",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "background|foreground|accent",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "t3-midnight",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 794
+  },
+  "session_id": "1a012e6d-34bb-4beb-935a-c7edf82c813c"
+}

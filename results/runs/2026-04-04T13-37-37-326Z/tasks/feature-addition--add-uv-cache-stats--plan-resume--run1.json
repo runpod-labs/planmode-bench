@@ -1,0 +1,269 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-uv-cache-stats",
+  "task_name": "Add 'uv cache stats' Subcommand to uv",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-04T19:25:01.664Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 284560,
+    "duration_api_ms": 303725,
+    "num_turns": 32,
+    "total_cost_usd": 0.7053197499999999,
+    "input_tokens": 34,
+    "output_tokens": 10450,
+    "cache_read_tokens": 787894,
+    "cache_creation_tokens": 51765,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 112177,
+    "plan_api_ms": 142982,
+    "plan_tokens_in": 12,
+    "plan_tokens_out": 4933,
+    "plan_cost_usd": 0.2952526,
+    "plan_content": "Here's a summary of the plan:\n\n---\n\n## Plan: `uv cache stats` Subcommand\n\n**4 files touched** — 3 modified, 1 new.\n\n### What I found\n\n- `CacheCommand` enum is in `crates/uv-cli/src/lib.rs` (lines 879–905). `SizeArgs` is already defined at line 947.\n- Dispatch is in `crates/uv/src/lib.rs` — `CacheCommand::Size` arm is at line 1181.\n- `commands/mod.rs` has a consistent `mod X; / pub(crate) use X::fn;` pattern.\n- `cache_size.rs` uses `diskus::DiskUsage::new(vec![path]).count_ignoring_errors()` — the new file reuses this exactly.\n- `CacheBucket::iter()` yields **10 variants** (Python is intentionally excluded). Their `Display` impl emits versioned strings like `wheels-v6`, `sdists-v9`, etc.\n- `human_readable_bytes` is already re-exported from `commands/mod.rs` via `uv_console`.\n\n### Changes\n\n1. **`crates/uv-cli/src/lib.rs`** — add `Stats(StatsArgs)` variant to `CacheCommand` + new `StatsArgs { human: bool }` struct after `SizeArgs`.\n2. **`crates/uv/src/commands/cache_stats.rs`** (new) — iterates `CacheBucket::iter()`, computes `DiskUsage` per bucket path, prints `{bucket}: {size}` per line + `total: {size}`, guards non-existent bucket dirs with `path.exists()`.\n3. **`crates/uv/src/commands/mod.rs`** — add `mod cache_stats;` and `pub(crate) use cache_stats::cache_stats;` alongside the `cache_size` lines.\n4. **`crates/uv/src/lib.rs`** — add `CacheCommand::Stats(args)` dispatch arm after the `Size` arm, calling `commands::cache_stats(&cache, args.human, printer)` (no `preview` flag).",
+    "execute_duration_ms": 172383,
+    "execute_api_ms": 160743,
+    "execute_tokens_in": 22,
+    "execute_tokens_out": 5517,
+    "execute_cost_usd": 0.41006715
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "crates/uv-cli/src/lib.rs",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "crates/uv-cli/src/lib.rs",
+              "check": "contains \"Stats\"",
+              "passed": true
+            },
+            {
+              "path": "crates/uv-cli/src/lib.rs",
+              "check": "contains \"StatsArgs\"",
+              "passed": true
+            },
+            {
+              "path": "crates/uv-cli/src/lib.rs",
+              "check": "contains \"per-bucket\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "Stats\\(StatsArgs\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "struct StatsArgs",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "human.*bool|bool.*human",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "checks_passed": 7,
+          "checks_total": 7,
+          "check_details": [
+            {
+              "path": "crates/uv/src/commands/cache_stats.rs",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "crates/uv/src/commands/cache_stats.rs",
+              "check": "contains \"cache_stats\"",
+              "passed": true
+            },
+            {
+              "path": "crates/uv/src/commands/cache_stats.rs",
+              "check": "contains \"CacheBucket\"",
+              "passed": true
+            },
+            {
+              "path": "crates/uv/src/commands/cache_stats.rs",
+              "check": "contains \"DiskUsage\"",
+              "passed": true
+            },
+            {
+              "path": "crates/uv/src/commands/cache_stats.rs",
+              "check": "contains \"ExitStatus\"",
+              "passed": true
+            },
+            {
+              "path": "crates/uv/src/commands/cache_stats.rs",
+              "check": "contains \"human_readable_bytes\"",
+              "passed": true
+            },
+            {
+              "path": "crates/uv/src/commands/cache_stats.rs",
+              "check": "contains \"total\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 5,
+          "patterns_total": 5,
+          "pattern_results": [
+            {
+              "pattern": "pub\\(crate\\) fn cache_stats",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "CacheBucket::iter\\(\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "cache\\.bucket\\(",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "DiskUsage",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "ExitStatus::Success",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "crates/uv/src/commands/mod.rs",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "crates/uv/src/commands/mod.rs",
+              "check": "contains \"cache_stats\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.05,
+        "weighted_score": 0.05,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "mod cache_stats;",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "use cache_stats::cache_stats",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "CacheCommand::Stats",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "commands::cache_stats",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 2
+  },
+  "session_id": "867330bf-8e3c-4ac6-8194-3106cf6ee142"
+}

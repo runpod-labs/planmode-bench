@@ -10,13 +10,13 @@ export default function Dashboard() {
 
   return (
     <div className="pt-20">
-      {/* Verdict — the big claim, full width */}
-      <section className="pt-0 px-6 sm:px-10 lg:px-16">
+      {/* Verdict — the big claim */}
+      <section className="pt-0 mx-auto max-w-5xl px-6">
         <Verdict overall={overall} totalTasks={meta.totalTasks} model={meta.claudeModel} />
       </section>
 
-      {/* Key numbers with inline bars */}
-      <section className="mt-20 mx-auto max-w-5xl px-6">
+      {/* Key numbers with inline bars — full width */}
+      <section className="mt-20 px-6 sm:px-10 lg:px-16">
         <KeyNumbers overall={overall} />
       </section>
 

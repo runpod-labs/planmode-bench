@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "task_id": "algorithm/implement-event-emitter",
+  "task_name": "Implement Full-Featured Event Emitter",
+  "mode": "plan-clear",
+  "run_number": 9,
+  "timestamp": "2026-04-04T13:45:26.268Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 148041,
+    "duration_api_ms": 144661,
+    "num_turns": 15,
+    "total_cost_usd": 0.28678485,
+    "input_tokens": 17,
+    "output_tokens": 7766,
+    "cache_read_tokens": 157141,
+    "cache_creation_tokens": 25125,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 109966,
+    "plan_api_ms": 108448,
+    "plan_tokens_in": 9,
+    "plan_tokens_out": 5575,
+    "plan_cost_usd": 0.1971243,
+    "plan_content": "Here's my implementation plan for `src/event-emitter.ts`.\n\n## Key design decision: `{original, fn}` entry pairs\n\nThe private store is a `Map<string, Array<{original: Listener, fn: Listener}>>`.\n\n- **`original`** — the function the caller passed in (used for identity lookup in `off`)\n- **`fn`** — the actual callable (`fn === original` for `on`; `fn` is a wrapper for `once`)\n\nThis cleanly solves the tricky `once` + `off` interaction and keeps all seven methods simple.\n\n## Method-by-method summary\n\n| Method | Approach |\n|---|---|\n| `on` | Push `{original, fn: original}`, return `() => this.off(event, listener)` |\n| `once` | Create wrapper that calls `off(original)` then `original(args)`, push `{original, fn: wrapper}` |\n| `emit` | Snapshot the array first (`[...entries]`), iterate snapshot, return `true` iff array was non-empty before iterating |\n| `off` | `findIndex(e => e.original === listener)` + `splice`; delete key if array empties |\n| `removeAllListeners` | `clear()` if no arg, `delete(event)` otherwise |\n| `listenerCount` | `entries?.length ?? 0` |\n| `eventNames` | `[...map.keys()]` (keys are pruned when arrays empty) |\n\n## Why snapshotting in `emit` handles self-removal\n\nIterating `[...entries]` (a copy) means mutations to the real array mid-emit (self-removal, `off` called by another listener) never cause index skips or crashes. The `emit` return value is captured before iteration starts, so it correctly returns `true` even when a `once` listener fires and removes itself.",
+    "execute_duration_ms": 38075,
+    "execute_api_ms": 36213,
+    "execute_tokens_in": 8,
+    "execute_tokens_out": 2191,
+    "execute_cost_usd": 0.08966055
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 1,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775310175347-ohf8tc\n\n ✓ tests/event-emitter.test.ts (29 tests) 6ms\n\n Test Files  1 passed (1)\n      Tests  29 passed (29)\n   Start at  15:45:25\n   Duration  241ms (transform 36ms, setup 0ms, collect 37ms, tests 6ms, environment 0ms, prepare 45ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/event-emitter.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"on(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"emit(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"once(\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1249
+  },
+  "session_id": "4a054959-4cbf-49ed-9a9c-11deb3e44bff"
+}

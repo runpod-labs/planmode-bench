@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "task_id": "performance/optimize-data-processing",
+  "task_name": "Optimize Slow Data Processing Pipeline",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-04T22:23:01.386Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 152678,
+    "duration_api_ms": 134740,
+    "num_turns": 20,
+    "total_cost_usd": 0.31607894999999997,
+    "input_tokens": 21,
+    "output_tokens": 6791,
+    "cache_read_tokens": 185182,
+    "cache_creation_tokens": 31688,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 96151,
+    "plan_api_ms": 96003,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 4104,
+    "plan_cost_usd": 0.19249259999999999,
+    "plan_content": "Here is the complete plan I've written. Let me summarize it for you:\n\n---\n\n## Plan Summary: Optimize `src/pipeline.ts`\n\n**Only file to change:** `src/pipeline.ts`\n\nEach of the 5 functions gets a targeted fix:\n\n### 1. `groupByCategory` — O(n²) → O(n)\nReplace the `array.find()` linear scan with a `Map<string, CategoryGroup>` for O(1) group lookup. Replace the per-insertion `reduce()` with an incremental `total += tx.amount`.\n\n### 2. `findDuplicates` — O(n³) → O(n)\nReplace the nested pair-comparison loops with a **single pass** using a `Map<string, Transaction[]>` keyed by `userId|amount|date`. After the pass, emit only map entries with > 1 transaction.\n\n### 3. `calculateRunningBalance` — O(n³) → O(n log n)\n**Filter once** (not per-position), **sort once** (not per-position), then compute the running balance with a **single linear pass** using a `map()` over the sorted user transactions.\n\n### 4. `topSpenders` — O(n²) → O(n log k)\nReplace the `includes()` dedup + per-user full scan + bubble sort with a **single pass** using a `Map<string, SpenderSummary>` for incremental accumulation, then a native `.sort()` + `.slice(0, n)`.\n\n### 5. `searchTransactions` — O(n²) → O(n)\nCompile the `RegExp` **once** before the loop (not once per transaction). Replace the O(n²) dedup scan with a plain `.filter()` (transaction IDs are unique in the input, so no dedup is needed).\n\n### Verification\n```bash\nnpm test   # both pipeline.test.ts and performance.test.ts must pass\n```\n\n---\n\nAll changes are confined to `src/pipeline.ts`. Return types and semantics are preserved exactly so every correctness test keeps passing.",
+    "execute_duration_ms": 56527,
+    "execute_api_ms": 38737,
+    "execute_tokens_in": 8,
+    "execute_tokens_out": 2687,
+    "execute_cost_usd": 0.12358635000000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775341214254-ehs2pm\n\n ✓ tests/pipeline.test.ts (22 tests) 82ms\n ✓ tests/performance.test.ts (6 tests) 1210ms\n   ✓ performance: searchTransactions > should search 100k transactions in under 50ms  304ms\n\n Test Files  2 passed (2)\n      Tests  28 passed (28)\n   Start at  00:22:54\n   Duration  2.62s (transform 329ms, setup 0ms, collect 546ms, tests 1.29s, environment 1ms, prepare 578ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "src/pipeline.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/pipeline.ts",
+              "check": "contains \"Map\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 8315
+  },
+  "session_id": "0db7cec1-af39-4bcf-bf63-f173f6d449c5"
+}

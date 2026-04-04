@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-04T19:19:06.946Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 544226,
+    "duration_api_ms": 631960,
+    "num_turns": 46,
+    "total_cost_usd": 1.3994919000000001,
+    "input_tokens": 43,
+    "output_tokens": 29394,
+    "cache_read_tokens": 853455,
+    "cache_creation_tokens": 67147,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 358111,
+    "plan_api_ms": 446992,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 16098,
+    "plan_cost_usd": 0.9380172000000002,
+    "plan_content": "Here's the full implementation plan. Ready to proceed?\n\n---\n\n## What will be implemented\n\n**One file to modify:** `unsloth/save.py`  \n**Four tightly-scoped changes:**\n\n### 1. `export_lora_to_onnx()` — standalone function (insert before line 2564)\n\nA `@torch.inference_mode` function that:\n- Lazily imports `onnx` (raises a clear `ImportError` if missing — no impact on users who don't need ONNX)\n- Validates `model.peft_config` is present\n- Reads `rank`, `lora_alpha`, `target_modules` from `model.peft_config[active_adapter]`\n- Walks `model.named_modules()`, finds every module with `lora_A` attribute\n- For each: extracts `lora_A[adapter].weight` (r×in), `lora_B[adapter].weight` (out×r), `scaling[adapter]`\n- Builds a 3-node ONNX graph per module: `MatMul(x, A^T) → MatMul(→, B^T) → Mul(→, scale)` — exactly encoding `Δ = s·(x @ A^T @ B^T)` as PEFT does\n- Calls `onnx.checker.check_model()` before saving, saves each `.onnx` file\n- Writes `lora_onnx_metadata.json` (rank, alpha, target_modules, opset, per-module in/out shapes)\n\n### 2. `unsloth_export_lora_to_onnx()` — bound method wrapper (immediately after above)\n\nThin wrapper identical in pattern to `unsloth_save_pretrained_torchao`.\n\n### 3. Registration in `patch_saving_functions()` — one new line\n\n```python\nmodel.export_lora_to_onnx = types.MethodType(unsloth_export_lora_to_onnx, model)\n```\nAdded in the `if not vision:` block after the existing `save_pretrained_torchao` line.\n\n### 4. `__all__` update — one new string entry\n\n`\"export_lora_to_onnx\"` added to the existing list.\n\n---\n\n### Output layout\n```\nmy_onnx_adapters/\n├── lora_onnx_metadata.json\n├── base_model_model_model_layers_0_self_attn_q_proj.onnx\n├── base_model_model_model_layers_0_self_attn_k_proj.onnx\n└── ...\n```\n\n### Usage after implementation\n```python\nmodel.export_lora_to_onnx(\"my_onnx_adapters\")              # default opset 17\nmodel.export_lora_to_onnx(\"my_onnx_adapters\", opset_version=14)\n```",
+    "execute_duration_ms": 186115,
+    "execute_api_ms": 184968,
+    "execute_tokens_in": 25,
+    "execute_tokens_out": 13296,
+    "execute_cost_usd": 0.4614747
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 87
+  },
+  "session_id": "913132c7-205f-48ea-8b1d-25aae1c8bd3d"
+}

@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-ollama-rename",
+  "task_name": "Add Model Rename API Endpoint and CLI Command to Ollama",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-04T15:35:21.675Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 305061,
+    "duration_api_ms": 353969,
+    "num_turns": 41,
+    "total_cost_usd": 1.1125303,
+    "input_tokens": 38,
+    "output_tokens": 16678,
+    "cache_read_tokens": 1268432,
+    "cache_creation_tokens": 76606,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 176378,
+    "plan_api_ms": 225405,
+    "plan_tokens_in": 10,
+    "plan_tokens_out": 7872,
+    "plan_cost_usd": 0.44277175,
+    "plan_content": "Here's the plan I've built after thoroughly exploring the codebase:\n\n---\n\n## Plan Summary: Ollama Model Rename Feature\n\n**4 files to change, 7 discrete edits** — all additive, nothing removed.\n\n### What I found in the codebase\n\n- `getExistingName()` (routes.go:1031) is just a **case-normalizer** against existing manifests — it never fails for a missing model. The real existence check always comes from `manifest.ParseNamedManifest()`.\n- `CopyModel()` (images.go:397) requires fully qualified names and returns `os.ErrNotExist` when the source manifest file is missing — this is the 404 signal.\n- `errtypes.InvalidModelNameErrMsg` (not the inline format string used by `CopyHandler`) is the correct constant to use for invalid name errors, matching the pattern in `create.go` and `writeModelRefParseError`.\n\n### The 7 edits\n\n| # | File | What |\n|---|---|---|\n| 1 | `api/types.go` | `RenameRequest{Source, Destination}` struct after `CopyRequest` |\n| 2 | `api/client.go` | `Rename()` method using `c.do(POST, \"/api/rename\", req, nil)` |\n| 3 | `server/routes.go` | `RenameHandler`: validate → check dst doesn't exist (409) → `CopyModel` → `m.Remove()` + `m.RemoveLayers()` → 200 |\n| 4 | `server/routes.go` | Register `r.POST(\"/api/rename\", s.RenameHandler)` after `/api/copy` |\n| 5 | `cmd/cmd.go` | `RenameHandler` func using `client.Rename()`, prints `Renamed \"X\" to \"Y\"` |\n| 6 | `cmd/cmd.go` | `renameCmd` cobra command with `ExactArgs(2)` + `checkServerHeartbeat` |\n| 7 | `cmd/cmd.go` | Add `renameCmd` after `copyCmd` in `rootCmd.AddCommand(...)` |",
+    "execute_duration_ms": 128683,
+    "execute_api_ms": 128564,
+    "execute_tokens_in": 28,
+    "execute_tokens_out": 8806,
+    "execute_cost_usd": 0.6697585500000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "api/types.go",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "api/types.go",
+              "check": "contains \"RenameRequest\"",
+              "passed": true
+            },
+            {
+              "path": "api/types.go",
+              "check": "contains \"Source\"",
+              "passed": true
+            },
+            {
+              "path": "api/types.go",
+              "check": "contains \"Destination\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "api/client.go",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "api/client.go",
+              "check": "contains \"func (c *Client) Rename\"",
+              "passed": true
+            },
+            {
+              "path": "api/client.go",
+              "check": "contains \"/api/rename\"",
+              "passed": true
+            },
+            {
+              "path": "api/client.go",
+              "check": "contains \"RenameRequest\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 6,
+          "check_details": [
+            {
+              "path": "server/routes.go",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "server/routes.go",
+              "check": "contains \"func (s *Server) RenameHandler\"",
+              "passed": true
+            },
+            {
+              "path": "server/routes.go",
+              "check": "contains \"RenameRequest\"",
+              "passed": true
+            },
+            {
+              "path": "server/routes.go",
+              "check": "contains \"/api/rename\"",
+              "passed": true
+            },
+            {
+              "path": "server/routes.go",
+              "check": "contains \"CopyModel\"",
+              "passed": true
+            },
+            {
+              "path": "server/routes.go",
+              "check": "contains \".Remove()\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "checks_passed": 5,
+          "checks_total": 5,
+          "check_details": [
+            {
+              "path": "cmd/cmd.go",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "cmd/cmd.go",
+              "check": "contains \"RenameHandler\"",
+              "passed": true
+            },
+            {
+              "path": "cmd/cmd.go",
+              "check": "contains \"renameCmd\"",
+              "passed": true
+            },
+            {
+              "path": "cmd/cmd.go",
+              "check": "contains \"Rename a model\"",
+              "passed": true
+            },
+            {
+              "path": "cmd/cmd.go",
+              "check": "contains \"rename SOURCE DESTINATION\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "type RenameRequest struct",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "Source\\s+string\\s+`json:\"source\"`",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "Destination\\s+string\\s+`json:\"destination\"`",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "func \\(s \\*Server\\) RenameHandler\\(c \\*gin\\.Context\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "r\\.POST\\(\"/api/rename\"",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "StatusConflict|409",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.05,
+        "weighted_score": 0.05,
+        "passed": true,
+        "details": {
+          "command": "python3 -c \"import subprocess, sys; files=['api/types.go','api/client.go','server/routes.go','cmd/cmd.go']; [print(f'Checking {f}...') or None for f in files]; result=subprocess.run(['grep','-c','RenameRequest','api/types.go'],capture_output=True,text=True); print(f'RenameRequest occurrences in api/types.go: {result.stdout.strip()}'); sys.exit(0 if int(result.stdout.strip())>=1 else 1)\"",
+          "exit_code": 0,
+          "output": "Checking api/types.go...\nChecking api/client.go...\nChecking server/routes.go...\nChecking cmd/cmd.go...\nRenameRequest occurrences in api/types.go: 2\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "renameCmd",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "cobra\\.ExactArgs\\(2\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "func RenameHandler\\(cmd \\*cobra\\.Command, args \\[\\]string\\) error",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 59
+  },
+  "session_id": "4e03c373-3d51-4347-8922-5ed2e3877aad"
+}

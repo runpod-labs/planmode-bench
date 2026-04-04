@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-04T19:10:00.604Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 512249,
+    "duration_api_ms": 509604,
+    "num_turns": 46,
+    "total_cost_usd": 1.6146675999999998,
+    "input_tokens": 44,
+    "output_tokens": 15996,
+    "cache_read_tokens": 1320570,
+    "cache_creation_tokens": 103780,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 415161,
+    "plan_api_ms": 412588,
+    "plan_tokens_in": 25,
+    "plan_tokens_out": 10312,
+    "plan_cost_usd": 1.0748102499999999,
+    "plan_content": "Here is the complete implementation plan:\n\n---\n\n## Summary\n\n**One file to change: `unsloth/save.py`** — three surgical edits.\n\n### What the plan does\n\nThe new `unsloth_save_pretrained_onnx` function follows unsloth's established save-method pattern exactly:\n\n1. Iterates all named modules on the PEFT model\n2. For each `Bnb_Linear4bit` / `Peft_Linear4bit` / `Peft_Linear` layer, calls the already-imported `get_lora_parameters_bias()` to extract raw `lora_A` / `lora_B` matrices (never touching the quantized base weight)\n3. Wraps each pair in a tiny `_LoraAdapterModule(nn.Module)` whose `forward` is `(x @ A.T @ B.T) * scale`\n4. Calls `torch.onnx.export()` on that small module with dynamic batch/seq axes → one `.onnx` file per adapted layer\n5. Writes a `metadata.json` with rank, alpha, target_modules, and per-layer info\n6. Layers without an active adapter are gracefully skipped\n\n### Three edits\n\n| # | Location | Change |\n|---|----------|--------|\n| 1 | `__all__` (line 54) | Add `\"unsloth_save_pretrained_onnx\"` |\n| 2 | After line 2263 | Insert the full `unsloth_save_pretrained_onnx` function (~120 lines) |\n| 3 | Line 2667 in `patch_saving_functions` | Add `model.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)` |\n\nAfter this, users call: `model.save_pretrained_onnx(\"./my_adapter_onnx\", opset_version=17)`",
+    "execute_duration_ms": 97088,
+    "execute_api_ms": 97016,
+    "execute_tokens_in": 19,
+    "execute_tokens_out": 5684,
+    "execute_cost_usd": 0.53985735
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 82
+  },
+  "session_id": "093f523b-f381-44c5-85b6-0fd625b157d8"
+}

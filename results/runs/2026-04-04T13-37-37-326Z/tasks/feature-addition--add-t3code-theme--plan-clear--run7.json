@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "Add Custom Theme System to T3 Code Editor",
+  "mode": "plan-clear",
+  "run_number": 7,
+  "timestamp": "2026-04-04T18:57:05.271Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 934204,
+    "duration_api_ms": 1032983,
+    "num_turns": 43,
+    "total_cost_usd": 1.912577,
+    "input_tokens": 44,
+    "output_tokens": 48922,
+    "cache_read_tokens": 1230099,
+    "cache_creation_tokens": 90785,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 559019,
+    "plan_api_ms": 662914,
+    "plan_tokens_in": 14,
+    "plan_tokens_out": 29897,
+    "plan_cost_usd": 1.0680233000000001,
+    "plan_content": "Here's the complete implementation plan I've put together after thoroughly exploring the codebase:\n\n---\n\n## Plan: Custom Theme System\n\n**6 files total — 2 created, 4 modified. Zero new dependencies, zero build config changes.**\n\n### What I found\n- `packages/shared` uses direct-source TypeScript exports with no React/browser APIs — perfect for pure theme data\n- `apps/web/src/hooks/useTheme.ts` currently handles `\"light\" | \"dark\" | \"system\"` with a `useSyncExternalStore` pattern; `DiffWorkerPoolProvider` depends on its `resolvedTheme: \"light\" | \"dark\"` output\n- CSS already uses custom properties (`--background`, `--foreground`, `--primary`, etc.) which can be overridden by inline styles on `:root`\n- The Settings page has an existing Appearance section (radio buttons) that will be replaced by the new `ThemeSelector`\n\n### Files\n\n| File | Action |\n|---|---|\n| `packages/shared/src/themes.ts` | **Create** — `Theme`/`ThemeColors` interfaces, 3 built-in themes, `getTheme(id)`, `listThemes()` |\n| `packages/shared/package.json` | **Modify** — add `\"./themes\"` subpath export |\n| `apps/web/src/hooks/useTheme.ts` | **Replace** — new hook, same `useSyncExternalStore` pattern, returns `{ theme, setTheme, availableThemes, resolvedTheme }` |\n| `apps/web/src/index.css` | **Modify** — add font/size CSS variables + 4 new surface vars as defaults |\n| `apps/web/src/components/ThemeSelector.tsx` | **Create** — radio-group with 3 color swatches per theme |\n| `apps/web/src/routes/_chat.settings.tsx` | **Modify** — swap Appearance section for `<ThemeSelector />` |\n\n### Key design decisions\n- **New localStorage key** `t3code:theme-id` (avoids colliding with old `t3code:theme`), with migration: old `\"light\"` → `\"t3-light\"`, `\"dark\"`/`\"system\"` → `\"t3-dark\"`\n- **`resolvedTheme: \"light\" | \"dark\"`** preserved on the hook (derived from `theme.dark: boolean`) so `DiffWorkerPoolProvider` needs zero changes\n- **CSS injection** via `document.documentElement.style.setProperty(...)` — inline styles beat stylesheet specificity, so all existing components pick up changes automatically\n- **Module-load apply** (same as existing hook) prevents flash before React renders\n- **`t3-midnight`** — deep navy background with cyan-blue accent as the third distinctive built-in theme",
+    "execute_duration_ms": 375185,
+    "execute_api_ms": 370069,
+    "execute_tokens_in": 30,
+    "execute_tokens_out": 19025,
+    "execute_cost_usd": 0.8445536999999999
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 5,
+          "checks_total": 5,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"t3-dark\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"t3-light\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"getTheme\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"listThemes\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "interface.*Theme|type.*Theme",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "background|foreground|accent",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "t3-midnight",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 743
+  },
+  "session_id": "caea24ed-546e-461a-afa9-1041cdbd5e27"
+}

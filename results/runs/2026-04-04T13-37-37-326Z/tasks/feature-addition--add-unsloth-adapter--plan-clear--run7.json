@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-clear",
+  "run_number": 7,
+  "timestamp": "2026-04-04T19:22:37.685Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 622345,
+    "duration_api_ms": 757933,
+    "num_turns": 57,
+    "total_cost_usd": 1.9399075499999996,
+    "input_tokens": 46,
+    "output_tokens": 36473,
+    "cache_read_tokens": 1504342,
+    "cache_creation_tokens": 104007,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 364114,
+    "plan_api_ms": 501644,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 18414,
+    "plan_cost_usd": 1.1089471499999997,
+    "plan_content": "Here's the complete implementation plan:\n\n---\n\n## Plan Summary\n\n**Only one file needs to be modified: `./unsloth/save.py`**\n\n### What gets added\n\n#### 1. `save_to_onnx()` — Core function (~insert after line 1318)\n- Lazily imports `onnx` at call time (not module-load time), so unsloth stays importable without the package — same pattern as llama.cpp handling\n- Reads LoRA config metadata: `model.peft_config[\"default\"].to_dict()` → rank, lora_alpha, target_modules\n- Iterates `model.named_modules()` filtering for `Peft_Linear4bit` / `Peft_Linear` instances (both already imported at line 18–19)\n- For each LoRA layer, extracts `A`, `B`, `scaling` using the same accessor pattern as `kernels/utils.py`\n- Pre-transposes to `A_T (in_features, rank)` and `B_T (rank, out_features)`, converts to float32 numpy\n- Builds an ONNX computation graph per module: `delta = scaling * MatMul(MatMul(x, A_T), B_T)` using `onnx.helper` + `onnx.checker.check_model`\n- Saves one `.onnx` file per adapted layer (with `.`→`__` sanitized filename)\n- Saves a `metadata.json` with rank, alpha, scaling, target_modules, and per-module shape info\n- Returns `List[str]` of all saved paths\n\n#### 2. `unsloth_save_pretrained_onnx()` — User-facing method (~insert right after)\n- Validates `peft_config` exists on `self`\n- Delegates to `save_to_onnx(self, output_dir, opset_version)`\n- Full docstring with Args/Returns/Raises\n\n#### 3. Registration in `patch_saving_functions()` (~line 2667)\nAdd one line inside the existing `if not vision: if hasattr(model, \"config\"):` block:\n```python\nmodel.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)\n```\n\n#### 4. Update `__all__` (~line 48)\nAdd `\"save_to_onnx\"` to the exported names list.",
+    "execute_duration_ms": 258231,
+    "execute_api_ms": 256289,
+    "execute_tokens_in": 29,
+    "execute_tokens_out": 18059,
+    "execute_cost_usd": 0.8309603999999999
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 91
+  },
+  "session_id": "66ed76e6-809e-45ad-b29f-165e686519e2"
+}

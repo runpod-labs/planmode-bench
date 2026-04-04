@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "Add JSON Path Constraint to SGLang",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-04T17:29:28.239Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 804318,
+    "duration_api_ms": 883266,
+    "num_turns": 56,
+    "total_cost_usd": 3.0056335,
+    "input_tokens": 58,
+    "output_tokens": 44531,
+    "cache_read_tokens": 4092219,
+    "cache_creation_tokens": 165958,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 538193,
+    "plan_api_ms": 617370,
+    "plan_tokens_in": 14,
+    "plan_tokens_out": 27233,
+    "plan_cost_usd": 1.2570229,
+    "plan_content": "Here's the implementation plan for the `json_path` constraint. Here's the architecture summary before you approve:\n\n## Design\n\n**Two-phase approach** (mirrors how `dtype` → `regex` already works):\n1. **Generation phase**: Automatically inject `json_schema=\"{}\"` into the backend request, so the existing grammar FSM infrastructure (xgrammar/outlines/llguidance) enforces valid JSON token-by-token.\n2. **Post-generation validation**: After text is returned, evaluate the JSONPath client-side and raise `ValueError` if the path doesn't resolve.\n\n## Files Changed (8 total)\n\n| File | Change |\n|---|---|\n| `python/sglang/lang/json_path_constraint.py` | **NEW** – `JsonPathConstraint` class: pure-Python JSONPath parser + validator (no external deps). Supports `$`, `.key`, `[n]`, `[*]`. |\n| `python/sglang/lang/ir.py` | Add `json_path` field to `SglSamplingParams` dataclass and `SglGen.__init__()` |\n| `python/sglang/lang/api.py` | Add `json_path` to `gen()`, with eager path-syntax validation and mutual-exclusion check with `json_schema` |\n| `python/sglang/lang/interpreter.py` | (1) Add `\"json_path\"` to `_resolve_sampling_params()` field list; (2) After `backend.generate()` returns in `_execute_gen()`, validate JSONPath and raise `ValueError` on failure |\n| `python/sglang/lang/backend/runtime_endpoint.py` | Add `_handle_json_path_to_schema()` — when `json_path` is set, injects `json_schema=\"{}\"` before the server request to enforce valid JSON during generation |\n| `python/sglang/srt/sampling/sampling_params.py` | Add `json_path` field; add it to the mutual-exclusivity check in `verify()` |\n| `python/sglang/srt/constrained/grammar_manager.py` | Add `json_path` branch in `process_req_with_grammar()` — dispatches it as `(\"json\", \"{}\")` to the grammar compiler |\n| `python/sglang/__init__.py` | Export `JsonPathConstraint` |\n\nShall I proceed with implementation?",
+    "execute_duration_ms": 266125,
+    "execute_api_ms": 265896,
+    "execute_tokens_in": 44,
+    "execute_tokens_out": 17298,
+    "execute_cost_usd": 1.7486106
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 335
+  },
+  "session_id": "a3e1b000-05e6-42a6-a260-9fac06408e0e"
+}

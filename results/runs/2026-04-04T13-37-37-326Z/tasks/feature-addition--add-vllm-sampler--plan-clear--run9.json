@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "Add Top-A Sampling Strategy to vLLM",
+  "mode": "plan-clear",
+  "run_number": 9,
+  "timestamp": "2026-04-04T20:01:55.023Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 749497,
+    "duration_api_ms": 815224,
+    "num_turns": 82,
+    "total_cost_usd": 2.9315045,
+    "input_tokens": 73,
+    "output_tokens": 38040,
+    "cache_read_tokens": 4496612,
+    "cache_creation_tokens": 151391,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 308805,
+    "plan_api_ms": 377938,
+    "plan_tokens_in": 19,
+    "plan_tokens_out": 13901,
+    "plan_cost_usd": 0.8908344999999999,
+    "plan_content": "Here's the complete implementation plan for adding Top-A sampling to vLLM.\n\n---\n\n## Summary\n\nThe change touches **6 files** across two code paths (V0 classic engine, V1 GPU engine):\n\n### 1. `vllm/sampling_params.py`\n- Add `top_a: float = 0.0` struct field after `min_p`\n- Add docstring entry: *\"Keeps only tokens whose probability ≥ top_a × max_probability. [0, 1], default 0.0 = disabled.\"*\n- Add validation: `0.0 <= top_a <= 1.0`\n- Reset `top_a = 0.0` in the greedy-sampling path (alongside `top_p`, `top_k`, `min_p`)\n- Add to `from_optional()` signature and body\n\n### 2. `vllm/model_executor/sampling_metadata.py` (V0 path)\n- Add `top_as: torch.Tensor` to `SamplingTensors` dataclass\n- In `from_sampling_metadata()`: extract `top_a` per sequence group, track `do_top_a` flag, append to `top_as` list\n- In `from_lists()`: add `top_as` parameter, create a `float32` tensor, include in the returned dataclass\n- Return value expands to a 5-tuple: `(sampling_tensors, do_penalties, do_top_p_top_k, do_min_p, do_top_a)`\n\n### 3. `vllm/model_executor/layers/sampler.py` (V0 sampler)\n- Add `_apply_top_a(logits, a)` function (models exactly `_apply_min_p`): softmax → find max prob → threshold = `a * max_prob` → mask tokens below threshold to `-inf`\n- In `_init_sampling_tensors()`: destructure the new `do_top_a` and store as `self._do_top_a`\n- In `forward()`: call `_apply_top_a` after `_apply_top_k_top_p` and before `_apply_min_p`\n\n### 4. `vllm/v1/sample/metadata.py`\n- Add `top_a: Optional[torch.Tensor]` field after `top_k`\n\n### 5. `vllm/v1/worker/gpu_input_batch.py` (V1 GPU path)\n- Allocate `top_a` CPU+GPU tensors and `top_a_reqs: set[str]` in `__init__()`\n- Track requests in `add_request()`, discard in `remove_request()`, copy in `condense()`, swap in `swap_states()`\n- Add `no_top_a` property, copy tensor in `_make_sampling_metadata()`, pass to `SamplingMetadata`\n\n### 6. `vllm/v1/sample/sampler.py` (V1 sampler)\n- Add module-level `_apply_top_a()` function (same logic)\n- In `sample()`: apply after temperature scaling, before the `topk_topp_sampler` call, gated on `sampling_metadata.top_a is not None`",
+    "execute_duration_ms": 440692,
+    "execute_api_ms": 437286,
+    "execute_tokens_in": 54,
+    "execute_tokens_out": 24139,
+    "execute_cost_usd": 2.04067
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "contains \"top_a\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "top_a.*float|float.*top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "0\\.0.*top_a|top_a.*0\\.0",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "python3 -c 'import ast; ast.parse(open(\"vllm/sampling_params.py\").read()); print(\"Syntax OK\")'",
+          "exit_code": 0,
+          "output": "Syntax OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 264
+  },
+  "session_id": "71fc01a6-17fa-4687-9d05-c981638875da"
+}

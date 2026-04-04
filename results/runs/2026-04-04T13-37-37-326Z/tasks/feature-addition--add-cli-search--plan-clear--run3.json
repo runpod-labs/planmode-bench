@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-cli-search",
+  "task_name": "Add Search Functionality to Python CLI",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-04T14:35:35.183Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 154941,
+    "duration_api_ms": 152538,
+    "num_turns": 21,
+    "total_cost_usd": 0.31630490000000006,
+    "input_tokens": 20,
+    "output_tokens": 6750,
+    "cache_read_tokens": 217109,
+    "cache_creation_tokens": 25570,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 106305,
+    "plan_api_ms": 105011,
+    "plan_tokens_in": 10,
+    "plan_tokens_out": 3963,
+    "plan_cost_usd": 0.19856690000000005,
+    "plan_content": "Here's the implementation plan:\n\n---\n\n## Plan: Add Search Functionality\n\n### What I found\n\nThe codebase has a clean modular structure: `models.py` (data), `storage.py` (persistence), `formatter.py` (output), `cli.py` (argparse commands). The `tests/test_search.py` file already exists and completely defines the expected behavior — I just need to make the code match it.\n\n---\n\n### Two changes needed\n\n#### 1. Create `src/search.py` (new file)\n\nFour functions using stdlib only (`urllib.parse.urlparse` for domain extraction):\n\n- **`search_by_title(bookmarks, query)`** — `query.lower() in b.title.lower()` list comprehension\n- **`search_by_tag(bookmarks, tag)`** — `tag in b.tags` list comprehension (exact match)\n- **`search_by_domain(bookmarks, domain)`** — `urlparse(b.url).netloc == domain` exact match  \n  *(e.g. `https://docs.python.org/3/...` → netloc = `docs.python.org`)*\n- **`search(bookmarks, title=None, tag=None, domain=None)`** — chains the above with AND logic; returns all bookmarks when no criteria given\n\n#### 2. Modify `src/cli.py` (two additions)\n\n**In `build_parser()`** — add a `search` subparser with `--title`, `--tag`, `--domain`, `--format` (table/json, default table) flags.\n\n**In `main()`** — add an `elif args.command == \"search\"` branch that:\n1. Calls `load_bookmarks()` (already imported)\n2. Calls `search(bookmarks, title=args.title, tag=args.tag, domain=args.domain)`\n3. Prints via `format_table()` or `format_json()` (both already imported)\n\nNo changes to `models.py`, `storage.py`, `formatter.py`, or any test files.\n\n---\n\n### Verification\n\n```bash\npytest   # all tests in test_storage.py + all 18 tests in test_search.py should pass\n```",
+    "execute_duration_ms": 48636,
+    "execute_api_ms": 47527,
+    "execute_tokens_in": 10,
+    "execute_tokens_out": 2787,
+    "execute_cost_usd": 0.11773800000000001
+  },
+  "evaluation": {
+    "overall_score": 0.8999999999999999,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775313178185-lyxl2r/.venv/bin/activate && python3 -m pytest tests/ -v",
+          "tests_passed": 29,
+          "tests_failed": 0,
+          "tests_total": 29,
+          "output": "hByDomain::test_matches_domain PASSED     [ 24%]\ntests/test_search.py::TestSearchByDomain::test_matches_subdomain PASSED  [ 27%]\ntests/test_search.py::TestSearchByDomain::test_no_match_returns_empty PASSED [ 31%]\ntests/test_search.py::TestSearchCombined::test_single_criterion_title PASSED [ 34%]\ntests/test_search.py::TestSearchCombined::test_single_criterion_tag PASSED [ 37%]\ntests/test_search.py::TestSearchCombined::test_single_criterion_domain PASSED [ 41%]\ntests/test_search.py::TestSearchCombined::test_and_logic_title_and_tag PASSED [ 44%]\ntests/test_search.py::TestSearchCombined::test_and_logic_all_three PASSED [ 48%]\ntests/test_search.py::TestSearchCombined::test_no_criteria_returns_all PASSED [ 51%]\ntests/test_search.py::TestSearchCombined::test_conflicting_criteria_returns_empty PASSED [ 55%]\ntests/test_search.py::TestSearchCLI::test_search_command_exists PASSED   [ 58%]\ntests/test_search.py::TestSearchCLI::test_search_format_json_flag PASSED [ 62%]\ntests/test_storage.py::TestLoadBookmarks::test_returns_empty_list_when_file_missing PASSED [ 65%]\ntests/test_storage.py::TestLoadBookmarks::test_loads_bookmarks_from_file PASSED [ 68%]\ntests/test_storage.py::TestSaveBookmarks::test_creates_file PASSED       [ 72%]\ntests/test_storage.py::TestSaveBookmarks::test_file_contains_valid_json PASSED [ 75%]\ntests/test_storage.py::TestAddBookmark::test_adds_bookmark_and_returns_it PASSED [ 79%]\ntests/test_storage.py::TestAddBookmark::test_persists_bookmark PASSED    [ 82%]\ntests/test_storage.py::TestAddBookmark::test_generates_unique_ids PASSED [ 86%]\ntests/test_storage.py::TestDeleteBookmark::test_deletes_existing_bookmark PASSED [ 89%]\ntests/test_storage.py::TestDeleteBookmark::test_returns_false_for_missing_id PASSED [ 93%]\ntests/test_storage.py::TestGetBookmark::test_returns_bookmark_by_id PASSED [ 96%]\ntests/test_storage.py::TestGetBookmark::test_returns_none_for_missing_id PASSED [100%]\n\n============================== 29 passed in 0.03s ==============================\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "message": "Test files were modified -- possible cheating",
+          "diff_preview": "diff --git a/tests/__pycache__/__init__.cpython-314.pyc b/tests/__pycache__/__init__.cpython-314.pyc\nindex 36b81d3..c733127 100644\nBinary files a/tests/__pycache__/__init__.cpython-314.pyc and b/tests/__pycache__/__init__.cpython-314.pyc differ\ndiff --git a/tests/__pycache__/test_search.cpython-314-pytest-9.0.2.pyc b/tests/__pycache__/test_search.cpython-314-pytest-9.0.2.pyc\nindex 9c197e5..21f5bf4 100644\nBinary files a/tests/__pycache__/test_search.cpython-314-pytest-9.0.2.pyc and b/tests/__pycache__/test_search.cpython-314-pytest-9.0.2.pyc differ\ndiff --git a/tests/__pycache__/test_storage.cpython-314-pytest-9.0.2.pyc b/tests/__pycache__/test_storage.cpython-314-pytest-9.0.2.pyc\nindex 6209fa9..cfeaf9c 100644\nBinary files a/tests/__pycache__/test_storage.cpython-314-pytest-9.0.2.pyc and b/tests/__pycache__/test_storage.cpython-314-pytest-9.0.2.pyc differ\n"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/search.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/search.py",
+              "check": "contains \"search_by_title\"",
+              "passed": true
+            },
+            {
+              "path": "src/search.py",
+              "check": "contains \"search_by_tag\"",
+              "passed": true
+            },
+            {
+              "path": "src/search.py",
+              "check": "contains \"search_by_domain\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775313178185-lyxl2r/.venv/bin/activate && python3 -m py_compile src/search.py",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 326
+  },
+  "session_id": "3f2d35ab-bc8a-44c5-a3a0-1b4ae074cdaf"
+}

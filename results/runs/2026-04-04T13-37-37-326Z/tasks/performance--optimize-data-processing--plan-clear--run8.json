@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "task_id": "performance/optimize-data-processing",
+  "task_name": "Optimize Slow Data Processing Pipeline",
+  "mode": "plan-clear",
+  "run_number": 8,
+  "timestamp": "2026-04-04T22:25:35.467Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 211954,
+    "duration_api_ms": 129577,
+    "num_turns": 15,
+    "total_cost_usd": 0.28419495000000006,
+    "input_tokens": 18,
+    "output_tokens": 6622,
+    "cache_read_tokens": 189588,
+    "cache_creation_tokens": 26176,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 80240,
+    "plan_api_ms": 79997,
+    "plan_tokens_in": 8,
+    "plan_tokens_out": 3506,
+    "plan_cost_usd": 0.1382355,
+    "plan_content": "Here's the plan summary:\n\n---\n\n## Plan: Optimize `src/pipeline.ts`\n\nAll five functions get drop-in replacements using better data structures. No changes to types, exports, or `processAll` logic.\n\n### Optimization per function\n\n| Function | Before | After | Key Change |\n|---|---|---|---|\n| `groupByCategory` | O(n·m·k) | **O(n)** | `Map` by category; accumulate total incrementally |\n| `findDuplicates` | O(n²) | **O(n)** | `Map` by `userId\\|amount\\|date`; single pass |\n| `calculateRunningBalance` | O(n·u²·log u) | **O(n + u·log u)** | Filter once → sort once → single cumulative-sum pass |\n| `topSpenders` | O(u·n + u²) | **O(n + u·log u)** | `Map` for totals+counts; native `Array.sort` replaces bubble sort |\n| `searchTransactions` | O(n·m) | **O(n)** | Compile regex **once** before loop; `filter` eliminates dedup scan |\n| `processAll` | slow | fast | Inherits gains — no edits needed |\n\n### Correctness safeguards\n- Monetary values rounded with `Math.round(x * 100) / 100` to match test expectations\n- `findDuplicates` key stays `userId|amount|date`\n- `calculateRunningBalance` sorted ascending by date before cumulative sum\n- `searchTransactions` regex is case-insensitive with special-char escaping\n\n### Verification\n```bash\nnpx jest   # both pipeline.test.ts and performance.test.ts must pass\n```",
+    "execute_duration_ms": 131714,
+    "execute_api_ms": 49580,
+    "execute_tokens_in": 10,
+    "execute_tokens_out": 3116,
+    "execute_cost_usd": 0.14595945000000002
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775341309126-ku7i7p\n\n ✓ tests/pipeline.test.ts (22 tests) 51ms\n ✓ tests/performance.test.ts (6 tests) 1006ms\n   ✓ performance: searchTransactions > should search 100k transactions in under 50ms  345ms\n\n Test Files  2 passed (2)\n      Tests  28 passed (28)\n   Start at  00:25:30\n   Duration  2.09s (transform 482ms, setup 0ms, collect 639ms, tests 1.06s, environment 1ms, prepare 654ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "src/pipeline.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/pipeline.ts",
+              "check": "contains \"Map\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 6338
+  },
+  "session_id": "0e76e57d-451a-4498-be09-1878f70ea762"
+}

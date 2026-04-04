@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-diffusers-scheduler",
+  "task_name": "Add Cosine Annealing Noise Scheduler to Diffusers",
+  "mode": "plan-clear",
+  "run_number": 8,
+  "timestamp": "2026-04-04T15:06:01.786Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 364515,
+    "duration_api_ms": 394401,
+    "num_turns": 32,
+    "total_cost_usd": 1.0453078000000002,
+    "input_tokens": 3023,
+    "output_tokens": 17036,
+    "cache_read_tokens": 640095,
+    "cache_creation_tokens": 67085,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 182070,
+    "plan_api_ms": 267582,
+    "plan_tokens_in": 3004,
+    "plan_tokens_out": 8405,
+    "plan_cost_usd": 0.6807523000000001,
+    "plan_content": "Here's the full implementation plan:\n\n---\n\n## Plan Summary: Add `CosineAnnealingScheduler`\n\n### What we learned from exploration\n\n- The codebase has 57 existing schedulers, all following the same pattern anchored in `scheduling_ddpm.py`\n- Schedulers inherit from `SchedulerMixin` + `ConfigMixin`, use `@register_to_config`, and need to be registered in **two** `__init__.py` files (both a lazy `_import_structure` dict entry and a `TYPE_CHECKING` direct import)\n- `add_noise` and `step` have a well-established pattern (DDPM posterior mean formula) that can be reused directly\n- The beta schedule formula `beta_t = beta_min + 0.5*(beta_max-beta_min)*(1+cos(π·t/T))` gives `beta_end` at `t=0` (max noise) and `beta_start` at `t=T` (min noise), consistent with DDPM's `beta_start < beta_end` convention\n\n### 3 files to touch\n\n| | File |\n|--|------|\n| **Create** | `src/diffusers/schedulers/scheduling_cosine_annealing.py` |\n| **Modify** | `src/diffusers/schedulers/__init__.py` — add `_import_structure` entry + `TYPE_CHECKING` import |\n| **Modify** | `src/diffusers/__init__.py` — add to the scheduler string list (line ~351) + the import block (line ~1121) |\n\n### Key design decisions\n\n- **Uses `CosineAnnealingSchedulerOutput`** (custom `BaseOutput` subclass with `prev_sample` + `pred_original_sample`) — mirrors DDPMSchedulerOutput\n- **`step()`** uses DDPM posterior mean (formula 7 from Ho et al.) — same math, different beta schedule\n- **`add_noise()`** is a direct copy of `DDPMScheduler.add_noise()` (same formula applies to any alpha-based schedule)\n- **`set_timesteps()`** supports simple `num_inference_steps` evenly-spaced descending timesteps (no custom timestep complexity needed per requirements)\n- **No `KarrasDiffusionSchedulers` compatibility** — `_compatibles = []` since this is a new standalone scheduler not meant to swap with Karras schedulers",
+    "execute_duration_ms": 182445,
+    "execute_api_ms": 126819,
+    "execute_tokens_in": 19,
+    "execute_tokens_out": 8631,
+    "execute_cost_usd": 0.36455550000000003
+  },
+  "evaluation": {
+    "overall_score": 0.5,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775314263576-m8sswk/.venv/bin/activate && python3 -m pytest tests/test_cosine_scheduler.py -v",
+          "tests_passed": 0,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "error": "Command failed: source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775314263576-m8sswk/.venv/bin/activate && python3 -m pytest tests/test_cosine_scheduler.py -v\n",
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 6,
+          "check_details": [
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"CosineAnnealingScheduler\"",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"SchedulerMixin\"",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"cosine\"",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"step\"",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"add_noise\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775314263576-m8sswk/.venv/bin/activate && python3 -c 'from diffusers import CosineAnnealingScheduler; print(\"Import OK\")'",
+          "exit_code": 1,
+          "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    from diffusers import CosineAnnealingScheduler; print(\"Import OK\")\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'CosineAnnealingScheduler' from 'diffusers' (/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-bases/feature-addition-add-diffusers-scheduler/src/diffusers/__init__.py)\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "class CosineAnnealingScheduler",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "register_to_config",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "def step",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 518160
+  },
+  "session_id": "787bdc8a-30af-4529-ad8b-d21765df6f36"
+}

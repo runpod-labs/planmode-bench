@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "Add JSON Path Constraint to SGLang",
+  "mode": "plan-resume",
+  "run_number": 6,
+  "timestamp": "2026-04-04T17:27:25.589Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 594219,
+    "duration_api_ms": 755572,
+    "num_turns": 66,
+    "total_cost_usd": 2.63861615,
+    "input_tokens": 58,
+    "output_tokens": 32129,
+    "cache_read_tokens": 3247029,
+    "cache_creation_tokens": 142180,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 351704,
+    "plan_api_ms": 513289,
+    "plan_tokens_in": 19,
+    "plan_tokens_out": 15653,
+    "plan_cost_usd": 1.2667278499999999,
+    "plan_content": "Here is the complete implementation plan I've developed after thoroughly reading the SGLang codebase:\n\n---\n\n## How Existing Constraints Work\n\nAll constraints (`regex`, `json_schema`, `ebnf`) flow through the same pipeline:\n1. **User API** (`gen()` in `api.py`) → **IR** (`SglSamplingParams` in `ir.py`) → **`SamplingParams`** (in `sampling_params.py`)\n2. **`GrammarManager.process_req_with_grammar()`** picks up the constraint, creates a `(\"type\", value)` cache key, and submits it for async compilation\n3. **`BaseGrammarBackend._init_value_dispatch()`** routes by key type to `dispatch_json()`, `dispatch_regex()`, etc.\n4. Each backend returns a `BaseGrammarObject` that provides token-level masking via `fill_vocab_mask()` / `accept_token()`\n\n---\n\n## Strategy for `json_path`\n\n**Key insight**: A JSONPath like `$.store.book[*].author` describes a *structural requirement* — the JSON must have a `store` object with a `book` array whose items have `author` fields. This is exactly what a JSON Schema expresses. So the plan is:\n\n> **Convert `json_path → json_schema` at dispatch time**, then reuse all existing infrastructure unchanged.\n\nNo backend-specific changes are needed. All three grammar backends (xgrammar, outlines, llguidance) already support `dispatch_json()`.\n\n---\n\n## 7 Files to Change\n\n| # | File | Action |\n|---|---|---|\n| 1 | `python/sglang/srt/constrained/json_path_backend.py` | **CREATE** — path parser + schema converter |\n| 2 | `python/sglang/srt/constrained/base_grammar_backend.py` | Add `dispatch_json_path()` + dispatch branch in `_init_value_dispatch()` |\n| 3 | `python/sglang/srt/constrained/grammar_manager.py` | Add `json_path` condition and cache key |\n| 4 | `python/sglang/srt/sampling/sampling_params.py` | Add `json_path` param + mutual-exclusivity validation |\n| 5 | `python/sglang/lang/ir.py` | Add `json_path` to `SglSamplingParams`, `SglGen`, and `to_srt_kwargs()` |\n| 6 | `python/sglang/lang/api.py` | Add `json_path` parameter to `gen()` |\n| 7 | `python/sglang/srt/entrypoints/openai/protocol.py` | Add `json_path` to both request classes and `to_sampling_params()` |\n\n---\n\n## Core New Logic (json_path_backend.py)\n\nThe converter tokenizes the JSONPath into segments and recursively builds a JSON Schema:\n\n```\n$.store.book[*].author\n→ [\"store\", \"book\", \"[*]\", \"author\"]\n→ {\n    \"type\": \"object\",\n    \"required\": [\"store\"],\n    \"properties\": {\n      \"store\": {\n        \"type\": \"object\",\n        \"required\": [\"book\"],\n        \"properties\": {\n          \"book\": {\n            \"type\": \"array\",\n            \"items\": {\n              \"type\": \"object\",\n              \"required\": [\"author\"],\n              \"properties\": {\"author\": {}}\n            }\n          }\n        }\n      }\n    }\n  }\n```\n\nComplex path features (recursive descent `..`, filter expressions `[?(…)]`) fall back gracefully to `{\"type\": \"object\"}` (valid JSON only).\n\nThe full plan is saved at `/Users/timpietrusky/.claude/plans/glistening-wishing-patterson.md`. Ready to implement on your approval.",
+    "execute_duration_ms": 242515,
+    "execute_api_ms": 242283,
+    "execute_tokens_in": 39,
+    "execute_tokens_out": 16476,
+    "execute_cost_usd": 1.3718882999999997
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 342
+  },
+  "session_id": "493c4fc3-9c8a-45a3-87b1-95b38aaac005"
+}

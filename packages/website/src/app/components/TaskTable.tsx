@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, Fragment } from "react";
-import { Zap, Compass, BookOpen, Scissors } from "lucide-react";
+import { Zap, BookOpen, Scissors } from "lucide-react";
 
 interface ModeResult {
   score: number;
@@ -31,20 +31,6 @@ const MODE_META: Record<
   "plan-resume": { label: "plan+resume", bg: "bg-mode-pr/15", text: "text-mode-pr", icon: BookOpen },
   "plan-clear": { label: "plan+clear", bg: "bg-mode-pc/15", text: "text-mode-pc", icon: Scissors },
 };
-
-function getWinner(results: Record<string, ModeResult>): Mode | "tie" {
-  const active = MODES.filter((m) => results[m] && results[m].totalCost > 0);
-  if (active.length === 0) return "tie";
-  const scores = active.map((m) => ({ mode: m, score: results[m].score }));
-  const maxScore = Math.max(...scores.map((s) => s.score));
-  const winners = scores.filter((s) => s.score === maxScore);
-  if (winners.length === active.length) return "tie";
-  if (winners.length === 1) return winners[0].mode;
-  const cheapest = winners.reduce((a, b) =>
-    results[a.mode].totalCost <= results[b.mode].totalCost ? a : b
-  );
-  return cheapest.mode;
-}
 
 function formatDuration(ms: number): string {
   if (ms === 0) return "—";
@@ -133,7 +119,6 @@ export default function TaskTable({ tasks }: { tasks: TaskResult[] }) {
                   </th>
                 );
               })}
-              <th className="pb-2" />
             </tr>
             {/* Sub headers */}
             <tr className="border-b border-border">
@@ -147,19 +132,22 @@ export default function TaskTable({ tasks }: { tasks: TaskResult[] }) {
                   <Th label="Time" id={`${m}-time` as SortKey} className="text-right px-1.5" />
                 </Fragment>
               ))}
-              <th className="pb-2 pl-2 text-right text-[10px] font-mono font-normal uppercase tracking-widest text-muted-foreground/70">
-                Best
-              </th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((task) => {
-              const winner = getWinner(task.results);
-              const activeScores = MODES.filter(
+              const activeModes = MODES.filter(
                 (m) => task.results[m]?.totalCost > 0
-              ).map((m) => task.results[m].score);
-              const maxScore =
-                activeScores.length > 0 ? Math.max(...activeScores) : 0;
+              );
+              const maxScore = activeModes.length > 0
+                ? Math.max(...activeModes.map((m) => task.results[m].score))
+                : 0;
+              const minCost = activeModes.length > 0
+                ? Math.min(...activeModes.map((m) => task.results[m].totalCost))
+                : 0;
+              const minTime = activeModes.length > 0
+                ? Math.min(...activeModes.map((m) => task.results[m].durationMs))
+                : 0;
 
               return (
                 <tr
@@ -201,41 +189,26 @@ export default function TaskTable({ tasks }: { tasks: TaskResult[] }) {
                   {MODES.map((m) => {
                     const r = task.results[m];
                     const hasData = r && r.totalCost > 0;
-                    const isTop = hasData && r.score === maxScore && maxScore > 0;
+                    const isTopScore = hasData && r.score === maxScore && maxScore > 0;
+                    const isTopCost = hasData && r.totalCost === minCost && minCost > 0;
+                    const isTopTime = hasData && r.durationMs === minTime && minTime > 0;
+                    const bold = "text-foreground font-medium";
+                    const normal = "text-muted-foreground";
+                    const empty = "text-muted-foreground/80";
                     return (
                       <Fragment key={m}>
-                        <td className={`py-3 px-1.5 text-right font-mono text-xs tabular-nums ${isTop ? "text-foreground font-medium" : hasData ? "text-muted-foreground" : "text-muted-foreground/80"}`}>
+                        <td className={`py-3 px-1.5 text-right font-mono text-xs tabular-nums ${isTopScore ? bold : hasData ? normal : empty}`}>
                           {hasData ? (r.score * 100).toFixed(0) : "—"}
                         </td>
-                        <td className={`py-3 px-1.5 text-right font-mono text-xs tabular-nums ${hasData ? "text-muted-foreground" : "text-muted-foreground/80"}`}>
+                        <td className={`py-3 px-1.5 text-right font-mono text-xs tabular-nums ${isTopCost ? bold : hasData ? normal : empty}`}>
                           {hasData ? `$${r.totalCost.toFixed(2)}` : "—"}
                         </td>
-                        <td className={`py-3 px-1.5 text-right font-mono text-xs tabular-nums ${hasData ? "text-muted-foreground" : "text-muted-foreground/80"}`}>
+                        <td className={`py-3 px-1.5 text-right font-mono text-xs tabular-nums ${isTopTime ? bold : hasData ? normal : empty}`}>
                           {hasData ? formatDuration(r.durationMs) : "—"}
                         </td>
                       </Fragment>
                     );
                   })}
-                  <td className="py-3 pl-2 text-right">
-                    {winner === "tie" ? (
-                      <span className="text-[10px] text-muted-foreground">tie</span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                        {(() => {
-                          const wm = MODE_META[winner];
-                          const WIcon = wm.icon;
-                          return (
-                            <>
-                              <span className={`flex items-center justify-center h-3.5 w-3.5 rounded-sm ${wm.bg} ${wm.text}`}>
-                                <WIcon className="h-2 w-2" />
-                              </span>
-                              {wm.label}
-                            </>
-                          );
-                        })()}
-                      </span>
-                    )}
-                  </td>
                 </tr>
               );
             })}

@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "Add Mistral Instruct v3 Chat Template to llama.cpp",
+  "mode": "plan-clear",
+  "run_number": 6,
+  "timestamp": "2026-04-04T15:20:59.930Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 292603,
+    "duration_api_ms": 291121,
+    "num_turns": 27,
+    "total_cost_usd": 0.59231435,
+    "input_tokens": 28,
+    "output_tokens": 13722,
+    "cache_read_tokens": 436003,
+    "cache_creation_tokens": 45338,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 199858,
+    "plan_api_ms": 198470,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 9177,
+    "plan_cost_usd": 0.38573525,
+    "plan_content": "## Plan Summary\n\nAfter thoroughly reading `common/chat.cpp` and `common/chat.h`, here is the complete implementation plan.\n\n---\n\n### Only file to modify: `common/chat.cpp`\n\n#### Step 1 — Add handler function (insert between lines 1622–1624)\n\n```cpp\nstatic common_chat_params common_chat_params_init_mistral_instruct_v3(\n        const common_chat_template &          tmpl,\n        const autoparser::generation_params & inputs) {\n    common_chat_params data;\n    std::string system_prompt;\n    bool        first_user = true;\n\n    // Format: <s>[INST] {system}\\n{user} [/INST] {assistant}</s>[INST] {user2} [/INST]\n    data.prompt = tmpl.bos_token();\n\n    for (const auto & msg : inputs.messages) {\n        const auto role    = msg.value(\"role\", \"\");\n        const auto content = msg.value(\"content\", \"\");\n\n        if (role == \"system\") {\n            system_prompt = content;\n        } else if (role == \"user\") {\n            data.prompt += \"[INST] \";\n            if (first_user && !system_prompt.empty()) {\n                data.prompt += system_prompt + \"\\n\";\n            }\n            first_user   = false;\n            data.prompt += content + \" [/INST]\";\n        } else if (role == \"assistant\") {\n            data.prompt += \" \" + content + tmpl.eos_token();\n        }\n    }\n    data.format = COMMON_CHAT_FORMAT_CONTENT_ONLY;\n    return data;\n}\n```\n\n#### Step 2 — Register detection in `common_chat_try_specialized_template()` (insert between lines 1688–1690, just before `return std::nullopt;`)\n\n```cpp\n    // Mistral Instruct v0.3 - uses [INST]/[/INST] markers without [SYSTEM_PROMPT]\n    if (src.find(\"[INST]\") != std::string::npos &&\n        src.find(\"[/INST]\") != std::string::npos &&\n        src.find(\"[SYSTEM_PROMPT]\") == std::string::npos) {\n        LOG_DBG(\"Using specialized template: Mistral Instruct v3\\n\");\n        return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n    }\n```\n\n---\n\n### Key design decisions\n- `inputs.messages` is `nlohmann::ordered_json` — iterates identically to the Ministral 3 handler\n- BOS/EOS come from `tmpl.bos_token()` / `tmpl.eos_token()` (not hardcoded strings)\n- `[SYSTEM_PROMPT]` **absence** check prevents any conflict with the existing Ministral 3 detection\n- `COMMON_CHAT_FORMAT_CONTENT_ONLY` is already in the enum — no parser or grammar needed\n- `common/chat.h` is **untouched**",
+    "execute_duration_ms": 92745,
+    "execute_api_ms": 92651,
+    "execute_tokens_in": 15,
+    "execute_tokens_out": 4545,
+    "execute_cost_usd": 0.2065791
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 6,
+          "check_details": [
+            {
+              "path": "common/chat.cpp",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"mistral_instruct_v3\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"common_chat_params_init_mistral_instruct_v3\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"[INST]\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"[/INST]\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"COMMON_CHAT_FORMAT_CONTENT_ONLY\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 4,
+          "patterns_total": 4,
+          "pattern_results": [
+            {
+              "pattern": "static common_chat_params common_chat_params_init_mistral_instruct_v3",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "\\[INST\\].*\\[/INST\\]",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "LOG_DBG.*[Mm]istral [Ii]nstruct v3",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "common_chat_params_init_mistral_instruct_v3\\(tmpl, params\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -c 'mistral_instruct_v3' common/chat.cpp",
+          "exit_code": 0,
+          "output": "2\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 12
+  },
+  "session_id": "286ff7e1-266c-451e-9176-754b2b2afd48"
+}

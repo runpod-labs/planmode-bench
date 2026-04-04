@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "Add JSON Path Constraint to SGLang",
+  "mode": "plan-resume",
+  "run_number": 10,
+  "timestamp": "2026-04-04T17:38:39.961Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 808738,
+    "duration_api_ms": 885767,
+    "num_turns": 63,
+    "total_cost_usd": 2.7325070499999997,
+    "input_tokens": 57,
+    "output_tokens": 41759,
+    "cache_read_tokens": 3567808,
+    "cache_creation_tokens": 158985,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 526565,
+    "plan_api_ms": 606490,
+    "plan_tokens_in": 23,
+    "plan_tokens_out": 22606,
+    "plan_cost_usd": 1.3146484,
+    "plan_content": "Here's the full implementation plan I've designed after thoroughly exploring the SGLang codebase:\n\n---\n\n## Summary\n\n### Architecture Decision\n`json_path` is implemented as a **translation layer** rather than a new grammar backend. A JSON path like `$.store.book[*].author` is parsed and converted into a JSON Schema, which is then delegated to the existing `json_schema` machinery (xgrammar/outlines/llguidance). This means **zero changes to any grammar backend** and full compatibility with all three backends.\n\n### How it flows:\n```\ngen(json_path=\"$.store.book[*].author\")\n  → SglGen → SglSamplingParams.to_srt_kwargs()\n  → SamplingParams(json_path=...)\n  → GrammarManager: converts path → JSON Schema → grammar key (\"json\", schema)\n  → existing dispatch_json() in any backend ← no changes needed\n```\n\n### Files to modify (6 total):\n\n| File | Type | Change |\n|------|------|--------|\n| `python/sglang/srt/constrained/json_path_constraint.py` | **NEW** | `JsonPathConstraint` class + `json_path_to_json_schema()` helper |\n| `python/sglang/lang/ir.py` | Modify | Add `json_path` to `SglSamplingParams`, `clone()`, `to_srt_kwargs()`, `SglGen.__init__` |\n| `python/sglang/lang/api.py` | Modify | Add `json_path` param to `gen()` + validation (must start with `$`, mutually exclusive with `json_schema`) |\n| `python/sglang/srt/sampling/sampling_params.py` | Modify | Add `json_path` param + extend `verify()` mutual-exclusion check |\n| `python/sglang/srt/constrained/grammar_manager.py` | Modify | Add `json_path` branch that calls `json_path_to_json_schema()` then uses existing `(\"json\", schema)` key |\n| `python/sglang/__init__.py` | Modify | Export `JsonPathConstraint` and `json_path_to_json_schema` |\n\n### Key design notes:\n1. **Grammar cache reuse** — The cache key is `(\"json\", schema_string)`, so identical paths share one compiled FSM\n2. **Transport works automatically** — `runtime_endpoint.py` sends `**sampling_params.to_srt_kwargs()` as a dict, so adding `json_path` there means the HTTP API picks it up for free\n3. **Supported path syntax**: dot notation (`$.foo`), bracket notation (`$['foo']`), wildcard (`$[*]`), integer index (`$[0]`)\n4. **Leaf schema is `{}`** (any value) — allows the model to freely choose the value type at the path endpoint",
+    "execute_duration_ms": 282173,
+    "execute_api_ms": 279277,
+    "execute_tokens_in": 34,
+    "execute_tokens_out": 19153,
+    "execute_cost_usd": 1.4178586499999997
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 397
+  },
+  "session_id": "d2b053c6-7c48-46c4-9ea9-00d9e28542a9"
+}

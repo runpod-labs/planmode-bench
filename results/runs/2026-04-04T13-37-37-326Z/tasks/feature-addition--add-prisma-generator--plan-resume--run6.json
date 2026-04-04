@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "Add REST API Client Generator to Prisma",
+  "mode": "plan-resume",
+  "run_number": 6,
+  "timestamp": "2026-04-04T16:33:26.008Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 466709,
+    "duration_api_ms": 623824,
+    "num_turns": 35,
+    "total_cost_usd": 1.4368633,
+    "input_tokens": 31,
+    "output_tokens": 17985,
+    "cache_read_tokens": 1134566,
+    "cache_creation_tokens": 89443,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 345853,
+    "plan_api_ms": 504173,
+    "plan_tokens_in": 11,
+    "plan_tokens_out": 9970,
+    "plan_cost_usd": 0.8575804,
+    "plan_content": "Here is my complete implementation plan for `packages/generator-rest-client`:\n\n---\n\n## Overview\n\n**7 new files** + **1 file modified**.\n\nThe package is a standalone process-based Prisma generator. When Prisma CLI sees `provider = \"prisma-generator-rest-client\"` in a schema, it spawns the compiled binary as a child process and communicates via JSON-RPC 2.0 over stdin/stderr. The `generatorHandler` from `@prisma/generator-helper` handles all protocol plumbing — we only need to implement `onManifest` and `onGenerate`.\n\n---\n\n## Files to Create\n\n### `packages/generator-rest-client/package.json`\nStandard monorepo layout. Key additions over a plain utility package:\n- `\"bin\": { \"prisma-generator-rest-client\": \"./dist/index.js\" }` — makes the package executable as the generator provider\n- Dependencies: `@prisma/generator-helper`, `@prisma/generator`, `@prisma/dmmf`, `@prisma/internals` (for `parseEnvValue`), `fs-extra` (for `ensureDir`)\n\n### `packages/generator-rest-client/tsconfig.json`\n```json\n{ \"extends\": \"../../tsconfig.json\", \"include\": [\"./**/*\"] }\n```\n\n### `packages/generator-rest-client/tsconfig.build.json`\n```json\n{ \"extends\": \"../../tsconfig.build.regular.json\", \"compilerOptions\": { \"outDir\": \"dist\", \"rootDir\": \"src\" }, \"include\": [\"src\"] }\n```\n\n### `packages/generator-rest-client/helpers/build.ts`\nUses `createAdapterConfig` (not the pre-baked `adapterConfig`) to inject a `banner: { js: '#!/usr/bin/env node' }` into the CJS output only — this is what makes the built file directly executable as the generator binary when spawned by Prisma CLI.\n\n### `packages/generator-rest-client/src/template.ts`\nAll string-template helpers:\n- `fieldTypeToTs(field)` — maps DMMF `FieldKind`/`type` → TypeScript types (`String→string`, `Int/Float→number`, `DateTime→Date`, `BigInt→bigint`, `Decimal→string`, `Bytes→Uint8Array`, `Json→unknown`; handles `isList` and `!isRequired` wrapping)\n- `generateModelInterface(model)` — full read interface (all fields)\n- `generateCreateInput(model)` — scalar/enum fields only, optional when `isRequired=false`, excludes auto-generated fields\n- `generateUpdateInput(model)` — same but all fields optional\n- `generateWhereUniqueInput(model)` — `isId` + `isUnique` scalar fields, all optional\n- `generateModelMethods(model)` — the per-model `readonly <name> = { findMany, findUnique, create, update, delete }` block using `fetch`\n- `FILE_HEADER` constant — the \"do not edit\" banner comment\n\n### `packages/generator-rest-client/src/generator.ts`\nOrchestrates generation: calls `parseEnvValue(options.generator.output!)` to get the output directory, loops over `options.dmmf.datamodel.models` calling template helpers, builds the full source string, then `ensureDir` + `fs.writeFile('rest-client.ts')`.\n\n### `packages/generator-rest-client/src/index.ts`\nEntry point: calls `generatorHandler({ onManifest, onGenerate })` where `onManifest` returns `{ prettyName: 'Prisma REST Client Generator', defaultOutput: './generated/rest-client' }` and `onGenerate` delegates to `generate(options)`.\n\n---\n\n## File to Modify\n\n### `tsconfig.build.bundle.json`\nAdd one entry to `compilerOptions.paths`:\n```json\n\"@prisma/generator-rest-client\": [\"./packages/generator-rest-client/src\"],\n```\n\n---\n\n## Verification Steps\n\n```bash\npnpm install                                        # pick up new workspace package\npnpm --filter @prisma/generator-rest-client build  # build CJS + ESM + types\n# then point a test schema at provider = \"prisma-generator-rest-client\" and run prisma generate\n```",
+    "execute_duration_ms": 120856,
+    "execute_api_ms": 119651,
+    "execute_tokens_in": 20,
+    "execute_tokens_out": 8015,
+    "execute_cost_usd": 0.5792828999999999
+  },
+  "evaluation": {
+    "overall_score": 0.5700000000000001,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.8,
+        "weight": 0.4,
+        "weighted_score": 0.32000000000000006,
+        "passed": false,
+        "details": {
+          "checks_passed": 8,
+          "checks_total": 10,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"prisma\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"generator\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"generatorHandler\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"onGenerate\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"dmmf\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"findMany\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"create\"",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 2,
+          "output": "ns for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\n../internals/src/WasmSchemaEngineLoader.ts(1,16): error TS2591: Cannot find name 'node:fs/promises'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\n../internals/src/WasmSchemaEngineLoader.ts(2,18): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\n../internals/src/WasmSchemaEngineLoader.ts(5,55): error TS2307: Cannot find module '@prisma/schema-engine-wasm' or its corresponding type declarations.\n../internals/src/WasmSchemaEngineLoader.ts(8,33): error TS2304: Cannot find name '__dirname'.\n../internals/src/WasmSchemaEngineLoader.ts(19,32): error TS2307: Cannot find module '@prisma/schema-engine-wasm/schema_engine_bg' or its corresponding type declarations.\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.6666666666666666,
+        "weight": 0.15,
+        "weighted_score": 0.09999999999999999,
+        "passed": false,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "findUnique|findMany",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "model|Model",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "interface|type",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "generatorHandler",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "onGenerate|onManifest",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 949
+  },
+  "session_id": "f9b52a36-39b1-47c9-af8c-bc50e8429229"
+}

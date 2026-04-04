@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "Add New AI Image Provider to Vercel AI SDK",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-04T20:24:13.533Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 933615,
+    "duration_api_ms": 986858,
+    "num_turns": 112,
+    "total_cost_usd": 3.7943051000000008,
+    "input_tokens": 108,
+    "output_tokens": 47438,
+    "cache_read_tokens": 6613428,
+    "cache_creation_tokens": 192783,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 179142,
+    "plan_api_ms": 295735,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 6706,
+    "plan_cost_usd": 0.69223295,
+    "plan_content": "The plan is ready. Here's a summary of what will be built:\n\n## Plan: `@ai-sdk/pixelart` Provider\n\n**Modeled after**: `packages/black-forest-labs/` — the simplest image-only provider in the repo.\n\n**10 files to create** under `packages/pixelart/`:\n\n| File | Purpose |\n|---|---|\n| `package.json` | NPM metadata, workspace deps, dual CJS+ESM exports |\n| `tsconfig.json` | TypeScript project config, references `../provider` + `../provider-utils` |\n| `tsconfig.build.json` | Build-time override (`composite: false`) for tsup |\n| `tsup.config.ts` | Bundle config — single entry, CJS + ESM + `.d.ts`, injects version |\n| `turbo.json` | Turborepo task config |\n| `src/version.ts` | `VERSION` constant injected at build time |\n| `src/pixelart-image-settings.ts` | `PixelArtImageModelId` type + `PixelArtImageSettings` interface |\n| `src/pixelart-image-model.ts` | `PixelArtImageModel` implementing `ImageModelV3`, with Zod provider options schema for `size`, `style`, `pixelDensity` |\n| `src/pixelart-provider.ts` | `createPixelArt()` factory + `PixelArtProvider` interface; throws `NoSuchModelError` for language/embedding models |\n| `src/index.ts` | Public re-exports of all types and factory |\n\n**API**: Simple synchronous JSON POST to `https://api.pixelart.ai/v1/images/generate` — no polling needed. Returns base64-encoded images. Unsupported standard options (`aspectRatio`, `seed`, `files`, `mask`) emit warnings rather than throwing.",
+    "execute_duration_ms": 754473,
+    "execute_api_ms": 691123,
+    "execute_tokens_in": 93,
+    "execute_tokens_out": 40732,
+    "execute_cost_usd": 3.1020721500000006
+  },
+  "evaluation": {
+    "overall_score": 0.575,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.875,
+        "weight": 0.4,
+        "weighted_score": 0.35000000000000003,
+        "passed": false,
+        "details": {
+          "checks_passed": 7,
+          "checks_total": 8,
+          "check_details": [
+            {
+              "path": "packages/pixelart/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/index.ts",
+              "check": "contains \"createPixelArt\"",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-provider.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-provider.ts",
+              "check": "contains \"pixelart\"",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "contains \"generateImage\"",
+              "passed": false
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "contains \"pixelDensity\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/pixelart && npx tsc --noEmit",
+          "exit_code": 1,
+          "output": "src/pixelart-image-model.ts(13,19): error TS2307: Cannot find module 'zod/v4' or its corresponding type declarations.\nsrc/pixelart-image-model.ts(88,5): error TS18046: 'data' is of type 'unknown'.\nsrc/pixelart-image-model.ts(88,28): error TS18046: 'data' is of type 'unknown'.\nsrc/pixelart-image-model.ts(180,24): error TS2339: Property 'size' does not exist on type '{}'.\nsrc/pixelart-image-model.ts(182,24): error TS2339: Property 'style' does not exist on type '{}'.\nsrc/pixelart-image-model.ts(184,24): error TS2339: Property 'pixelDensity' does not exist on type '{}'.\nsrc/pixelart-image-model.ts(222,15): error TS18046: 'response' is of type 'unknown'.\nsrc/pixelart-image-model.ts(222,33): error TS7006: Parameter 'item' implicitly has an 'any' type.\nsrc/pixelart-image-model.ts(225,18): error TS18046: 'response' is of type 'unknown'.\nsrc/pixelart-image-model.ts(231,19): error TS18046: 'response' is of type 'unknown'.\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "export.*createPixelArt",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "PixelArtProvider",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.15,
+        "weighted_score": 0.075,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "pixel.*8bit|8bit.*pixel|style",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "api\\.pixelart\\.ai",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 589
+  },
+  "session_id": "b2147354-b0c1-474f-aea1-ef4567058c44"
+}

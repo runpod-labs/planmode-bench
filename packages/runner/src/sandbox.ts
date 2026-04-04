@@ -7,6 +7,31 @@ import type { Task } from "@planmode-bench/schema";
 
 const execAsync = promisify(exec);
 
+/**
+ * Per-repo mutex to prevent concurrent git worktree operations on the same base.
+ * Git locks .git/worktrees internally, so parallel `git worktree add` on the same
+ * repo will fail (especially on large repos with many files).
+ */
+const repoLocks = new Map<string, Promise<void>>();
+
+async function withRepoLock<T>(baseDir: string, fn: () => Promise<T>): Promise<T> {
+  // Wait for any pending operation on this repo
+  while (repoLocks.has(baseDir)) {
+    await repoLocks.get(baseDir);
+  }
+
+  let resolve: () => void;
+  const lock = new Promise<void>((r) => { resolve = r; });
+  repoLocks.set(baseDir, lock);
+
+  try {
+    return await fn();
+  } finally {
+    repoLocks.delete(baseDir);
+    resolve!();
+  }
+}
+
 export interface Workspace {
   dir: string;
   task: Task;
@@ -142,10 +167,12 @@ export async function createWorkspace(
   const branchName = `bench-${worktreeId}`;
   const worktreeDir = path.join(os.tmpdir(), `planmode-bench-wt-${worktreeId}`);
 
-  await execAsync(`git worktree add -b ${branchName} ${worktreeDir} HEAD`, {
-    cwd: baseDir,
-    timeout: 30_000,
-  });
+  await withRepoLock(baseDir, () =>
+    execAsync(`git worktree add -b ${branchName} ${worktreeDir} HEAD`, {
+      cwd: baseDir,
+      timeout: 120_000,
+    })
+  );
 
   // For Node.js tasks, symlink node_modules from base (huge speed gain)
   try {
@@ -199,25 +226,27 @@ export async function createWorkspace(
     task,
     shellPrefix,
     cleanup: async () => {
-      // Remove worktree and branch
-      try {
-        await execAsync(`git worktree remove ${worktreeDir} --force`, {
-          cwd: baseDir,
-          timeout: 15_000,
-        });
-      } catch {
-        // Force cleanup if git worktree remove fails
-        await rm(worktreeDir, { recursive: true, force: true });
+      // Remove worktree and branch (locked to prevent concurrent git ops)
+      await withRepoLock(baseDir, async () => {
         try {
-          await execAsync(`git worktree prune`, { cwd: baseDir, timeout: 10_000 });
+          await execAsync(`git worktree remove ${worktreeDir} --force`, {
+            cwd: baseDir,
+            timeout: 15_000,
+          });
+        } catch {
+          // Force cleanup if git worktree remove fails
+          await rm(worktreeDir, { recursive: true, force: true });
+          try {
+            await execAsync(`git worktree prune`, { cwd: baseDir, timeout: 10_000 });
+          } catch { /* ignore */ }
+        }
+        try {
+          await execAsync(`git branch -D ${branchName}`, {
+            cwd: baseDir,
+            timeout: 5_000,
+          });
         } catch { /* ignore */ }
-      }
-      try {
-        await execAsync(`git branch -D ${branchName}`, {
-          cwd: baseDir,
-          timeout: 5_000,
-        });
-      } catch { /* ignore */ }
+      });
     },
   };
 }

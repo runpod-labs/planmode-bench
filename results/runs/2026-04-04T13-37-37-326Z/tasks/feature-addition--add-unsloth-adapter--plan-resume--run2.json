@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-04T19:07:34.628Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 378461,
+    "duration_api_ms": 464935,
+    "num_turns": 25,
+    "total_cost_usd": 1.3136739,
+    "input_tokens": 23,
+    "output_tokens": 16611,
+    "cache_read_tokens": 633548,
+    "cache_creation_tokens": 97524,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 288532,
+    "plan_api_ms": 375056,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 11250,
+    "plan_cost_usd": 0.91437765,
+    "plan_content": "Here's a summary of the full implementation plan:\n\n---\n\n## Plan: ONNX Export for LoRA Adapters\n\n**Single file to modify: `unsloth/save.py`**\n\n### 4 changes, in order:\n\n**1. `__all__` (line 48–54)** — Add `\"export_lora_to_onnx\"` to the public API list.\n\n**2. `export_lora_to_onnx()` function** (insert after `save_lora_to_custom_dir`, ~line 2141):\n- `@torch.inference_mode` decorated, typed `(model, output_dir, opset_version=17) -> str`\n- Lazily imports `onnx` with a user-friendly `ImportError` if missing\n- Reads `model.peft_config[adapter_name]` for rank / alpha / target_modules\n- Iterates `model.named_modules()`, filters `Peft_Linear` / `Peft_Linear4bit` with active (non-merged) adapters using the same `isinstance` check as `_merge_lora()`\n- Accesses `module.lora_A[adapter].weight` (float32 cast) and `module.lora_B[adapter].weight` — same access pattern as `kernels/utils.py:get_lora_parameters()`\n- Builds a **weight-container ONNX graph**: no nodes, only `initializers` (one `lora_A` + one `lora_B` per layer, named by full module path)\n- Embeds rank/alpha/target_modules in `model_proto.metadata_props`\n- Writes `lora_adapters.onnx` + `lora_metadata.json` to `output_dir`\n- Raises `ValueError` if no LoRA layers found\n\n**3. `unsloth_save_pretrained_onnx()` wrapper** (right after the above):\n- Takes `(self, output_dir, opset_version=17)`, delegates to `export_lora_to_onnx`\n- Same thin-wrapper pattern as `unsloth_save_pretrained_torchao` (line 2502)\n\n**4. `patch_saving_functions()` registration** (lines 2658–2676):\n- Add `model.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)` in both the `if not vision:` and `else:` branches so all model types expose `model.save_pretrained_onnx(\"my_dir/\")`\n\n### Why a weight-container ONNX?\nLoRA adapters are weight deltas, not runnable inference graphs. Storing them as ONNX initializers (named tensors, no ops) is the standard approach and keeps full compatibility with ONNX Runtime, OpenVINO, and other consumers without inventing a dummy computation graph.",
+    "execute_duration_ms": 89929,
+    "execute_api_ms": 89879,
+    "execute_tokens_in": 10,
+    "execute_tokens_out": 5361,
+    "execute_cost_usd": 0.39929624999999996
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 90
+  },
+  "session_id": "4d560e20-8860-4704-965b-b79f232d0697"
+}

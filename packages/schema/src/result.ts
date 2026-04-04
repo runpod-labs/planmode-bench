@@ -112,10 +112,8 @@ export type TaskModeStatsType = z.infer<typeof TaskModeStats>;
 
 export const TaskComparison = z.object({
   task_id: z.string(),
-  normal: TaskModeStats,
-  "plan-resume": TaskModeStats,
-  "plan-clear": TaskModeStats,
-  winner: z.enum(["normal", "plan-resume", "plan-clear", "tie"]),
+  modes: z.record(z.string(), TaskModeStats),
+  winner: z.string(),
   p_value: z.number().optional(),
 });
 
@@ -130,27 +128,9 @@ export const RunSummary = z.object({
   total_runs: z.number(),
   total_cost_usd: z.number(),
   total_duration_ms: z.number(),
-  overall: z.object({
-    normal: AggregatedModeStats,
-    "plan-resume": AggregatedModeStats,
-    "plan-clear": AggregatedModeStats,
-  }),
-  by_category: z.record(
-    z.string(),
-    z.object({
-      normal: AggregatedModeStats,
-      "plan-resume": AggregatedModeStats,
-      "plan-clear": AggregatedModeStats,
-    })
-  ),
-  by_difficulty: z.record(
-    z.string(),
-    z.object({
-      normal: AggregatedModeStats,
-      "plan-resume": AggregatedModeStats,
-      "plan-clear": AggregatedModeStats,
-    })
-  ),
+  overall: z.record(z.string(), AggregatedModeStats),
+  by_category: z.record(z.string(), z.record(z.string(), AggregatedModeStats)),
+  by_difficulty: z.record(z.string(), z.record(z.string(), AggregatedModeStats)),
   per_task: z.array(TaskComparison),
 });
 

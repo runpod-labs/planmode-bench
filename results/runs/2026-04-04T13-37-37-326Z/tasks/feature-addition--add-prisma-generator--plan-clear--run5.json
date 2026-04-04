@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "Add REST API Client Generator to Prisma",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-04T16:39:39.689Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 408602,
+    "duration_api_ms": 531151,
+    "num_turns": 39,
+    "total_cost_usd": 1.1301451,
+    "input_tokens": 32,
+    "output_tokens": 18541,
+    "cache_read_tokens": 677435,
+    "cache_creation_tokens": 68138,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 226967,
+    "plan_api_ms": 350866,
+    "plan_tokens_in": 10,
+    "plan_tokens_out": 10317,
+    "plan_cost_usd": 0.6649637999999999,
+    "plan_content": "## Plan Summary\n\nHere's what I'll build after your approval:\n\n### New package: `packages/generator-rest-client/` (7 files)\n\n| File | What it does |\n|---|---|\n| `package.json` | Package named `@prisma/generator-rest-client`; depends only on `@prisma/dmmf`, `@prisma/generator`, `@prisma/generator-helper`; `bin` field exposes `prisma-generator-rest-client` for CLI invocation |\n| `tsconfig.json` | Extends `../../tsconfig.json` — identical to every other package |\n| `tsconfig.build.json` | Extends `../../tsconfig.build.regular.json`, compiles `src/` → `dist/` |\n| `helpers/build.ts` | `void build(adapterConfig)` — produces dual CJS + ESM bundles with type declarations |\n| `src/index.ts` | Calls `generatorHandler({ onManifest, onGenerate })` from `@prisma/generator-helper` — the entire JSON-RPC protocol is handled for free |\n| `src/generator.ts` | Reads `options.dmmf.datamodel.{models,enums}`, maps DMMF scalars → TS types, assembles code fragments, writes `rest-client.ts` via `node:fs` |\n| `src/template.ts` | Pure functions: `renderEnum`, `renderModelInterface`, `renderWhereUniqueInput`, `renderCreateInput`, `renderUpdateInput`, `renderClientClass`, `renderFactory` |\n\n### Modification: `tsconfig.build.bundle.json` (1 line)\nAdd `\"@prisma/generator-rest-client\": [\"./packages/generator-rest-client/src\"]` to `paths` for IDE go-to-definition.\n\n### Generated output shape (for a `User` model)\n- `export interface User { ... }` — all fields\n- `export type UserWhereUniqueInput` — id/unique fields only\n- `export type CreateUserInput` — writable fields (auto-generated become optional)\n- `export type UpdateUserInput` — all writable fields as optional\n- `export class UserRestClient` — `findMany`, `findUnique`, `create`, `update`, `delete` using native `fetch`\n- `export function createRestClient(baseUrl)` — factory returning all model clients",
+    "execute_duration_ms": 181635,
+    "execute_api_ms": 180285,
+    "execute_tokens_in": 22,
+    "execute_tokens_out": 8224,
+    "execute_cost_usd": 0.4651813
+  },
+  "evaluation": {
+    "overall_score": 0.5700000000000001,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.8,
+        "weight": 0.4,
+        "weighted_score": 0.32000000000000006,
+        "passed": false,
+        "details": {
+          "checks_passed": 8,
+          "checks_total": 10,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"prisma\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"generator\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"generatorHandler\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"onGenerate\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"dmmf\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"findMany\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"create\"",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 2,
+          "output": ": error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\n../generator-helper/src/GeneratorProcess.ts(108,23): error TS2503: Cannot find namespace 'NodeJS'.\n../generator-helper/src/GeneratorProcess.ts(186,21): error TS2503: Cannot find namespace 'NodeJS'.\n../generator-helper/src/GeneratorProcess.ts(215,21): error TS2503: Cannot find namespace 'NodeJS'.\n../generator-helper/src/GeneratorProcess.ts(216,20): error TS2503: Cannot find namespace 'NodeJS'.\nsrc/generator.ts(1,16): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nsrc/generator.ts(2,18): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.6666666666666666,
+        "weight": 0.15,
+        "weighted_score": 0.09999999999999999,
+        "passed": false,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "findUnique|findMany",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "model|Model",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "interface|type",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "generatorHandler",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "onGenerate|onManifest",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 535
+  },
+  "session_id": "44a0e6e2-2e85-44a5-bd96-1cc1e04e20c5"
+}

@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "Add Top-A Sampling Strategy to vLLM",
+  "mode": "plan-clear",
+  "run_number": 6,
+  "timestamp": "2026-04-04T19:53:55.579Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 409706,
+    "duration_api_ms": 480593,
+    "num_turns": 43,
+    "total_cost_usd": 1.1639741000000001,
+    "input_tokens": 39,
+    "output_tokens": 18911,
+    "cache_read_tokens": 1122851,
+    "cache_creation_tokens": 71961,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 202254,
+    "plan_api_ms": 274957,
+    "plan_tokens_in": 12,
+    "plan_tokens_out": 8961,
+    "plan_cost_usd": 0.5892047,
+    "plan_content": "## Implementation Plan: Add Top-A Sampling to vLLM\n\nHere's the complete, step-by-step plan based on thorough codebase analysis.\n\n---\n\n### Architecture Overview\n\nThe pipeline to thread `top_a` through is identical to `min_p`:\n\n```\nSamplingParams.top_a\n  → SamplingTensors.top_as (GPU tensor)\n    → Sampler._do_top_a flag\n      → _apply_top_a(logits, top_as) in forward()\n```\n\n---\n\n### File 1: `vllm/sampling_params.py`\n\n**1a. Docstring** — add after the `min_p` entry (~line 156):\n```\n        top_a: Float that controls Top-A sampling. Keeps only tokens whose\n            probability is at least top_a * (max token probability). Must be\n            in [0, 1]. Set to 0 to disable.\n```\n\n**1b. Field** — add after `min_p: float = 0.0` (line 214):\n```python\ntop_a: float = 0.0\n```\n\n**1c. Validation** in `_verify_args()` — add after the `min_p` check (after line 428):\n```python\nif not 0.0 <= self.top_a <= 1.0:\n    raise ValueError(\"top_a must be in [0, 1], got \"\n                     f\"{self.top_a}.\")\n```\n\n**1d. Greedy reset** in `__post_init__()` — add inside the `temperature < _SAMPLING_EPS` block (after line 381):\n```python\nself.top_a = 0.0\n```\n\n**1e. `from_optional()` signature** — add `top_a: float = 0.0,` after `min_p: float = 0.0`\n\n**1f. `from_optional()` constructor call** — add `top_a=top_a,` after `min_p=min_p,`\n\n---\n\n### File 2: `vllm/model_executor/sampling_metadata.py`\n\n**2a. `SamplingTensors` dataclass** — add `top_as: torch.Tensor` after `min_ps` (after line 379)\n\n**2b. `from_sampling_metadata()`** — add `top_as: list[float] = []` and `do_top_a = False` to the initializations; extract `top_a = sampling_params.top_a` in the loop; add flag check `if not do_top_a and top_a > _SAMPLING_EPS: do_top_a = True`; append `top_as += [top_a] * prefill_len` and `top_as += [top_a] * sample_lens` in the two list-building blocks\n\n**2c. Return type** — update to 5-tuple: `return (sampling_tensors, do_penalties, do_top_p_top_k, do_min_p, do_top_a)`\n\n**2d. `from_lists()`** — add `top_as: list[float]` parameter; create `top_as_t = torch.tensor(top_as, device=\"cpu\", dtype=dtype, pin_memory=pin_memory)`; add `top_as=top_as_t.to(device=device, non_blocking=True)` to the `cls(...)` return\n\n---\n\n### File 3: `vllm/model_executor/layers/sampler.py`\n\n**3a. `_init_sampling_tensors()`** — unpack the new 5-tuple from `from_sampling_metadata()`; store `self._do_top_a = do_top_a`\n\n**3b. `forward()`** — read `do_top_a = self._do_top_a`; after the `do_min_p` block add:\n```python\nif do_top_a:\n    logits = _apply_top_a(logits, sampling_tensors.top_as)\n```\n\n**3c. New function** — add `_apply_top_a()` after `_apply_min_p()` (after line 441), mirroring its pattern exactly:\n```python\ndef _apply_top_a(logits: torch.Tensor, top_a: torch.Tensor) -> torch.Tensor:\n    probs = torch.softmax(logits, dim=-1)\n    top_probs, _ = probs.max(dim=-1, keepdim=True)\n    scaled_top_a = top_a.unsqueeze_(dim=1) * top_probs\n    tokens_to_remove = probs < scaled_top_a\n    logits = logits.masked_fill_(tokens_to_remove, -float(\"inf\"))\n    return logits\n```\n\n---\n\n### Key Design Decisions\n- **No-op guarantee**: `do_top_a` flag only activates when `top_a > 1e-5`, so requests with `top_a=0.0` incur zero overhead\n- **Safety guarantee**: The max-probability token always satisfies `p >= top_a * max_p` (since `top_a ≤ 1.0`), so at least one token always survives\n- **Filter ordering**: Applied after `min_p` — both operate on softmax probabilities and order is independent for correctness",
+    "execute_duration_ms": 207452,
+    "execute_api_ms": 205636,
+    "execute_tokens_in": 27,
+    "execute_tokens_out": 9950,
+    "execute_cost_usd": 0.5747694000000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "contains \"top_a\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "top_a.*float|float.*top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "0\\.0.*top_a|top_a.*0\\.0",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "python3 -c 'import ast; ast.parse(open(\"vllm/sampling_params.py\").read()); print(\"Syntax OK\")'",
+          "exit_code": 0,
+          "output": "Syntax OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 32
+  },
+  "session_id": "a7b25d18-a07e-4e1e-8f28-cfddb173b2b5"
+}

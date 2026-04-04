@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-clear",
+  "run_number": 8,
+  "timestamp": "2026-04-04T19:23:50.335Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 646442,
+    "duration_api_ms": 727447,
+    "num_turns": 34,
+    "total_cost_usd": 1.3924779999999999,
+    "input_tokens": 114,
+    "output_tokens": 29233,
+    "cache_read_tokens": 650556,
+    "cache_creation_tokens": 67411,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 506884,
+    "plan_api_ms": 588643,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 20818,
+    "plan_cost_usd": 1.0050474999999999,
+    "plan_content": "Here is the complete plan I've written:\n\n---\n\n## Plan: Add ONNX Export for LoRA Adapters\n\n### What I found in the codebase\n\n- **Only `/unsloth/save.py`** needs to be modified (2,678 lines).\n- All export methods (`save_pretrained_gguf`, `save_pretrained_ggml`, etc.) follow the same pattern: a standalone function taking `self` as first argument, registered via `types.MethodType(...)` inside `patch_saving_functions` (lines 2569–2678).\n- LoRA A/B matrices live at `module.lora_A[adapter].weight` (shape: `rank × in_features`) and `module.lora_B[adapter].weight` (shape: `out_features × rank`) on any `Peft_Linear` or `Peft_Linear4bit` module.\n- Rank, alpha, and target_modules are in `model.peft_config[\"default\"]`.\n- `Peft_Linear4bit` and `Peft_Linear` are already imported at line 18–19 of `save.py`.\n\n---\n\n### Three exact changes to `/unsloth/save.py`\n\n**Change 1 — Add to `__all__` (line 48):**\n```python\n\"export_lora_to_onnx\",\n```\n\n**Change 2 — Insert `export_lora_to_onnx` function before line 2564** (~110 lines):\n- Lazily imports `onnx`, `json`, `numpy` (no hard dep for non-ONNX users)\n- Reads rank/alpha/target_modules from `self.peft_config[\"default\"]`\n- Walks `self.named_modules()`, filters for `Peft_Linear`/`Peft_Linear4bit`\n- Skips merged/disabled adapters; raises `ValueError` if none active\n- For each layer: extracts raw A/B matrices + scaling, converts to float32 numpy\n- Builds an ONNX graph with all tensors as **initializers** surfaced via `Identity` nodes (no dynamic inputs — pure constant graph)\n- Stores rank/alpha/target_modules in ONNX `metadata_props`\n- Runs `onnx.checker.check_model()` before saving\n- Writes `lora_adapters.onnx` + `lora_metadata.json` to `output_dir`\n- Returns path to ONNX file\n\n**Change 3 — Register in `patch_saving_functions` (after line 2667):**\n```python\nmodel.save_pretrained_onnx = types.MethodType(export_lora_to_onnx, model)\n```\n\n### Resulting API\n```python\nmodel.save_pretrained_onnx(\"outputs/lora_onnx/\", opset_version=17)\n# → outputs/lora_onnx/lora_adapters.onnx\n# → outputs/lora_onnx/lora_metadata.json\n```",
+    "execute_duration_ms": 139558,
+    "execute_api_ms": 138804,
+    "execute_tokens_in": 99,
+    "execute_tokens_out": 8415,
+    "execute_cost_usd": 0.3874305
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 85
+  },
+  "session_id": "d2578d21-40ed-411e-8897-c3c816c01981"
+}

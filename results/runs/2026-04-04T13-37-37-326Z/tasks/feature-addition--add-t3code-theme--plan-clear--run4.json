@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "Add Custom Theme System to T3 Code Editor",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-04T18:57:19.621Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1062842,
+    "duration_api_ms": 1165217,
+    "num_turns": 48,
+    "total_cost_usd": 2.2896365000000003,
+    "input_tokens": 43,
+    "output_tokens": 62839,
+    "cache_read_tokens": 1986985,
+    "cache_creation_tokens": 115833,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 475859,
+    "plan_api_ms": 589346,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 24588,
+    "plan_cost_usd": 0.92757365,
+    "plan_content": "Here's a summary of what I found and the plan I've created:\n\n---\n\n## Plan: Custom Theme System\n\n### What the codebase already has\n- A `useTheme()` hook (`apps/web/src/hooks/useTheme.ts`) for light/dark/system mode — stored at `t3code:theme`, applies a `.dark` CSS class, used by `DiffWorkerPoolProvider` and the Settings page. **This will not be touched.**\n- CSS custom properties in `index.css` (Tailwind v4) — `--background`, `--foreground`, `--primary`, `--muted`, etc. — these are the variables the new theme system will override.\n- `packages/shared` uses direct TypeScript subpath exports (no build step).\n\n### The 5-file plan\n\n**Create:**\n1. **`packages/shared/src/themes.ts`** — `Theme` interface (id, name, colorScheme, colors, fontFamily, fontSize), 3 built-in themes (t3-dark, t3-light, t3-midnight), `getTheme()` and `listThemes()` — pure TypeScript, no deps\n2. **`apps/web/src/hooks/useCustomTheme.ts`** — mirrors the exact `useSyncExternalStore` pattern of the existing `useTheme.ts`; applies ~18 CSS custom properties to `document.documentElement.style` on load + on change; cross-tab sync; returns `{ theme, setTheme, availableThemes }`\n3. **`apps/web/src/components/ThemeSelector.tsx`** — radio-button picker with background/sidebar/accent color swatches per theme, styled to match the existing Settings Appearance section\n\n**Modify:**\n4. **`packages/shared/package.json`** — add `\"./themes\"` to the exports map\n5. **`apps/web/src/routes/_chat.settings.tsx`** — add a \"Color Theme\" section with `<ThemeSelector />` after the existing light/dark section\n\nNo build config changes, no new dependencies, no breakage of existing code.",
+    "execute_duration_ms": 586983,
+    "execute_api_ms": 575871,
+    "execute_tokens_in": 30,
+    "execute_tokens_out": 38251,
+    "execute_cost_usd": 1.36206285
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 5,
+          "checks_total": 5,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"t3-dark\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"t3-light\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"getTheme\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"listThemes\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "interface.*Theme|type.*Theme",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "background|foreground|accent",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "t3-midnight",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 808
+  },
+  "session_id": "cccc1984-5188-4c5e-936e-4022e371141b"
+}

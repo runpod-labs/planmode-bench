@@ -22,12 +22,7 @@ interface Stats {
 }
 
 interface Props {
-  overall: {
-    normal: Stats;
-    "normal-guided": Stats;
-    "plan-resume": Stats;
-    "plan-clear": Stats;
-  };
+  overall: Record<string, Stats>;
 }
 
 const MODES = [

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-clear",
+  "run_number": 9,
+  "timestamp": "2026-04-04T19:27:38.163Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 437270,
+    "duration_api_ms": 937316,
+    "num_turns": 25,
+    "total_cost_usd": 2.0450335500000003,
+    "input_tokens": 23,
+    "output_tokens": 17179,
+    "cache_read_tokens": 541745,
+    "cache_creation_tokens": 48258,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 430397,
+    "plan_api_ms": 616479,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 16893,
+    "plan_cost_usd": 1.22295,
+    "plan_content": "Here is the complete implementation plan I've developed after exploring the codebase thoroughly.\n\n---\n\n## Summary\n\n### What I found\n\nThe entire save/export machinery lives in **one file: `unsloth/save.py`** (2678 lines). Every export format follows the same pattern:\n1. A module-level function (e.g. `unsloth_save_pretrained_gguf`)\n2. A paired hub-upload variant (e.g. `unsloth_push_to_hub_gguf`)\n3. Both registered via `types.MethodType` monkey-patching inside `patch_saving_functions()` at the bottom of the file\n\nThe LoRA A/B matrices and scale factor are already extractable via `get_lora_parameters()` in `unsloth/kernels/utils.py:190` — this is the same utility used by `_merge_lora()` for GGUF export. Importantly, **no other files need to change** — `patch_saving_functions()` is already called by every model-loading path.\n\n### The plan (4 edits, all in `unsloth/save.py`)\n\n| # | Location | Change |\n|---|----------|--------|\n| 1 | Lines 22–31 | Add `import numpy as np` |\n| 2 | Lines 48–54 | Extend `__all__` with 2 new symbols |\n| 3 | After line 2561 | Insert `unsloth_save_pretrained_onnx` + `unsloth_push_to_hub_onnx` functions |\n| 4 | Lines 2657–2667 | Register both methods in `patch_saving_functions()` |\n\n### Key design decisions\n- **Weight-store ONNX graph**: No inputs/outputs — just named `initializer` tensors for every A/B matrix. This is the most portable representation for adapter-only export (no need to embed the full model architecture in the ONNX graph).\n- **`onnx` imported lazily** (inside the function) with a clear `pip install onnx` error, so existing functionality is unaffected if the package is absent.\n- **Metadata embedded in `model.metadata_props`**: rank, alpha, target_modules (JSON), adapter name, and base model name — accessible to any ONNX runtime.\n- **Companion `adapter_config.json`** written alongside the `.onnx` file for PEFT compatibility.",
+    "execute_duration_ms": 6873,
+    "execute_api_ms": 320837,
+    "execute_tokens_in": 3,
+    "execute_tokens_out": 286,
+    "execute_cost_usd": 0.8220835500000001
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 82
+  },
+  "session_id": "91f702e8-fa4c-4cd3-8cdb-e341fa1d30ee"
+}

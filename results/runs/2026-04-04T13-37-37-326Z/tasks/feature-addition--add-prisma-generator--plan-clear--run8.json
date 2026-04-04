@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "Add REST API Client Generator to Prisma",
+  "mode": "plan-clear",
+  "run_number": 8,
+  "timestamp": "2026-04-04T16:50:00.937Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 874058,
+    "duration_api_ms": 910249,
+    "num_turns": 44,
+    "total_cost_usd": 1.7485324999999996,
+    "input_tokens": 51,
+    "output_tokens": 41870,
+    "cache_read_tokens": 1155202,
+    "cache_creation_tokens": 80981,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 591585,
+    "plan_api_ms": 629685,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 27971,
+    "plan_cost_usd": 0.9457474,
+    "plan_content": "Here's the complete implementation plan for `packages/generator-rest-client`.\n\n---\n\n## Summary\n\n**8 new files + 1 modified file:**\n\n### New package files\n\n| File | Role |\n|---|---|\n| `package.json` | `@prisma/generator-rest-client`, CJS+ESM exports, `bin: { prisma-generator-rest-client: dist/bin.js }`, deps on `generator-helper` + `internals` + `dmmf` |\n| `tsconfig.json` | Extends root `../../tsconfig.json` |\n| `tsconfig.build.json` | Extends `tsconfig.build.regular.json`, outDir `dist` |\n| `helpers/build.ts` | `adapterConfig` (lib) + custom bin build with `banner: { js: '#!/usr/bin/env node' }` |\n| `src/template.ts` | Pure string-template helpers: `fieldToTsType`, `renderModelInterface`, `renderCreateInput`, `renderUpdateInput`, `renderWhereUniqueInput`, `renderModelClient`, `renderRootClient`, `renderFile` |\n| `src/generator.ts` | `generate(options)` — resolves output with `parseEnvValue`, builds URL paths from `dmmf.mappings.modelOperations[].plural`, calls `renderFile`, writes `rest-client.ts` |\n| `src/index.ts` | Side-effect-free library exports from `./generator` and `./template` |\n| `src/bin.ts` | Calls `generatorHandler({ onManifest, onGenerate })` — the subprocess Prisma CLI spawns |\n\n### Modified file\n- **`tsconfig.build.bundle.json`** — add `\"@prisma/generator-rest-client\": [\"./packages/generator-rest-client/src\"]` to `compilerOptions.paths`\n\n### Key design decisions\n- **`parseEnvValue`** comes from `@prisma/internals` (not `@prisma/generator` — confirmed from source)\n- **URL paths** use `dmmf.mappings.modelOperations[].plural` (Prisma already computes correct plurals like `users`, `posts`) — no custom pluralisation logic needed\n- **`src/index.ts` has zero side effects** — `generatorHandler()` is only called in `src/bin.ts`, keeping the library importable without starting a JSON-RPC listener\n- **Single output file** `rest-client.ts` with model interfaces, input types (`CreateInput`, `UpdateInput`, `WhereUniqueInput`), per-model client classes using the `fetch` API, and a root `RestClient` aggregator class",
+    "execute_duration_ms": 282473,
+    "execute_api_ms": 280564,
+    "execute_tokens_in": 31,
+    "execute_tokens_out": 13899,
+    "execute_cost_usd": 0.8027850999999997
+  },
+  "evaluation": {
+    "overall_score": 0.29,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.6,
+        "weight": 0.4,
+        "weighted_score": 0.24,
+        "passed": false,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 10,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"prisma\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"generator\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"generatorHandler\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"onGenerate\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"dmmf\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"findMany\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"create\"",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 2,
+          "output": "ns for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\n../internals/src/WasmSchemaEngineLoader.ts(1,16): error TS2591: Cannot find name 'node:fs/promises'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\n../internals/src/WasmSchemaEngineLoader.ts(2,18): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\n../internals/src/WasmSchemaEngineLoader.ts(5,55): error TS2307: Cannot find module '@prisma/schema-engine-wasm' or its corresponding type declarations.\n../internals/src/WasmSchemaEngineLoader.ts(8,33): error TS2304: Cannot find name '__dirname'.\n../internals/src/WasmSchemaEngineLoader.ts(19,32): error TS2307: Cannot find module '@prisma/schema-engine-wasm/schema_engine_bg' or its corresponding type declarations.\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.3333333333333333,
+        "weight": 0.15,
+        "weighted_score": 0.049999999999999996,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "findUnique|findMany",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "model|Model",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "interface|type",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "generatorHandler",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "onGenerate|onManifest",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 956
+  },
+  "session_id": "aa0e11af-1840-4eb6-82a8-8cea9813e55f"
+}

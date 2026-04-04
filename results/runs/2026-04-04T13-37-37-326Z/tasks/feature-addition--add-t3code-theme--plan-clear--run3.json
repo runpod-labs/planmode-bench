@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "Add Custom Theme System to T3 Code Editor",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-04T18:45:03.509Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 531395,
+    "duration_api_ms": 653932,
+    "num_turns": 43,
+    "total_cost_usd": 1.5168453999999998,
+    "input_tokens": 35,
+    "output_tokens": 27294,
+    "cache_read_tokens": 1028271,
+    "cache_creation_tokens": 96797,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 385392,
+    "plan_api_ms": 512032,
+    "plan_tokens_in": 12,
+    "plan_tokens_out": 18328,
+    "plan_cost_usd": 1.0031314,
+    "plan_content": "Here's the full implementation plan for the custom theme system. A few key findings from the codebase exploration:\n\n## What I found\n\n**Existing theme system conflict**: `apps/web/src/hooks/useTheme.ts` already exports `useTheme()` with `{ theme, setTheme, resolvedTheme }` — a light/dark/system toggle used in **5 files**. The new hook would conflict on name.\n\n**Resolution in plan**: Name the new hook `useColorTheme()` so both systems coexist without breakage. The existing `useTheme` manages the `.dark` CSS class; `useColorTheme` manages named color palettes via inline CSS custom properties.\n\n---\n\n## Plan summary (6 steps, 3 new files, 3 edits)\n\n1. **`packages/shared/src/themes.ts`** *(new)* — `Theme` interface (id, name, colors, fontFamily, fontSize, plus `isDark` needed to sync the `.dark` class), 3 built-in themes, `getTheme(id)` and `listThemes()`. Styled after `git.ts` (pure functions, `readonly`, JSDoc, named exports).\n\n2. **`packages/shared/package.json`** *(edit)* — Add `\"./themes\"` subpath export matching the existing pattern.\n\n3. **`apps/web/src/hooks/useColorTheme.ts`** *(new)* — Mirrors the `useSyncExternalStore` pattern of `useTheme.ts` exactly. Stores ID in `localStorage` at `t3code:color-theme`, applies colors as **inline CSS custom properties** on `document.documentElement` (overrides `:root` CSS), and syncs the `.dark` class via `theme.isDark`. Returns `{ theme, setTheme, availableThemes }`.\n\n4. **`apps/web/src/components/ThemeSelector.tsx`** *(new)* — Radio group matching the Appearance section's button style, with 3 color swatches per theme (background, foreground, accent previews).\n\n5. **`apps/web/src/routes/_chat.settings.tsx`** *(edit)* — Add \"Color Theme\" `<section>` above the existing \"Appearance\" section, rendering `<ThemeSelector />`.\n\n6. **`apps/web/src/index.css`** *(edit)* — Add CSS fallback declarations for `--theme-sidebar`, `--theme-editor`, `--theme-terminal`, `--theme-status-bar`, `--theme-font-family`, `--theme-font-size` inside `:root`.\n\n**Zero build config changes. Zero new dependencies.**",
+    "execute_duration_ms": 146003,
+    "execute_api_ms": 141900,
+    "execute_tokens_in": 23,
+    "execute_tokens_out": 8966,
+    "execute_cost_usd": 0.5137139999999999
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 5,
+          "checks_total": 5,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"t3-dark\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"t3-light\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"getTheme\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"listThemes\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "interface.*Theme|type.*Theme",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "background|foreground|accent",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "t3-midnight",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 708
+  },
+  "session_id": "65ee68dd-1e57-4398-b175-ae1ddc81eba6"
+}

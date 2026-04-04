@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "Add New AI Image Provider to Vercel AI SDK",
+  "mode": "plan-clear",
+  "run_number": 10,
+  "timestamp": "2026-04-04T21:55:55.382Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1029688,
+    "duration_api_ms": 1032680,
+    "num_turns": 121,
+    "total_cost_usd": 3.5771169500000006,
+    "input_tokens": 111,
+    "output_tokens": 52134,
+    "cache_read_tokens": 6107274,
+    "cache_creation_tokens": 136160,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 234703,
+    "plan_api_ms": 328044,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 11432,
+    "plan_cost_usd": 0.78938195,
+    "plan_content": "## Plan complete — here's the summary\n\nAfter thoroughly studying `packages/fal` (the closest existing analog — image-only, no language models), here's the full plan for the `@ai-sdk/pixelart` package:\n\n### Files to **create** (all new, in `packages/pixelart/`)\n\n| File | Purpose |\n|---|---|\n| `package.json` | `@ai-sdk/pixelart` v1.0.0 with workspace deps on `@ai-sdk/provider` + `@ai-sdk/provider-utils` |\n| `tsconfig.json` | Extends `@vercel/ai-tsconfig/ts-library.json`, references `../provider` + `../provider-utils` |\n| `tsconfig.build.json` | Disables `composite` for tsup |\n| `tsup.config.ts` | Builds CJS + ESM + `.d.ts`, injects version |\n| `turbo.json` | Turbo task config |\n| `vitest.node.config.js` / `vitest.edge.config.js` | Test configs |\n| `src/version.ts` | `VERSION` constant |\n| `src/pixelart-image-model-id.ts` | `PixelArtImageModelId` type + `PixelArtImageSettings` interface |\n| `src/pixelart-image-model.ts` | `PixelArtImageModel` class implementing `ImageModelV3` |\n| `src/pixelart-provider.ts` | `createPixelArt` factory + `PixelArtProvider` interface + `pixelart` singleton |\n| `src/index.ts` | All public exports |\n\n### File to **update**\n- **Root `tsconfig.json`** — insert `{ \"path\": \"packages/pixelart\" }` between `packages/perplexity` and `packages/provider` (alphabetical order)\n\n### Key design decisions\n- **Pattern source**: Mirrors `packages/fal` exactly — image-only provider\n- **Unsupported models**: `languageModel`/`embeddingModel` throw `NoSuchModelError`  \n- **Provider-specific settings** (`size`, `style`, `pixelDensity`): Passed via `providerOptions.pixelart`, parsed with `parseProviderOptions` + Zod schema\n- **Unsupported standard params** (`aspectRatio`, `seed`, `files`, `mask`): Emit warnings instead of throwing\n- **Auth**: `PIXELART_API_KEY` env var or explicit `apiKey` option",
+    "execute_duration_ms": 794985,
+    "execute_api_ms": 704636,
+    "execute_tokens_in": 95,
+    "execute_tokens_out": 40702,
+    "execute_cost_usd": 2.7877350000000005
+  },
+  "evaluation": {
+    "overall_score": 0.875,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.875,
+        "weight": 0.4,
+        "weighted_score": 0.35000000000000003,
+        "passed": false,
+        "details": {
+          "checks_passed": 7,
+          "checks_total": 8,
+          "check_details": [
+            {
+              "path": "packages/pixelart/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/index.ts",
+              "check": "contains \"createPixelArt\"",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-provider.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-provider.ts",
+              "check": "contains \"pixelart\"",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "contains \"generateImage\"",
+              "passed": false
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "contains \"pixelDensity\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "cd packages/pixelart && npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "export.*createPixelArt",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "PixelArtProvider",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.15,
+        "weighted_score": 0.075,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "pixel.*8bit|8bit.*pixel|style",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "api\\.pixelart\\.ai",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 572
+  },
+  "session_id": "d088cb0d-e49e-487c-82a9-03b7f49697c9"
+}

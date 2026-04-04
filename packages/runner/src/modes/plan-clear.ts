@@ -26,10 +26,12 @@ export async function runPlanClearMode(
   task: Task,
   workDir: string,
   model: string,
-  planBudgetRatio: number = 0.3
+  _planBudgetRatio: number = 0.3
 ): Promise<PlanClearResult> {
-  const planBudget = task.setup.max_budget_usd * planBudgetRatio;
-  const executeBudget = task.setup.max_budget_usd * (1 - planBudgetRatio);
+  // Give each phase the full task budget — it's a safety cap, not a spend target.
+  // Splitting caused plan phases to hit budget caps on complex tasks.
+  const planBudget = task.setup.max_budget_usd;
+  const executeBudget = task.setup.max_budget_usd;
   const allMessages: SDKMessage[] = [];
 
   // Phase 1: Plan (with retry for transient failures)
