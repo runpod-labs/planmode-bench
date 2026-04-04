@@ -64,6 +64,12 @@ export async function reportCommand(runId?: string): Promise<void> {
   const o = summary.overall;
   const rows = [
     ["Avg Score", ...modes.map((m) => o[m].avg_score.toFixed(3))],
+    ["  95% CI", ...modes.map((m) => {
+      const lo = (o[m] as any).ci_lower;
+      const hi = (o[m] as any).ci_upper;
+      return lo != null && hi != null ? `[${lo.toFixed(3)}, ${hi.toFixed(3)}]` : "n/a";
+    })],
+    ["  n", ...modes.map((m) => ((o[m] as any).n ?? "?").toString())],
     ["Success Rate", ...modes.map((m) => `${(o[m].success_rate * 100).toFixed(1)}%`)],
     ["Avg Cost", ...modes.map((m) => `$${o[m].avg_cost_usd.toFixed(4)}`)],
     ["Avg Duration", ...modes.map((m) => `${(o[m].avg_duration_ms / 1000).toFixed(1)}s`)],
@@ -140,9 +146,15 @@ export async function reportCommand(runId?: string): Promise<void> {
     console.log(`\n  ${task.task_id}: winner=${task.winner}${sig}`);
 
     for (const mode of modes) {
-      const data = task[mode];
+      const data = task[mode] as any;
       const scoreStr = `avg=${data.avg.toFixed(3)}`;
-      const scoresStr = `[${data.scores.map((s) => s.toFixed(2)).join(", ")}]`;
+      const ciStr = data.ci_lower != null && data.ci_upper != null
+        ? ` CI=[${data.ci_lower.toFixed(3)}, ${data.ci_upper.toFixed(3)}]`
+        : "";
+      const srStr = data.success_rate != null
+        ? ` sr=${(data.success_rate * 100).toFixed(0)}%`
+        : "";
+      const scoresStr = `[${data.scores.map((s: number) => s.toFixed(2)).join(", ")}]`;
 
       // Find plan metrics for this task+mode
       const taskResults = allResults.filter((r) => r.task_id === task.task_id && r.mode === mode);
@@ -155,7 +167,7 @@ export async function reportCommand(runId?: string): Promise<void> {
         costDetail = ` total=$${r.metrics.total_cost_usd.toFixed(4)}${costDetail}`;
       }
 
-      console.log(`    ${mode.padEnd(14)} ${scoreStr} ${scoresStr}${costDetail}`);
+      console.log(`    ${mode.padEnd(14)} ${scoreStr}${ciStr}${srStr} ${scoresStr}${costDetail}`);
     }
   }
 

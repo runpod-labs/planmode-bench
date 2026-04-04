@@ -1,6 +1,7 @@
 import { query, type SDKResultMessage, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import type { Task, RunMetricsType } from "@planmode-bench/schema";
 import { extractMetrics } from "../metrics.js";
+import { withRetry } from "../retry.js";
 
 export interface NormalModeResult {
   metrics: RunMetricsType;
@@ -17,33 +18,35 @@ export async function runNormalMode(
   workDir: string,
   model: string
 ): Promise<NormalModeResult> {
-  let resultMessage: SDKResultMessage | null = null;
-  const messages: SDKMessage[] = [];
+  return withRetry(async () => {
+    let resultMessage: SDKResultMessage | null = null;
+    const messages: SDKMessage[] = [];
 
-  for await (const message of query({
-    prompt: task.prompt,
-    options: {
-      cwd: workDir,
-      permissionMode: "bypassPermissions",
-      allowDangerouslySkipPermissions: true,
-      maxTurns: 150,
-      maxBudgetUsd: task.setup.max_budget_usd,
-      model,
-    },
-  })) {
-    messages.push(message);
-    if (message.type === "result") {
-      resultMessage = message;
+    for await (const message of query({
+      prompt: task.prompt,
+      options: {
+        cwd: workDir,
+        permissionMode: "bypassPermissions",
+        allowDangerouslySkipPermissions: true,
+        maxTurns: 150,
+        maxBudgetUsd: task.setup.max_budget_usd,
+        model,
+      },
+    })) {
+      messages.push(message);
+      if (message.type === "result") {
+        resultMessage = message;
+      }
     }
-  }
 
-  if (!resultMessage) {
-    throw new Error(`Normal mode run for ${task.id} produced no result`);
-  }
+    if (!resultMessage) {
+      throw new Error(`Normal mode run for ${task.id} produced no result`);
+    }
 
-  return {
-    metrics: extractMetrics(resultMessage),
-    sessionId: resultMessage.session_id,
-    messages,
-  };
+    return {
+      metrics: extractMetrics(resultMessage),
+      sessionId: resultMessage.session_id,
+      messages,
+    };
+  }, { label: `normal/${task.id}` });
 }

@@ -71,6 +71,7 @@ export const RunResult = z.object({
   evaluation: EvaluationResult,
   session_id: z.string().optional(),
   permission_denials: z.array(z.string()).optional(),
+  error_message: z.string().optional(),
 });
 
 export type RunResultType = z.infer<typeof RunResult>;
@@ -83,6 +84,9 @@ export const AggregatedModeStats = z.object({
   avg_cost_usd: z.number(),
   avg_tokens: z.number(),
   avg_turns: z.number(),
+  ci_lower: z.number().optional(),
+  ci_upper: z.number().optional(),
+  n: z.number().optional(),
 });
 
 export type AggregatedModeStatsType = z.infer<typeof AggregatedModeStats>;
@@ -95,11 +99,22 @@ export const ModeDelta = z.object({
   winner: z.enum(["normal", "plan-resume", "plan-clear", "tie"]),
 });
 
+export const TaskModeStats = z.object({
+  scores: z.array(z.number()),
+  avg: z.number(),
+  std: z.number(),
+  ci_lower: z.number().optional(),
+  ci_upper: z.number().optional(),
+  success_rate: z.number().optional(),
+});
+
+export type TaskModeStatsType = z.infer<typeof TaskModeStats>;
+
 export const TaskComparison = z.object({
   task_id: z.string(),
-  normal: z.object({ scores: z.array(z.number()), avg: z.number(), std: z.number() }),
-  "plan-resume": z.object({ scores: z.array(z.number()), avg: z.number(), std: z.number() }),
-  "plan-clear": z.object({ scores: z.array(z.number()), avg: z.number(), std: z.number() }),
+  normal: TaskModeStats,
+  "plan-resume": TaskModeStats,
+  "plan-clear": TaskModeStats,
   winner: z.enum(["normal", "plan-resume", "plan-clear", "tie"]),
   p_value: z.number().optional(),
 });

@@ -5,6 +5,7 @@ import path from "node:path";
 import { query, type SDKResultMessage, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import type { Task, RunMetricsType, PlanMetricsType } from "@planmode-bench/schema";
 import { extractMetrics, mergeMetrics } from "../metrics.js";
+import { withRetry } from "../retry.js";
 
 const execAsync = promisify(exec);
 
@@ -31,29 +32,35 @@ export async function runPlanClearMode(
   const executeBudget = task.setup.max_budget_usd * (1 - planBudgetRatio);
   const allMessages: SDKMessage[] = [];
 
-  // Phase 1: Plan
-  let planResult: SDKResultMessage | null = null;
+  // Phase 1: Plan (with retry for transient failures)
+  const { planResult, planMessages } = await withRetry(async () => {
+    let planResult: SDKResultMessage | null = null;
+    const planMessages: SDKMessage[] = [];
 
-  for await (const message of query({
-    prompt: `${task.prompt}\n\nAnalyze the codebase thoroughly. Read all relevant files. Then create a detailed step-by-step implementation plan. Do NOT make any changes -- only read, explore, and plan.`,
-    options: {
-      cwd: workDir,
-      permissionMode: "plan",
-      maxTurns: 30,
-      maxBudgetUsd: planBudget,
-      model,
-    },
-  })) {
-    allMessages.push(message);
-    if (message.type === "result") {
-      planResult = message;
+    for await (const message of query({
+      prompt: `${task.prompt}\n\nAnalyze the codebase thoroughly. Read all relevant files. Then create a detailed step-by-step implementation plan. Do NOT make any changes -- only read, explore, and plan.`,
+      options: {
+        cwd: workDir,
+        permissionMode: "plan",
+        maxTurns: 30,
+        maxBudgetUsd: planBudget,
+        model,
+      },
+    })) {
+      planMessages.push(message);
+      if (message.type === "result") {
+        planResult = message;
+      }
     }
-  }
 
-  if (!planResult) {
-    throw new Error(`Plan phase for ${task.id} produced no result`);
-  }
+    if (!planResult) {
+      throw new Error(`Plan phase for ${task.id} produced no result`);
+    }
 
+    return { planResult, planMessages };
+  }, { label: `plan-clear/plan/${task.id}` });
+
+  allMessages.push(...planMessages);
   const planMetricsRaw = extractMetrics(planResult);
   const planContent = planResult.subtype === "success" ? planResult.result : "";
 
@@ -64,30 +71,36 @@ export async function runPlanClearMode(
     cwd: workDir,
   });
 
-  // Phase 2: Execute in FRESH session
-  let executeResult: SDKResultMessage | null = null;
+  // Phase 2: Execute in FRESH session (with retry for transient failures)
+  const { executeResult, executeMessages } = await withRetry(async () => {
+    let executeResult: SDKResultMessage | null = null;
+    const executeMessages: SDKMessage[] = [];
 
-  for await (const message of query({
-    prompt: `${task.prompt}\n\nAn implementation plan has been prepared for you in the file PLAN.md. Read it first, then execute the plan step by step, making all the necessary code changes.`,
-    options: {
-      cwd: workDir,
-      permissionMode: "bypassPermissions",
-      allowDangerouslySkipPermissions: true,
-      maxTurns: 150,
-      maxBudgetUsd: executeBudget,
-      model,
-    },
-  })) {
-    allMessages.push(message);
-    if (message.type === "result") {
-      executeResult = message;
+    for await (const message of query({
+      prompt: `${task.prompt}\n\nAn implementation plan has been prepared for you in the file PLAN.md. Read it first, then execute the plan step by step, making all the necessary code changes.`,
+      options: {
+        cwd: workDir,
+        permissionMode: "bypassPermissions",
+        allowDangerouslySkipPermissions: true,
+        maxTurns: 150,
+        maxBudgetUsd: executeBudget,
+        model,
+      },
+    })) {
+      executeMessages.push(message);
+      if (message.type === "result") {
+        executeResult = message;
+      }
     }
-  }
 
-  if (!executeResult) {
-    throw new Error(`Execute phase for ${task.id} produced no result`);
-  }
+    if (!executeResult) {
+      throw new Error(`Execute phase for ${task.id} produced no result`);
+    }
 
+    return { executeResult, executeMessages };
+  }, { label: `plan-clear/exec/${task.id}` });
+
+  allMessages.push(...executeMessages);
   const executeMetricsRaw = extractMetrics(executeResult);
 
   return {

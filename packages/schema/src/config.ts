@@ -4,7 +4,7 @@ import { ModeEnum } from "./result.js";
 export const RunnerConfig = z.object({
   tasks: z.array(z.string()).default(["all"]),
   modes: z.array(ModeEnum).default(["normal", "plan-resume", "plan-clear"]),
-  runs_per_task: z.number().int().min(1).default(3),
+  runs_per_task: z.number().int().min(1).default(10),
   model: z.string().default("claude-sonnet-4-6"),
   concurrency: z.number().int().min(1).default(1),
   output_dir: z.string().optional(),

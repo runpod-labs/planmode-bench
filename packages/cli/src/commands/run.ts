@@ -32,7 +32,7 @@ export async function runCommand(options: RunCommandOptions): Promise<void> {
     configOverrides: {
       tasks: taskList,
       modes,
-      runs_per_task: options.runs ? parseInt(options.runs, 10) : 3,
+      runs_per_task: options.runs ? parseInt(options.runs, 10) : undefined,
       model: options.model ?? "claude-sonnet-4-6",
       concurrency: options.concurrency ? parseInt(options.concurrency, 10) : 1,
       plan_budget_ratio: options.planBudgetRatio

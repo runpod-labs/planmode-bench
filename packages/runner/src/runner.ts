@@ -9,7 +9,7 @@ import {
   type RunResultType,
   type RunSummaryType,
 } from "@planmode-bench/schema";
-import { aggregateResults, mean, stddev, welchTTest } from "@planmode-bench/evaluator";
+import { aggregateResults, mean, stddev, welchTTest, confidenceInterval95 } from "@planmode-bench/evaluator";
 import { executeTask } from "./executor.js";
 import { prepareAllBases } from "./sandbox.js";
 
@@ -223,9 +223,44 @@ export async function run(options: RunOptions): Promise<RunSummaryType> {
       );
     } catch (error) {
       completed++;
+      const errorMessage = (error as Error).message;
       console.error(
-        `  [${completed}/${totalJobs}] ${job.task.id} ${job.mode} run${job.runNumber} FAILED: ${(error as Error).message}`
+        `  [${completed}/${totalJobs}] ${job.task.id} ${job.mode} run${job.runNumber} FAILED: ${errorMessage}`
       );
+
+      // Persist error result to disk for debugging visibility
+      const errorResult: RunResultType = {
+        schema_version: 1,
+        task_id: job.task.id,
+        task_name: job.task.name,
+        mode: job.mode,
+        run_number: job.runNumber,
+        timestamp: new Date().toISOString(),
+        model: config.model,
+        metrics: {
+          duration_ms: 0,
+          duration_api_ms: 0,
+          num_turns: 0,
+          total_cost_usd: 0,
+          input_tokens: 0,
+          output_tokens: 0,
+          stop_reason: null,
+          is_error: true,
+        },
+        evaluation: {
+          overall_score: 0,
+          strategy_results: [],
+          evaluation_duration_ms: 0,
+        },
+        error_message: errorMessage,
+      };
+
+      await writeFile(
+        path.join(tasksOutputDir, job.filename),
+        JSON.stringify(errorResult, null, 2)
+      );
+
+      allResults.push(errorResult);
     }
   }
 
@@ -261,6 +296,17 @@ export async function run(options: RunOptions): Promise<RunSummaryType> {
 
   await writeFile(path.join(runDir, "summary.json"), JSON.stringify(summary, null, 2));
   await writeFile(path.join(options.outputDir, "latest.json"), JSON.stringify(summary, null, 2));
+
+  // Auto-write to visualizer data directory
+  try {
+    const projectRoot = path.resolve(options.outputDir, "..");
+    const websiteDataPath = path.join(projectRoot, "packages", "website", "src", "data", "sample-results.json");
+    const websiteData = transformForWebsite(summary, allResults, tasks);
+    await writeFile(websiteDataPath, JSON.stringify(websiteData, null, 2));
+    console.log(`\nWebsite data updated: ${websiteDataPath}`);
+  } catch (err) {
+    console.warn(`\nCould not update website data: ${(err as Error).message}`);
+  }
 
   console.log(`\nResults saved to ${runDir}`);
   console.log(`Total cost: $${summary.total_cost_usd.toFixed(4)}`);
@@ -321,9 +367,17 @@ function generateSummary(
     const modeScores = Object.fromEntries(
       modes.map((mode) => {
         const scores = taskResults.filter((r) => r.mode === mode).map((r) => r.evaluation.overall_score);
-        return [mode, { scores, avg: mean(scores), std: stddev(scores) }];
+        const ci = confidenceInterval95(scores);
+        return [mode, {
+          scores,
+          avg: mean(scores),
+          std: stddev(scores),
+          ci_lower: ci.ci_lower,
+          ci_upper: ci.ci_upper,
+          success_rate: scores.length > 0 ? scores.filter((s) => s >= 0.5).length / scores.length : 0,
+        }];
       })
-    ) as Record<Mode, { scores: number[]; avg: number; std: number }>;
+    ) as Record<Mode, { scores: number[]; avg: number; std: number; ci_lower: number; ci_upper: number; success_rate: number }>;
 
     const modeAvgs = modes.map((m) => ({ mode: m, avg: modeScores[m].avg }));
     modeAvgs.sort((a, b) => b.avg - a.avg);
@@ -357,5 +411,71 @@ function generateSummary(
     by_category: byCategory as any,
     by_difficulty: byDifficulty as any,
     per_task: perTask,
+  };
+}
+
+function transformForWebsite(
+  summary: RunSummaryType,
+  allResults: RunResultType[],
+  tasks: Task[]
+): object {
+  const modes = ["normal", "plan-resume", "plan-clear"] as const;
+
+  function modeStats(stats: { avg_score: number; median_score: number; success_rate: number; avg_cost_usd: number; avg_tokens: number; avg_turns: number; ci_lower?: number; ci_upper?: number; n?: number }) {
+    return {
+      avgScore: stats.avg_score,
+      medianScore: stats.median_score,
+      successRate: stats.success_rate,
+      avgCost: stats.avg_cost_usd,
+      avgTokens: stats.avg_tokens,
+      avgTurns: stats.avg_turns,
+      ciLower: stats.ci_lower,
+      ciUpper: stats.ci_upper,
+      n: stats.n,
+    };
+  }
+
+  return {
+    meta: {
+      runId: summary.run_id,
+      timestamp: summary.timestamp,
+      claudeModel: summary.model,
+      totalTasks: summary.total_tasks,
+      modes: [...modes],
+    },
+    overall: Object.fromEntries(
+      modes.map((m) => [m, modeStats(summary.overall[m])])
+    ),
+    tasks: tasks.map((task) => {
+      const taskPerMode = (mode: typeof modes[number]) => {
+        const modeResults = allResults.filter(
+          (r) => r.task_id === task.id && r.mode === mode
+        );
+        if (modeResults.length === 0) {
+          return { score: 0, planCost: 0, execCost: 0, totalCost: 0 };
+        }
+        const avgScore = modeResults.reduce((s, r) => s + r.evaluation.overall_score, 0) / modeResults.length;
+        const avgPlanCost = modeResults.reduce((s, r) => s + (r.plan_metrics?.plan_cost_usd ?? 0), 0) / modeResults.length;
+        const avgExecCost = modeResults.reduce((s, r) => s + (r.plan_metrics?.execute_cost_usd ?? r.metrics.total_cost_usd), 0) / modeResults.length;
+        const avgTotalCost = modeResults.reduce((s, r) => s + r.metrics.total_cost_usd, 0) / modeResults.length;
+        return {
+          score: avgScore,
+          planCost: avgPlanCost,
+          execCost: avgExecCost,
+          totalCost: avgTotalCost,
+        };
+      };
+
+      return {
+        id: task.id,
+        name: task.name,
+        category: task.category,
+        project: "self-contained",
+        difficulty: task.difficulty,
+        results: Object.fromEntries(
+          modes.map((m) => [m, taskPerMode(m)])
+        ),
+      };
+    }),
   };
 }

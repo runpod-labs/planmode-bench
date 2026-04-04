@@ -21,6 +21,7 @@ export {
   RunResult,
   AggregatedModeStats,
   ModeDelta,
+  TaskModeStats,
   TaskComparison,
   RunSummary,
   type Mode,
@@ -30,6 +31,7 @@ export {
   type EvaluationResultType,
   type RunResultType,
   type AggregatedModeStatsType,
+  type TaskModeStatsType,
   type RunSummaryType,
 } from "./result.js";
 

@@ -32,7 +32,7 @@ program
     "Comma-separated modes: normal,plan-resume,plan-clear",
     "normal,plan-resume,plan-clear"
   )
-  .option("-r, --runs <n>", "Runs per task per mode", "3")
+  .option("-r, --runs <n>", "Runs per task per mode", "10")
   .option("--model <model>", "Model to use", "claude-sonnet-4-6")
   .option("--concurrency <n>", "Parallel task runs", "1")
   .option("--plan-budget-ratio <ratio>", "Budget ratio for plan phase", "0.3")
