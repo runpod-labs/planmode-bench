@@ -1,0 +1,152 @@
+id: "feature-addition/add-nextjs-geo"
+name: "Add Geolocation Utility Module to Next.js"
+version: 1
+
+category: "feature-addition"
+difficulty: "expert"
+estimated_time_minutes: 30
+tags: ["typescript", "next.js", "middleware", "geolocation", "monorepo", "real-codebase", "large-repo"]
+author: "runpod-labs"
+created_at: "2026-04-04"
+
+prompt: |
+  Add a new `next/geo` utility module to the Next.js framework that provides
+  geolocation helpers for use in middleware and edge functions. Study how the
+  existing `next/server` entry point exposes utilities like `userAgent` and
+  `userAgentFromString` (see `packages/next/server.js`, `packages/next/server.d.ts`,
+  and `packages/next/src/server/web/spec-extension/user-agent.ts`).
+
+  Follow the exact same patterns to create a geolocation utility module.
+
+  1. Create the core implementation at `packages/next/src/server/web/spec-extension/geo.ts`:
+     - Define and export a `Geo` interface with fields:
+       `city?: string`, `country?: string`, `countryCode?: string`,
+       `region?: string`, `latitude?: string`, `longitude?: string`,
+       `timezone?: string`
+     - Export a `geo(req)` function that accepts `{ headers: Headers }` and extracts
+       geolocation from common CDN/proxy headers:
+       - `x-vercel-ip-city` -> city
+       - `x-vercel-ip-country` -> countryCode
+       - `x-vercel-ip-country-region` -> region
+       - `x-vercel-ip-latitude` -> latitude
+       - `x-vercel-ip-longitude` -> longitude
+       - `x-vercel-ip-timezone` -> timezone
+       - Also check `cf-ipcountry` (Cloudflare) as fallback for countryCode
+       - Derive `country` by looking up `countryCode` in a `COUNTRY_NAMES` map
+         (include at least 10 common country codes: US, GB, DE, FR, JP, CN, IN, BR, AU, CA)
+     - Export a `geoFromHeaders(headers: Headers)` function (same logic, takes raw Headers)
+     - Export a `isInRegion(geo: Geo, regions: string[])` helper that checks if
+       `geo.countryCode` is in the given list (case-insensitive comparison)
+     - Export a `geoDistance(lat1: string, lon1: string, lat2: string, lon2: string): number`
+       function that calculates the Haversine distance in kilometers between two points
+
+  2. Create the public entry point at `packages/next/geo.js`:
+     - Follow the same pattern as `packages/next/server.js`
+     - Export: `geo`, `geoFromHeaders`, `isInRegion`, `geoDistance`
+     - Use `require('next/dist/server/web/spec-extension/geo')`
+
+  3. Create the type definitions at `packages/next/geo.d.ts`:
+     - Follow the same pattern as `packages/next/server.d.ts`
+     - Re-export all types and functions from the implementation
+
+  4. Register `geo.js` and `geo.d.ts` in the `files` array of `packages/next/package.json`
+     (add them right after the existing entries, following alphabetical order).
+
+  5. Create a comprehensive test file at `packages/next/src/server/web/spec-extension/geo.test.ts`:
+     - Test `geo()` with Vercel headers
+     - Test `geoFromHeaders()` with Cloudflare fallback
+     - Test `isInRegion()` with matching/non-matching regions
+     - Test `geoDistance()` (e.g., New York to London ~5570 km, allow 50km tolerance)
+     - Test that missing headers return undefined fields
+     - Test country name lookup from countryCode
+     - Use only built-in Node.js test facilities or simple assertions (no external test framework needed)
+
+  All existing code must remain unchanged except for the `files` array addition in package.json.
+  The implementation must compile cleanly with TypeScript (strict mode).
+
+setup:
+  source_repo:
+    url: "https://github.com/vercel/next.js.git"
+    ref: "v16.2.2"
+  install_command: "NEXT_SKIP_NATIVE_POSTINSTALL=1 pnpm install --ignore-scripts"
+  pre_commands:
+    - "git config core.hooksPath /dev/null"
+    - "corepack enable pnpm || true"
+  timeout_minutes: 30
+  max_budget_usd: 5.00
+
+evaluation:
+  - type: "file-check"
+    checks:
+      - path: "packages/next/src/server/web/spec-extension/geo.ts"
+        must_exist: true
+        must_contain:
+          - "Geo"
+          - "geo"
+          - "geoFromHeaders"
+          - "isInRegion"
+          - "geoDistance"
+          - "x-vercel-ip-city"
+          - "COUNTRY_NAMES"
+      - path: "packages/next/geo.js"
+        must_exist: true
+        must_contain:
+          - "require"
+          - "geo"
+          - "geoFromHeaders"
+          - "isInRegion"
+          - "geoDistance"
+      - path: "packages/next/geo.d.ts"
+        must_exist: true
+        must_contain:
+          - "Geo"
+          - "geo"
+          - "geoFromHeaders"
+          - "isInRegion"
+          - "geoDistance"
+    weight: 0.35
+
+  - type: "build"
+    command: "cd packages/next && npx tsc --noEmit --strict --moduleResolution node --module ESNext --target ES2018 --esModuleInterop --jsx react-jsx src/server/web/spec-extension/geo.ts 2>&1 | tail -20"
+    weight: 0.25
+
+  - type: "regex"
+    file: "packages/next/src/server/web/spec-extension/geo.ts"
+    patterns:
+      - pattern: "interface Geo"
+        should_match: true
+      - pattern: "export function geo"
+        should_match: true
+      - pattern: "export function geoFromHeaders"
+        should_match: true
+      - pattern: "export function isInRegion"
+        should_match: true
+      - pattern: "export function geoDistance"
+        should_match: true
+      - pattern: "x-vercel-ip-country"
+        should_match: true
+      - pattern: "cf-ipcountry"
+        should_match: true
+      - pattern: "Haversine|haversine|Math\\.asin|Math\\.atan2"
+        should_match: true
+    weight: 0.2
+
+  - type: "regex"
+    file: "packages/next/package.json"
+    patterns:
+      - pattern: "geo\\.js"
+        should_match: true
+      - pattern: "geo\\.d\\.ts"
+        should_match: true
+    weight: 0.1
+
+  - type: "file-check"
+    checks:
+      - path: "packages/next/src/server/web/spec-extension/geo.test.ts"
+        must_exist: true
+        must_contain:
+          - "geo"
+          - "geoDistance"
+          - "isInRegion"
+          - "Headers"
+    weight: 0.1

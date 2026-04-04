@@ -1,0 +1,157 @@
+id: "feature-addition/add-bun-ini-api"
+name: "Add Bun.INI Namespace API to Bun Runtime"
+version: 1
+
+category: "feature-addition"
+difficulty: "expert"
+estimated_time_minutes: 30
+tags: ["zig", "typescript", "cpp", "bun", "runtime", "api", "real-codebase", "large-repo"]
+author: "runpod-labs"
+created_at: "2026-04-04"
+
+prompt: |
+  Bun already has an internal INI parser used for npm config files (see
+  `test/js/bun/ini/ini.test.ts` which imports from `bun:internal-for-testing`),
+  but it is NOT exposed as a public API. Your task is to add a new `Bun.INI`
+  namespace that follows the exact same pattern as `Bun.TOML`, `Bun.JSONC`,
+  `Bun.JSON5`, and `Bun.YAML`.
+
+  Study these existing implementations carefully:
+  - `src/bun.js/api/TOMLObject.zig` — simplest example (parse only)
+  - `src/bun.js/api/JSONCObject.zig` — another parse-only example
+  - `src/bun.js/api/JSON5Object.zig` — parse + stringify example
+  - `src/bun.js/api/BunObject.zig` — how lazy properties are registered
+  - `src/bun.js/bindings/BunObject+exports.h` — C++ macro for exports
+  - `src/bun.js/bindings/BunObject.cpp` — the `bunObjectTable` hash entries
+  - `packages/bun-types/bun.d.ts` — TypeScript type definitions
+
+  Requirements:
+
+  1. Create `src/bun.js/api/INIObject.zig` implementing `Bun.INI`:
+     - A `create` function that builds a JS object with `parse` and `stringify`
+     - A `parse` function that:
+       * Takes a single string argument (the INI content)
+       * Returns a JavaScript object representing the parsed INI data
+       * Supports sections as nested objects: `[section]` -> `{ section: { ... } }`
+       * Supports key=value and key = value (whitespace around =)
+       * Supports comment lines starting with ; or #
+       * Throws with a descriptive error on invalid input
+     - A `stringify` function that:
+       * Takes a JavaScript object
+       * Returns an INI-formatted string
+       * Nested objects become `[section]` headers
+       * Values are formatted as `key = value`
+     - Follow the exact same code patterns as TOMLObject.zig and JSON5Object.zig
+       (imports, error handling, function signatures)
+
+  2. Wire `INIObject` into `BunObject.zig`:
+     - Add `pub const INI = toJSLazyPropertyCallback(Bun.getINIObject);` in the
+       BunObject struct alongside the other format entries (JSONC, TOML, etc.)
+     - Add a `getINIObject` function following the pattern of `getTOMLObject`
+     - Add the import: `const INIObject = bun.api.INIObject;`
+
+  3. Update `src/bun.js/bindings/BunObject+exports.h`:
+     - Add `macro(INI)` to the `FOR_EACH_GETTER` macro list (alphabetical order)
+
+  4. Update `src/bun.js/bindings/BunObject.cpp`:
+     - Add the INI entry to the `@begin bunObjectTable` hash table, following
+       the pattern of JSONC/JSON5/TOML/YAML entries
+
+  5. Add TypeScript type definitions in `packages/bun-types/bun.d.ts`:
+     - Add a `namespace INI` block in the Bun module (near the other format
+       namespaces like TOML, JSONC, JSON5, YAML)
+     - Document `parse(input: string): Record<string, any>` with JSDoc
+     - Document `stringify(input: Record<string, any>): string` with JSDoc
+     - Include usage examples in the JSDoc comments
+
+  Do NOT try to build Bun. Only modify source files. The INI parser
+  implementation in the Zig file should be self-contained (do not try to
+  import the internal npm INI parser).
+
+setup:
+  source_repo:
+    url: "https://github.com/oven-sh/bun.git"
+    ref: "bun-v1.3.11"
+  install_command: "echo 'source-only task — no build required'"
+  timeout_minutes: 30
+  max_budget_usd: 5.00
+
+evaluation:
+  # 1. Core Zig implementation file
+  - type: "file-check"
+    checks:
+      - path: "src/bun.js/api/INIObject.zig"
+        must_exist: true
+        must_contain:
+          - "create"
+          - "parse"
+          - "stringify"
+          - "jsc.JSGlobalObject"
+          - "jsc.JSValue"
+          - "bun.JSError"
+    weight: 0.25
+
+  # 2. INIObject.zig follows Zig patterns
+  - type: "regex"
+    file: "src/bun.js/api/INIObject.zig"
+    patterns:
+      - pattern: "pub fn create\\(globalThis: \\*jsc\\.JSGlobalObject\\) jsc\\.JSValue"
+        should_match: true
+      - pattern: "pub fn parse\\("
+        should_match: true
+      - pattern: "pub fn stringify\\("
+        should_match: true
+      - pattern: 'ZigString\.static\("parse"\)'
+        should_match: true
+      - pattern: 'ZigString\.static\("stringify"\)'
+        should_match: true
+      - pattern: "jsc\\.JSFunction\\.create"
+        should_match: true
+      - pattern: "@import\\(\"bun\"\\)"
+        should_match: true
+    weight: 0.15
+
+  # 3. BunObject.zig wiring
+  - type: "regex"
+    file: "src/bun.js/api/BunObject.zig"
+    patterns:
+      - pattern: "INI.*toJSLazyPropertyCallback|toJSLazyPropertyCallback.*INI"
+        should_match: true
+      - pattern: "getINIObject"
+        should_match: true
+      - pattern: "INIObject"
+        should_match: true
+    weight: 0.15
+
+  # 4. C++ header exports
+  - type: "regex"
+    file: "src/bun.js/bindings/BunObject+exports.h"
+    patterns:
+      - pattern: "macro\\(INI\\)"
+        should_match: true
+    weight: 0.10
+
+  # 5. C++ hash table entry
+  - type: "regex"
+    file: "src/bun.js/bindings/BunObject.cpp"
+    patterns:
+      - pattern: "INI.*BunObject_lazyPropCb_wrap_INI|BunObject_lazyPropCb_wrap_INI.*INI"
+        should_match: true
+    weight: 0.10
+
+  # 6. TypeScript type definitions
+  - type: "regex"
+    file: "packages/bun-types/bun.d.ts"
+    patterns:
+      - pattern: "namespace INI"
+        should_match: true
+      - pattern: "parse.*input.*string"
+        should_match: true
+      - pattern: "stringify.*input"
+        should_match: true
+    weight: 0.15
+
+  # 7. Syntax validation of the Zig file (basic check)
+  - type: "build"
+    command: "grep -c 'pub fn' src/bun.js/api/INIObject.zig | xargs test 1 -lt"
+    weight: 0.10

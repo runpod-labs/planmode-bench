@@ -1,0 +1,160 @@
+id: "feature-addition/add-uv-cache-stats"
+name: "Add 'uv cache stats' Subcommand to uv"
+version: 1
+category: "feature-addition"
+difficulty: "expert"
+estimated_time_minutes: 25
+tags: ["rust", "cli", "clap", "cache", "uv", "real-codebase", "large-repo"]
+author: "runpod-labs"
+created_at: "2026-04-04"
+
+prompt: |
+  Add a new `uv cache stats` subcommand to the uv Python package manager that
+  displays a per-bucket breakdown of cache disk usage.
+
+  The existing `uv cache size` command only prints the *total* cache size.
+  Your new `uv cache stats` command should print the size of every cache
+  bucket individually (e.g., wheels, sdists, git, simple, archives, etc.)
+  plus a total line at the end.
+
+  Study the codebase first:
+  - `crates/uv-cli/src/lib.rs` defines all CLI subcommands via clap.
+    Look at the `CacheCommand` enum and the existing `Size(SizeArgs)` variant.
+  - `crates/uv/src/lib.rs` dispatches commands. Search for `CacheCommand::Size`
+    to see the dispatch pattern.
+  - `crates/uv/src/commands/mod.rs` declares and re-exports command modules.
+    See how `cache_size` is declared and exported.
+  - `crates/uv/src/commands/cache_size.rs` implements `uv cache size`.
+  - `crates/uv-cache/src/lib.rs` has the `CacheBucket` enum with variants
+    `Wheels`, `SourceDistributions`, `FlatIndex`, `Git`, `Interpreter`,
+    `Simple`, `Archive`, `Builds`, `Environments`, `Binaries`.
+    It also has `CacheBucket::iter()` and `Cache::bucket(CacheBucket) -> PathBuf`.
+
+  Requirements:
+
+  1. In `crates/uv-cli/src/lib.rs`:
+     - Add a `Stats(StatsArgs)` variant to the `CacheCommand` enum with
+       doc comment: `/// Show per-bucket cache statistics.`
+     - Define a new `StatsArgs` struct (next to `SizeArgs`) with a single field:
+       `#[arg(long = "human", short = 'H', alias = "human-readable")]`
+       `pub human: bool`
+
+  2. Create a new file `crates/uv/src/commands/cache_stats.rs` implementing:
+     ```rust
+     pub(crate) fn cache_stats(
+         cache: &Cache,
+         human_readable: bool,
+         printer: Printer,
+     ) -> Result<ExitStatus>
+     ```
+     The function must:
+     - Iterate over `CacheBucket::iter()`
+     - For each bucket, compute its disk size using `diskus::DiskUsage` on
+       `cache.bucket(bucket)` (same approach as `cache_size.rs`)
+     - Print one line per bucket: `{bucket_name}: {size}` where bucket_name
+       is the Display impl of CacheBucket (e.g., "wheels-v6")
+     - Print a final `total: {total_size}` line
+     - When `human_readable` is true, format sizes with `human_readable_bytes`;
+       otherwise print raw byte counts
+     - Return `Ok(ExitStatus::Success)`
+
+  3. In `crates/uv/src/commands/mod.rs`:
+     - Add `mod cache_stats;` alongside the existing `mod cache_size;`
+     - Add `pub(crate) use cache_stats::cache_stats;` alongside the existing
+       `pub(crate) use cache_size::cache_size;`
+
+  4. In `crates/uv/src/lib.rs`:
+     - Import `CacheCommand::Stats` (it is imported via the existing glob path)
+     - Add a dispatch arm for `CacheCommand::Stats(args)` right after the
+       `CacheCommand::Size` arm, calling:
+       `commands::cache_stats(&cache, args.human, printer)`
+
+  Do NOT try to run `cargo build` or `cargo check`. Only modify source files.
+
+setup:
+  source_repo:
+    url: "https://github.com/astral-sh/uv.git"
+    ref: "0.11.3"
+  install_command: "echo 'source-only task'"
+  timeout_minutes: 25
+  max_budget_usd: 5.00
+
+evaluation:
+  # ── 1. CLI definition: StatsArgs struct + CacheCommand::Stats variant ──
+  - type: "file-check"
+    checks:
+      - path: "crates/uv-cli/src/lib.rs"
+        must_exist: true
+        must_contain:
+          - "Stats"
+          - "StatsArgs"
+          - "per-bucket"
+    weight: 0.15
+
+  - type: "regex"
+    file: "crates/uv-cli/src/lib.rs"
+    patterns:
+      - pattern: "Stats\\(StatsArgs\\)"
+        should_match: true
+      - pattern: "struct StatsArgs"
+        should_match: true
+      - pattern: "human.*bool|bool.*human"
+        should_match: true
+    weight: 0.10
+
+  # ── 2. New command implementation file ──
+  - type: "file-check"
+    checks:
+      - path: "crates/uv/src/commands/cache_stats.rs"
+        must_exist: true
+        must_contain:
+          - "cache_stats"
+          - "CacheBucket"
+          - "DiskUsage"
+          - "ExitStatus"
+          - "human_readable_bytes"
+          - "total"
+    weight: 0.25
+
+  - type: "regex"
+    file: "crates/uv/src/commands/cache_stats.rs"
+    patterns:
+      - pattern: "pub\\(crate\\) fn cache_stats"
+        should_match: true
+      - pattern: "CacheBucket::iter\\(\\)"
+        should_match: true
+      - pattern: "cache\\.bucket\\("
+        should_match: true
+      - pattern: "DiskUsage"
+        should_match: true
+      - pattern: "ExitStatus::Success"
+        should_match: true
+    weight: 0.20
+
+  # ── 3. Module registration in mod.rs ──
+  - type: "file-check"
+    checks:
+      - path: "crates/uv/src/commands/mod.rs"
+        must_exist: true
+        must_contain:
+          - "cache_stats"
+    weight: 0.10
+
+  - type: "regex"
+    file: "crates/uv/src/commands/mod.rs"
+    patterns:
+      - pattern: "mod cache_stats;"
+        should_match: true
+      - pattern: "use cache_stats::cache_stats"
+        should_match: true
+    weight: 0.05
+
+  # ── 4. Dispatch wiring in lib.rs ──
+  - type: "regex"
+    file: "crates/uv/src/lib.rs"
+    patterns:
+      - pattern: "CacheCommand::Stats"
+        should_match: true
+      - pattern: "commands::cache_stats"
+        should_match: true
+    weight: 0.15

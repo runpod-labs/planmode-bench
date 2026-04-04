@@ -1,0 +1,181 @@
+id: "feature-addition/add-ollama-rename"
+name: "Add Model Rename API Endpoint and CLI Command to Ollama"
+version: 1
+
+category: "feature-addition"
+difficulty: "expert"
+estimated_time_minutes: 30
+tags: ["go", "api", "cli", "gin", "cobra", "real-codebase", "large-repo", "ollama"]
+author: "runpod-labs"
+created_at: "2026-04-04"
+
+prompt: |
+  Add a model rename feature to Ollama that allows users to rename a local model
+  in a single atomic operation (instead of requiring copy + delete). This requires
+  changes across three layers: API types, server route handler, and CLI command.
+
+  Study the existing codebase first:
+  - `api/types.go` contains all request/response type definitions (e.g.,
+    `CopyRequest`, `DeleteRequest`, `ShowRequest`)
+  - `api/client.go` contains the `Client` methods that map to API endpoints
+    (e.g., `Client.Copy()`, `Client.Delete()`)
+  - `server/routes.go` contains:
+    - Handler methods on the `*Server` struct (e.g., `CopyHandler`, `DeleteHandler`)
+    - Route registration in `GenerateRoutes()` using the Gin framework
+  - `cmd/cmd.go` contains Cobra CLI command definitions in `NewCLI()` and
+    handler functions (e.g., `CopyHandler`, `DeleteHandler`)
+
+  Requirements:
+
+  1. In `api/types.go`, add a `RenameRequest` struct with two fields:
+     - `Source` (string, json tag "source") - the current model name
+     - `Destination` (string, json tag "destination") - the new model name
+     Follow the exact same pattern as `CopyRequest`.
+
+  2. In `api/client.go`, add a `Rename` method on `*Client`:
+     - Signature: `func (c *Client) Rename(ctx context.Context, req *RenameRequest) error`
+     - It should call `c.do(ctx, http.MethodPost, "/api/rename", req, nil)`
+     - Follow the same pattern as `Client.Copy()`
+
+  3. In `server/routes.go`, add a `RenameHandler` method on `*Server`:
+     - Signature: `func (s *Server) RenameHandler(c *gin.Context)`
+     - Parse the JSON body into `api.RenameRequest`
+     - Validate that both `Source` and `Destination` are non-empty (return 400 if missing)
+     - Validate that both model names are valid using `model.ParseName()` and `name.IsValid()`
+       (return 400 with `errtypes.InvalidModelNameErrMsg` if invalid)
+     - Perform the rename by calling the existing copy logic followed by delete:
+       a. First, call `CopyModel(src, dst)` with the parsed model names (this function
+          already exists in `server/images.go`). If it fails, return the appropriate error.
+       b. Then delete the source model by calling `manifest.ParseNamedManifest(src)` to get
+          the manifest, then calling `m.Remove()` followed by `m.RemoveLayers()` (this is
+          the same pattern used by the existing `DeleteHandler`).
+          If delete fails, return 500 but note the copy succeeded.
+     - Return HTTP 200 with `gin.H{"status": "success"}` on success
+     - Handle errors:
+       - If source model not found: return 404 with `"model 'X' not found"`
+       - If destination already exists: return 409 (Conflict) with `"destination model 'X' already exists"`
+       - For invalid names: return 400
+
+  4. Register the route in `GenerateRoutes()` in `server/routes.go`:
+     - Add `r.POST("/api/rename", s.RenameHandler)` in the "Local model cache management"
+       section, near the existing `/api/copy` route
+
+  5. In `cmd/cmd.go`, add:
+     a. A `RenameHandler` function:
+        - Signature: `func RenameHandler(cmd *cobra.Command, args []string) error`
+        - Takes exactly 2 args: source and destination model names
+        - Creates an API client and calls `client.Rename()` with an `api.RenameRequest`
+        - On success, prints `"Renamed "<source>" to "<destination>"` to stdout
+        - Follow the same pattern as the existing `CopyHandler` function
+     b. A `renameCmd` cobra.Command:
+        - Use: `"rename SOURCE DESTINATION"`
+        - Short: `"Rename a model"`
+        - Args: `cobra.ExactArgs(2)`
+        - PreRunE: `checkServerHeartbeat`
+        - RunE: `RenameHandler`
+     c. Register `renameCmd` in the `rootCmd.AddCommand(...)` call, placed after `copyCmd`
+
+  6. For the destination-already-exists check in `RenameHandler`, use
+     `manifest.ParseNamedManifest()` to check if the destination model already exists.
+     If the error is nil (manifest found), return 409 Conflict.
+
+  Do NOT try to build or run Ollama. Only modify source files.
+  Do NOT modify any test files.
+  All existing code must remain intact. Only add new code.
+
+setup:
+  source_repo:
+    url: "https://github.com/ollama/ollama.git"
+    ref: "v0.20.2"
+  install_command: "echo 'source-only task -- no build required'"
+  timeout_minutes: 30
+  max_budget_usd: 5.00
+
+evaluation:
+  # Check 1: RenameRequest type exists in api/types.go
+  - type: "file-check"
+    checks:
+      - path: "api/types.go"
+        must_exist: true
+        must_contain:
+          - "RenameRequest"
+          - "Source"
+          - "Destination"
+    weight: 0.15
+
+  # Check 2: Client.Rename method exists in api/client.go
+  - type: "file-check"
+    checks:
+      - path: "api/client.go"
+        must_exist: true
+        must_contain:
+          - "func (c *Client) Rename"
+          - "/api/rename"
+          - "RenameRequest"
+    weight: 0.15
+
+  # Check 3: RenameHandler and route registration in server/routes.go
+  - type: "file-check"
+    checks:
+      - path: "server/routes.go"
+        must_exist: true
+        must_contain:
+          - "func (s *Server) RenameHandler"
+          - "RenameRequest"
+          - "/api/rename"
+          - "CopyModel"
+          - ".Remove()"
+    weight: 0.2
+
+  # Check 4: CLI rename command in cmd/cmd.go
+  - type: "file-check"
+    checks:
+      - path: "cmd/cmd.go"
+        must_exist: true
+        must_contain:
+          - "RenameHandler"
+          - "renameCmd"
+          - "Rename a model"
+          - "rename SOURCE DESTINATION"
+    weight: 0.15
+
+  # Check 5: Regex patterns for structural correctness
+  - type: "regex"
+    file: "api/types.go"
+    patterns:
+      - pattern: 'type RenameRequest struct'
+        should_match: true
+      - pattern: 'Source\s+string\s+`json:"source"`'
+        should_match: true
+      - pattern: 'Destination\s+string\s+`json:"destination"`'
+        should_match: true
+    weight: 0.1
+
+  # Check 6: Server handler regex checks
+  - type: "regex"
+    file: "server/routes.go"
+    patterns:
+      - pattern: 'func \(s \*Server\) RenameHandler\(c \*gin\.Context\)'
+        should_match: true
+      - pattern: 'r\.POST\("/api/rename"'
+        should_match: true
+      - pattern: 'StatusConflict|409'
+        should_match: true
+    weight: 0.1
+
+  # Check 7: Go syntax check on modified files
+  - type: "build"
+    command: "python3 -c \"import subprocess, sys; files=['api/types.go','api/client.go','server/routes.go','cmd/cmd.go']; [print(f'Checking {f}...') or None for f in files]; result=subprocess.run(['grep','-c','RenameRequest','api/types.go'],capture_output=True,text=True); print(f'RenameRequest occurrences in api/types.go: {result.stdout.strip()}'); sys.exit(0 if int(result.stdout.strip())>=1 else 1)\""
+    weight: 0.05
+
+  # Check 8: CLI command registration check
+  - type: "regex"
+    file: "cmd/cmd.go"
+    patterns:
+      - pattern: 'renameCmd'
+        should_match: true
+      - pattern: 'cobra\.ExactArgs\(2\)'
+        should_match: true
+      - pattern: 'func RenameHandler\(cmd \*cobra\.Command, args \[\]string\) error'
+        should_match: true
+    weight: 0.1

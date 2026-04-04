@@ -1,0 +1,209 @@
+id: "feature-addition/add-openclaw-channel"
+name: "Add Fictional PulseBoard Channel to OpenClaw"
+version: 1
+
+category: "feature-addition"
+difficulty: "expert"
+estimated_time_minutes: 30
+tags: ["typescript", "plugin", "channel", "openclaw", "real-codebase", "large-repo"]
+author: "runpod-labs"
+created_at: "2026-04-04"
+
+prompt: |
+  Add a new fictional "PulseBoard" channel plugin to OpenClaw. PulseBoard is an
+  imaginary real-time bulletin board messaging platform where users post messages
+  to named "boards" (like channels) and can also send direct messages.
+
+  Study the existing channel plugins to understand the pattern. Good references:
+  - `extensions/irc/` — medium-complexity channel with DMs and groups
+  - `extensions/nostr/` — simpler DM-only channel
+  - `extensions/telegram/` — full-featured reference
+
+  Look at how each extension is structured:
+  - `extensions/<id>/index.ts` — plugin entry via `defineChannelPluginEntry()`
+  - `extensions/<id>/setup-entry.ts` — setup entry via `defineSetupPluginEntry()`
+  - `extensions/<id>/openclaw.plugin.json` — plugin manifest
+  - `extensions/<id>/package.json` — package metadata with `openclaw` block
+  - `extensions/<id>/src/channel.ts` — the `ChannelPlugin` built with `createChatChannelPlugin()`
+  - `extensions/<id>/src/runtime.ts` — runtime store via `createPluginRuntimeStore()`
+  - `extensions/<id>/src/types.ts` — channel-specific types
+
+  Also study the core channel SDK to understand the interfaces:
+  - `src/channels/plugins/types.plugin.ts` — the `ChannelPlugin` type definition
+  - Imports from `openclaw/plugin-sdk/core`, `openclaw/plugin-sdk/runtime-store`, etc.
+
+  Requirements:
+
+  1. Create `extensions/pulseboard/package.json`:
+     - Name: `@openclaw/pulseboard`
+     - Type: `"module"`
+     - Include the `openclaw` block with:
+       - `extensions`: `["./index.ts"]`
+       - `setupEntry`: `"./setup-entry.ts"`
+       - `channel.id`: `"pulseboard"`
+       - `channel.label`: `"PulseBoard"`
+       - `channel.selectionLabel`: `"PulseBoard (Bulletin)"`
+       - `channel.docsPath`: `"/channels/pulseboard"`
+       - `channel.blurb`: `"Connect to PulseBoard bulletin messaging."`
+
+  2. Create `extensions/pulseboard/openclaw.plugin.json`:
+     - `id`: `"pulseboard"`
+     - `channels`: `["pulseboard"]`
+     - Include a `configSchema` object (can be minimal)
+
+  3. Create `extensions/pulseboard/src/types.ts`:
+     - Export a `PulseBoardAccount` interface with fields:
+       `boardUrl: string`, `apiToken: string`, `username: string`
+     - Export a `PulseBoardConfig` interface with fields:
+       `accounts: Record<string, PulseBoardAccount>`
+     - Export a `PulseBoardMessage` interface with fields:
+       `id: string`, `boardId: string`, `authorId: string`,
+       `content: string`, `timestamp: number`
+
+  4. Create `extensions/pulseboard/src/runtime.ts`:
+     - Use `createPluginRuntimeStore` from `openclaw/plugin-sdk/runtime-store`
+     - Export `getPulseBoardRuntime` and `setPulseBoardRuntime`
+     - Error message: `"PulseBoard runtime not initialized"`
+
+  5. Create `extensions/pulseboard/src/channel.ts`:
+     - Use `createChatChannelPlugin` from `openclaw/plugin-sdk/core`
+     - Use `getChatChannelMeta` from `openclaw/plugin-sdk/core`
+     - Build a plugin with:
+       - `id`: `"pulseboard"`
+       - `meta` using `getChatChannelMeta()` with label `"PulseBoard"`,
+         docsPath `"/channels/pulseboard"`, blurb about bulletin messaging
+       - `capabilities`: `{ chatTypes: ["direct", "group"], media: false }`
+       - `reload.configPrefixes`: `["channels.pulseboard"]`
+       - A `config` adapter (can be minimal with account resolution stubs)
+       - A `setup` adapter with `applyAccountConfig` (can be a stub)
+       - A `gateway` adapter with `startAccount` (async stub that logs connection)
+       - A `messaging` adapter with `normalizeTarget` that trims whitespace
+       - An `outbound` adapter with:
+         * `deliveryMode`: `"direct"`
+         * `textChunkLimit`: `4000`
+         * `sendText`: async stub that returns a result with channel, to, and messageId
+     - Export the plugin as `pulseBoardPlugin`
+
+  6. Create `extensions/pulseboard/index.ts`:
+     - Import `defineChannelPluginEntry` from `openclaw/plugin-sdk/core`
+     - Import `pulseBoardPlugin` from `./src/channel.js`
+     - Import `setPulseBoardRuntime` from `./src/runtime.js`
+     - Export default `defineChannelPluginEntry()` with:
+       `id: "pulseboard"`, `name: "PulseBoard"`,
+       `description: "PulseBoard bulletin messaging channel plugin"`,
+       `plugin: pulseBoardPlugin`, `setRuntime: setPulseBoardRuntime`
+
+  7. Create `extensions/pulseboard/setup-entry.ts`:
+     - Import `defineSetupPluginEntry` from `openclaw/plugin-sdk/core`
+     - Import `pulseBoardPlugin` from `./src/channel.js`
+     - Export default `defineSetupPluginEntry(pulseBoardPlugin)`
+
+  Do NOT modify any existing files. Only create new files in `extensions/pulseboard/`.
+
+setup:
+  source_repo:
+    url: "https://github.com/openclaw/openclaw.git"
+    ref: "v2026.4.2"
+  install_command: "pnpm install --no-frozen-lockfile"
+  pre_commands:
+    - "corepack enable pnpm || true"
+    - "git config core.hooksPath /dev/null"
+  timeout_minutes: 30
+  max_budget_usd: 5.00
+
+evaluation:
+  # 1. Package manifest files
+  - type: "file-check"
+    checks:
+      - path: "extensions/pulseboard/package.json"
+        must_exist: true
+        must_contain:
+          - "@openclaw/pulseboard"
+          - "openclaw"
+          - "pulseboard"
+          - "module"
+          - "setupEntry"
+      - path: "extensions/pulseboard/openclaw.plugin.json"
+        must_exist: true
+        must_contain:
+          - "pulseboard"
+          - "channels"
+          - "configSchema"
+    weight: 0.15
+
+  # 2. Types file
+  - type: "file-check"
+    checks:
+      - path: "extensions/pulseboard/src/types.ts"
+        must_exist: true
+        must_contain:
+          - "PulseBoardAccount"
+          - "PulseBoardConfig"
+          - "PulseBoardMessage"
+          - "boardUrl"
+          - "apiToken"
+    weight: 0.10
+
+  # 3. Runtime store
+  - type: "file-check"
+    checks:
+      - path: "extensions/pulseboard/src/runtime.ts"
+        must_exist: true
+        must_contain:
+          - "createPluginRuntimeStore"
+          - "getPulseBoardRuntime"
+          - "setPulseBoardRuntime"
+    weight: 0.10
+
+  # 4. Channel plugin (the core of the task)
+  - type: "file-check"
+    checks:
+      - path: "extensions/pulseboard/src/channel.ts"
+        must_exist: true
+        must_contain:
+          - "createChatChannelPlugin"
+          - "pulseboard"
+          - "PulseBoard"
+          - "capabilities"
+          - "outbound"
+          - "sendText"
+          - "gateway"
+          - "messaging"
+    weight: 0.25
+
+  - type: "regex"
+    file: "extensions/pulseboard/src/channel.ts"
+    patterns:
+      - pattern: "createChatChannelPlugin"
+        should_match: true
+      - pattern: "chatTypes.*direct.*group|chatTypes.*group.*direct"
+        should_match: true
+      - pattern: "textChunkLimit.*4000"
+        should_match: true
+      - pattern: "deliveryMode.*direct"
+        should_match: true
+      - pattern: "normalizeTarget"
+        should_match: true
+    weight: 0.15
+
+  # 5. Entry points
+  - type: "file-check"
+    checks:
+      - path: "extensions/pulseboard/index.ts"
+        must_exist: true
+        must_contain:
+          - "defineChannelPluginEntry"
+          - "pulseBoardPlugin"
+          - "setPulseBoardRuntime"
+          - "pulseboard"
+      - path: "extensions/pulseboard/setup-entry.ts"
+        must_exist: true
+        must_contain:
+          - "defineSetupPluginEntry"
+          - "pulseBoardPlugin"
+    weight: 0.15
+
+  # 6. Build check — TypeScript compilation
+  - type: "build"
+    command: "cd extensions/pulseboard && npx tsc --noEmit --strict --moduleResolution bundler --module ESNext --target ES2022 --esModuleInterop --skipLibCheck src/types.ts 2>&1 | tail -20"
+    weight: 0.10
