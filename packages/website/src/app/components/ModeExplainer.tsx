@@ -38,10 +38,10 @@ const MODES = [
 export default function ModeExplainer() {
   return (
     <div>
-      <h2 className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/80 mb-2">
+      <h2 className="text-lg font-mono uppercase tracking-widest text-foreground/70 mb-2 text-center mt-8">
         how each mode works
       </h2>
-      <p className="text-sm text-muted-foreground mb-8">
+      <p className="text-sm text-muted-foreground mb-8 text-center">
         each mode gets the same task. the difference is how we prompt Claude
         Code and whether it plans before executing.
       </p>

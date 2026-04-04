@@ -60,7 +60,7 @@ export default function KeyNumbers({ overall }: Props) {
 
   return (
     <div>
-      <h2 className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/80 mb-8">
+      <h2 className="text-lg font-mono uppercase tracking-widest text-foreground/70 mb-10 text-center mt-8">
         results at a glance
       </h2>
 
@@ -98,7 +98,8 @@ export default function KeyNumbers({ overall }: Props) {
                       </div>
                       <div className="relative">
                         <div className="relative h-7 w-full rounded-md bg-muted/20 overflow-hidden">
-                          {isBaseline ? (
+                          {isBaseline || deltaPct < 5 ? (
+                            /* Simple solid bar — baseline or negligible delta */
                             <div className={`absolute inset-y-0 left-0 ${m.barColor} opacity-80`} style={{ width: `${barPct}%` }} />
                           ) : isMore ? (
                             <>

@@ -36,10 +36,10 @@ export default function ProjectShowcase({
 
   return (
     <div>
-      <h2 className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/80 mb-2">
+      <h2 className="text-lg font-mono uppercase tracking-widest text-foreground/70 mb-2 text-center mt-8">
         benchmark tasks
       </h2>
-      <p className="text-sm text-muted-foreground mb-8">
+      <p className="text-sm text-muted-foreground mb-8 text-center">
         {tasks.length} tasks across real-world codebases and self-contained
         challenges
       </p>
@@ -64,7 +64,7 @@ export default function ProjectShowcase({
                   loading="lazy"
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-baseline gap-2">
                     <a
                       href={task.repoUrl}
                       target="_blank"
@@ -73,22 +73,13 @@ export default function ProjectShowcase({
                     >
                       {task.repoOrg}/{task.project}
                     </a>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                    {task.name}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <span
-                      className={`text-[10px] font-mono font-medium ${DIFFICULTY_COLOR[task.difficulty] || "text-muted-foreground"}`}
-                    >
-                      {DIFFICULTY_LABEL[task.difficulty] || task.difficulty}
-                    </span>
                     {task.repoRef && (
-                      <span className="text-[10px] font-mono text-muted-foreground/70">
-                        @{task.repoRef}
-                      </span>
+                      <span className="text-[10px] font-mono text-muted-foreground/50 shrink-0">@{task.repoRef}</span>
                     )}
                   </div>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 min-h-[2lh]">
+                    {task.name}
+                  </p>
                 </div>
               </div>
             ))}
@@ -108,15 +99,9 @@ export default function ProjectShowcase({
                 <div className="text-sm font-medium text-foreground truncate">
                   {task.name}
                 </div>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="mt-1">
                   <span className="text-[10px] font-mono text-muted-foreground">
                     {task.category}
-                  </span>
-                  <span className="text-muted-foreground/80">&middot;</span>
-                  <span
-                    className={`text-[10px] font-mono font-medium ${DIFFICULTY_COLOR[task.difficulty] || "text-muted-foreground"}`}
-                  >
-                    {DIFFICULTY_LABEL[task.difficulty] || task.difficulty}
                   </span>
                 </div>
               </div>

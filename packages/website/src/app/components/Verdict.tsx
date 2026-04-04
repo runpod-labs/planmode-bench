@@ -57,14 +57,11 @@ export default function Verdict({ overall, totalTasks, model }: Props) {
         <h1 className="text-6xl sm:text-7xl lg:text-8xl font-heading tracking-tight">
           stop using plan mode.
         </h1>
-        <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+        <p className="mt-14 max-w-5xl text-lg leading-relaxed text-muted-foreground">
           does planning before coding actually help?
           we tested 3 modes across {totalTasks} tasks on real codebases
-          like vLLM, Prisma, llama.cpp, and diffusers.
+          like vLLM, T3 Code, llama.cpp, unsloth, and diffusers.
           plan mode costs more, takes longer, and doesn&apos;t improve accuracy
-        </p>
-        <p className="mt-3 font-mono text-xs text-muted-foreground/70">
-          {model}
         </p>
       </div>
 

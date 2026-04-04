@@ -21,27 +21,20 @@ export default function Dashboard() {
       </section>
 
       {/* Projects used */}
-      <section className="mt-24 mx-auto max-w-5xl px-6">
+      <section className="mt-32 mx-auto max-w-5xl px-6">
         <ProjectShowcase tasks={tasks} />
       </section>
 
-      {/* Full Results — FULL WIDTH */}
-      <section className="mt-24 px-6">
-        <TaskTable tasks={tasks} />
+      {/* Full Results */}
+      <section className="mt-32 mx-auto max-w-6xl px-6">
+        <TaskTable tasks={tasks} model={meta.claudeModel} />
       </section>
 
       {/* How each mode works */}
-      <section className="mt-24 mx-auto max-w-5xl px-6">
+      <section className="mt-32 mx-auto max-w-5xl px-6">
         <ModeExplainer />
       </section>
 
-      {/* Footer meta */}
-      <div className="mt-24 mx-auto max-w-5xl px-6 flex flex-wrap gap-x-6 gap-y-1 border-t border-border pt-6 font-mono text-xs text-muted-foreground/70">
-        <span>model {meta.claudeModel}</span>
-        <span>
-          {meta.totalTasks} task{meta.totalTasks !== 1 ? "s" : ""}
-        </span>
-      </div>
     </div>
   );
 }
