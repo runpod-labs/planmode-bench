@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "Add Custom Theme System to T3 Code Editor",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-04T12:39:24.074Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 760287,
+    "duration_api_ms": 894790,
+    "num_turns": 35,
+    "total_cost_usd": 1.6957078499999998,
+    "input_tokens": 33,
+    "output_tokens": 37873,
+    "cache_read_tokens": 821318,
+    "cache_creation_tokens": 97805,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 547889,
+    "plan_api_ms": 686404,
+    "plan_tokens_in": 11,
+    "plan_tokens_out": 27363,
+    "plan_cost_usd": 1.14135975,
+    "plan_content": "Here's a summary of the plan I've created:\n\n## Plan: Custom Theme System\n\n**6 files total** — 2 new, 4 modified. No new dependencies, no build config changes.\n\n### New files:\n1. **`packages/shared/src/themes.ts`** — `Theme` interface + `ThemeColors` + 3 built-ins (`t3-dark`, `t3-light`, `t3-midnight`) with `getTheme(id)` and `listThemes()`. Pure TypeScript, no Effect needed.\n2. **`apps/web/src/components/ThemeSelector.tsx`** — Card-grid picker (3 columns) with mini swatch previews showing sidebar strip, editor area, status bar, and accent color for each theme.\n\n### Modified files:\n3. **`packages/shared/package.json`** — Add `\"./themes\"` subpath export (same pattern as `./model`, `./git`, etc.)\n4. **`apps/web/src/hooks/useTheme.ts`** — Rename existing `useTheme()` → `useAppearanceMode()` (internals unchanged). Add new `useTheme()` using the same `useSyncExternalStore` external-store pattern, storing the theme ID under `t3code:color-theme`. `applyColorTheme()` writes `--background`, `--foreground`, `--primary`, `--ring`, `--card*`, `--popover*`, and new `--t3-sidebar/editor/terminal/status-bar` + font vars via `style.setProperty()`, and toggles `.dark` based on `theme.variant`.\n5. **`apps/web/src/routes/_chat.settings.tsx`** — Swap `useTheme` → `useAppearanceMode` (one line), add a \"Color Theme\" section above \"Appearance\" that renders `<ThemeSelector />`.\n6. **`apps/web/src/index.css`** — Update `body` font-family/size to `var(--t3-font-family, fallback)` / `var(--t3-font-size, 14px)`.",
+    "execute_duration_ms": 212398,
+    "execute_api_ms": 208386,
+    "execute_tokens_in": 22,
+    "execute_tokens_out": 10510,
+    "execute_cost_usd": 0.5543481
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 5,
+          "checks_total": 5,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"t3-dark\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"t3-light\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"getTheme\"",
+              "passed": true
+            },
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "contains \"listThemes\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "interface.*Theme|type.*Theme",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "background|foreground|accent",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "t3-midnight",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 662
+  },
+  "session_id": "e9f0a4a6-ef43-4a8d-8244-7e6ffe507147"
+}

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-04T12:29:52.043Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 441383,
+    "duration_api_ms": 577618,
+    "num_turns": 34,
+    "total_cost_usd": 1.6658646999999998,
+    "input_tokens": 35,
+    "output_tokens": 22171,
+    "cache_read_tokens": 1276919,
+    "cache_creation_tokens": 103879,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 320419,
+    "plan_api_ms": 456829,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 14892,
+    "plan_cost_usd": 1.0266039999999998,
+    "plan_content": "## Plan Summary\n\nHere's what I found and designed:\n\n---\n\n### What I explored\n\n- **All save/export lives in `unsloth/save.py`** (2,678 lines). Every format — GGUF, GGML, merged-16bit, TorchAO — follows the same pattern: a standalone function + registration in `patch_saving_functions()` via `types.MethodType`.\n- **LoRA weight access**: `module.lora_A[adapter].weight` (shape `[rank, in_features]`) and `module.lora_B[adapter].weight` (shape `[out_features, rank]`). All three layer types (`Peft_Linear`, `Peft_Linear4bit`, `Bnb_Linear4bit`) are already imported at lines 17–19 of `save.py`.\n- **Config metadata**: `model.peft_config[\"default\"].to_dict()` gives `r`, `lora_alpha`, `target_modules`.\n- **`numpy` and `json` are not yet imported** in `save.py` — need to add them.\n\n---\n\n### The 4 changes to `unsloth/save.py`\n\n1. **Add `import json` and `import numpy as np`** after line 46.\n2. **Add `\"export_lora_to_onnx\"` to `__all__`**.\n3. **Implement `export_lora_to_onnx(self, output_dir, opset_version=17)`** before `patch_saving_functions`. It walks all named modules, collects active LoRA layers, creates an ONNX `Constant` node per tensor (A matrix, B matrix, scaling scalar), embeds metadata in `model.metadata_props`, validates with `onnx.checker.check_model`, and writes `lora_adapters.onnx` + `lora_metadata.json`. `onnx` is imported lazily (same pattern as `llama.cpp` tools).\n4. **Register**: add `model.export_to_onnx = types.MethodType(export_lora_to_onnx, model)` in the `if not vision:` block of `patch_saving_functions`.\n\n**Key design choice**: using ONNX `Constant` nodes (not initializers) ensures `onnx.checker.check_model` passes — a no-input graph where every output comes from a Constant node is well-formed ONNX.",
+    "execute_duration_ms": 120964,
+    "execute_api_ms": 120789,
+    "execute_tokens_in": 22,
+    "execute_tokens_out": 7279,
+    "execute_cost_usd": 0.6392607
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 82
+  },
+  "session_id": "a2cc7820-8008-4e42-b1c1-e39dc188937b"
+}
