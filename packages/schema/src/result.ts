@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ModeEnum = z.enum(["normal", "plan-resume", "plan-clear"]);
+export const ModeEnum = z.enum(["normal", "normal-guided", "plan-resume", "plan-clear"]);
 
 export type Mode = z.infer<typeof ModeEnum>;
 

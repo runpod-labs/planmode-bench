@@ -7,6 +7,7 @@ import type {
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { evaluate } from "@planmode-bench/evaluator";
 import { runNormalMode } from "./modes/normal.js";
+import { runNormalGuidedMode } from "./modes/normal-guided.js";
 import { runPlanResumeMode } from "./modes/plan-resume.js";
 import { runPlanClearMode } from "./modes/plan-clear.js";
 import { createWorkspace } from "./sandbox.js";
@@ -43,6 +44,13 @@ export async function executeTask(options: ExecuteOptions): Promise<ExecuteResul
     switch (mode) {
       case "normal": {
         const result = await runNormalMode(task, workspace.dir, config.model);
+        metrics = result.metrics;
+        sessionId = result.sessionId;
+        messages = result.messages;
+        break;
+      }
+      case "normal-guided": {
+        const result = await runNormalGuidedMode(task, workspace.dir, config.model);
         metrics = result.metrics;
         sessionId = result.sessionId;
         messages = result.messages;
