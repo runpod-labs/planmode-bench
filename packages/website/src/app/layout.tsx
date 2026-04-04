@@ -1,42 +1,27 @@
 import type { Metadata } from "next";
+import { Geist, Geist_Mono, Instrument_Sans } from "next/font/google";
+import { cn } from "@/lib/utils";
 import "./globals.css";
+
+const heading = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-heading",
+});
+
+const sans = Geist({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const mono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   title: "planmode-bench",
-  description:
-    "Benchmark: Does Plan Mode + Context Clearing beat direct execution in Claude Code?",
+  description: "Does Plan Mode beat direct execution in Claude Code?",
 };
-
-function Nav() {
-  return (
-    <nav className="border-b border-border px-6 py-4">
-      <div className="mx-auto flex max-w-6xl items-center justify-between">
-        <a href="/" className="text-lg font-bold tracking-tight">
-          planmode-bench
-        </a>
-        <div className="flex gap-6 text-sm text-text-secondary">
-          <a href="/" className="hover:text-text-primary transition-colors">
-            Dashboard
-          </a>
-          <a
-            href="/methodology"
-            className="hover:text-text-primary transition-colors"
-          >
-            Methodology
-          </a>
-          <a
-            href="https://github.com/runpod-labs/planmode-bench"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-text-primary transition-colors"
-          >
-            GitHub
-          </a>
-        </div>
-      </div>
-    </nav>
-  );
-}
 
 export default function RootLayout({
   children,
@@ -44,19 +29,50 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen bg-surface antialiased">
-        <Nav />
-        <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
-        <footer className="border-t border-border px-6 py-8 text-center text-sm text-text-muted">
-          planmode-bench &mdash; built by{" "}
+    <html
+      lang="en"
+      className={cn(
+        "dark antialiased",
+        sans.variable,
+        heading.variable,
+        mono.variable
+      )}
+    >
+      <body className="min-h-screen bg-background text-foreground">
+        {/* Gradient accent line */}
+        <div className="fixed top-0 left-0 right-0 h-px z-50 bg-gradient-to-r from-mode-n via-mode-g to-mode-pc opacity-50" />
+
+        <nav className="relative px-6 pt-8">
+          <div className="mx-auto flex max-w-5xl items-center justify-between">
+            <a
+              href="/"
+              className="font-mono text-sm font-medium tracking-tight text-muted-foreground hover:text-foreground transition-colors"
+            >
+              plan mode bench
+            </a>
+            <div className="flex gap-6 text-sm text-muted-foreground">
+              <a
+                href="https://github.com/runpod-labs/planmode-bench"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors"
+              >
+                GitHub
+              </a>
+            </div>
+          </div>
+        </nav>
+
+        <main className="pb-24">{children}</main>
+
+        <footer className="px-6 pb-12 text-center">
           <a
             href="https://github.com/runpod-labs"
-            className="text-text-secondary hover:text-text-primary transition-colors"
             target="_blank"
             rel="noopener noreferrer"
+            className="text-xs font-mono text-muted-foreground/50 hover:text-muted-foreground transition-colors"
           >
-            RunPod Labs
+            Runpod Labs
           </a>
         </footer>
       </body>
