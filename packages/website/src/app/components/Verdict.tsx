@@ -59,7 +59,7 @@ export default function Verdict({ overall, totalTasks, model }: Props) {
         </h1>
         <p className="mt-14 max-w-5xl text-lg leading-relaxed text-muted-foreground">
           does planning before coding actually help?
-          we tested 3 modes across {totalTasks} tasks on real codebases
+          we tested 3 modes across {totalTasks}{" "}tasks on real codebases
           like vLLM, bun, T3 Code, llama.cpp, unsloth, diffusers, transformers.js, and AI SDK.
           plan mode costs more, takes longer, and doesn&apos;t improve accuracy
         </p>
