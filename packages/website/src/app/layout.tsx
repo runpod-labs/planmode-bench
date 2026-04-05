@@ -88,8 +88,8 @@ export default function RootLayout({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/runpod-wordmark-text.webp"
-                alt="RunPod"
+                src={`${process.env.NODE_ENV === "production" ? "/planmode-bench" : ""}/runpod-wordmark-text.webp`}
+                alt="Runpod"
                 width={90}
                 height={20}
                 className="opacity-70 group-hover:opacity-100 transition-opacity"
