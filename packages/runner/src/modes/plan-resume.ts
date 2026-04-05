@@ -38,7 +38,7 @@ export async function runPlanResumeMode(
       options: {
         cwd: workDir,
         permissionMode: "plan",
-        maxTurns: 30,
+        maxTurns: 100,
         maxBudgetUsd: planBudget,
         model,
       },

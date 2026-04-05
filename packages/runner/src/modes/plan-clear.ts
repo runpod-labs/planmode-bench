@@ -44,7 +44,7 @@ export async function runPlanClearMode(
       options: {
         cwd: workDir,
         permissionMode: "plan",
-        maxTurns: 30,
+        maxTurns: 100,
         maxBudgetUsd: planBudget,
         model,
       },
