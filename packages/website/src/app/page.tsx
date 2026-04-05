@@ -20,11 +20,6 @@ export default function Dashboard() {
         <KeyNumbers overall={overall} />
       </section>
 
-      {/* Projects used */}
-      <section className="mt-32 mx-auto max-w-5xl px-6">
-        <ProjectShowcase tasks={tasks} />
-      </section>
-
       {/* Full Results */}
       <section className="mt-32 mx-auto max-w-6xl px-6">
         <TaskTable tasks={tasks} model={meta.claudeModel} />
