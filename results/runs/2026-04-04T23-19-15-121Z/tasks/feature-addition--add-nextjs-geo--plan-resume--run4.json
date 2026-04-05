@@ -1,0 +1,290 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-nextjs-geo",
+  "task_name": "Add Geolocation Utility Module to Next.js",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-04T23:25:45.072Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 358808,
+    "duration_api_ms": 404390,
+    "num_turns": 29,
+    "total_cost_usd": 0.8417644000000001,
+    "input_tokens": 31,
+    "output_tokens": 15561,
+    "cache_read_tokens": 870972,
+    "cache_creation_tokens": 74379,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 258734,
+    "plan_api_ms": 304419,
+    "plan_tokens_in": 10,
+    "plan_tokens_out": 9148,
+    "plan_cost_usd": 0.36292855000000007,
+    "plan_content": "Here's the complete plan for adding `next/geo`:\n\n---\n\n## Plan: Add `next/geo` Utility Module\n\n**5 files total** — 4 new, 1 modified. All patterns cloned directly from the `userAgent` / `server.js` approach.\n\n### Files\n\n| Action | Path |\n|--------|------|\n| Create | `packages/next/src/server/web/spec-extension/geo.ts` |\n| Create | `packages/next/geo.js` |\n| Create | `packages/next/geo.d.ts` |\n| Modify | `packages/next/package.json` |\n| Create | `packages/next/src/server/web/spec-extension/geo.test.ts` |\n\n---\n\n### Step 1 — `geo.ts` (core implementation)\n\nMirrors `user-agent.ts` exactly — no external imports, pure TypeScript:\n\n- **`Geo` interface**: 7 optional string fields (`city`, `country`, `countryCode`, `region`, `latitude`, `longitude`, `timezone`)\n- **`COUNTRY_NAMES`** map: 10 entries (US, GB, DE, FR, JP, CN, IN, BR, AU, CA)\n- **`geoFromHeaders(headers: Headers): Geo`**: reads `x-vercel-ip-*` headers; falls back to `cf-ipcountry` for `countryCode`; derives `country` from map; converts `null` → `undefined` via `?? undefined`\n- **`geo({ headers }): Geo`**: thin wrapper calling `geoFromHeaders` (mirrors `userAgent()` → `userAgentFromString()`)\n- **`isInRegion(geo, regions): boolean`**: case-insensitive `countryCode` match\n- **`geoDistance(lat1, lon1, lat2, lon2): number`**: Haversine formula, returns km\n\n### Step 2 — `geo.js` (CJS entry point)\n\nExact copy of `server.js` pattern: build `geoExports` object with `require('next/dist/server/web/spec-extension/geo').xxx`, set `module.exports = geoExports`, then assign each named export to `exports.xxx` for ESM interop.\n\n### Step 3 — `geo.d.ts` (type definitions)\n\nRe-exports everything from `next/dist/server/web/spec-extension/geo`, mirroring `server.d.ts`.\n\n### Step 4 — `package.json` edit\n\nInsert `\"geo.js\"` and `\"geo.d.ts\"` into the `files` array after `\"form.d.ts\"` (alphabetically `g` follows `f`).\n\n### Step 5 — `geo.test.ts` (Jest tests)\n\n9 test cases using Jest's `describe/it/expect` (same as `adapters/headers.test.ts` nearby):\n- `geo()` with full Vercel headers — all 7 fields populated\n- `geo()` with no headers — all fields `undefined`\n- `geoFromHeaders()` with only `cf-ipcountry` — fallback works\n- `geoFromHeaders()` with both headers — Vercel takes precedence\n- `geoFromHeaders()` with unknown countryCode — `country` is `undefined`\n- `isInRegion()` match (case-insensitive)\n- `isInRegion()` no match\n- `isInRegion()` with `countryCode: undefined`\n- `geoDistance()` NY→London (expect 5520–5620 km)\n- `geoDistance()` identical points (expect ≈0)\n\n### Verification\n```bash\npnpm --filter=next types          # TypeScript check (~10s)\npnpm --filter=next build          # Compile to dist/\npnpm test-unit packages/next/src/server/web/spec-extension/geo.test.ts\n```",
+    "execute_duration_ms": 100074,
+    "execute_api_ms": 99971,
+    "execute_tokens_in": 21,
+    "execute_tokens_out": 6413,
+    "execute_cost_usd": 0.47883585
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 20,
+          "checks_total": 20,
+          "check_details": [
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.ts",
+              "check": "contains \"Geo\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.ts",
+              "check": "contains \"geo\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.ts",
+              "check": "contains \"geoFromHeaders\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.ts",
+              "check": "contains \"isInRegion\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.ts",
+              "check": "contains \"geoDistance\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.ts",
+              "check": "contains \"x-vercel-ip-city\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.ts",
+              "check": "contains \"COUNTRY_NAMES\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/geo.js",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/next/geo.js",
+              "check": "contains \"require\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/geo.js",
+              "check": "contains \"geo\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/geo.js",
+              "check": "contains \"geoFromHeaders\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/geo.js",
+              "check": "contains \"isInRegion\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/geo.js",
+              "check": "contains \"geoDistance\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/geo.d.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/next/geo.d.ts",
+              "check": "contains \"Geo\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/geo.d.ts",
+              "check": "contains \"geo\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/geo.d.ts",
+              "check": "contains \"geoFromHeaders\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/geo.d.ts",
+              "check": "contains \"isInRegion\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/geo.d.ts",
+              "check": "contains \"geoDistance\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "cd packages/next && npx tsc --noEmit --strict --moduleResolution node --module ESNext --target ES2018 --esModuleInterop --jsx react-jsx src/server/web/spec-extension/geo.ts 2>&1 | tail -20",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 8,
+          "patterns_total": 8,
+          "pattern_results": [
+            {
+              "pattern": "interface Geo",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "export function geo",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "export function geoFromHeaders",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "export function isInRegion",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "export function geoDistance",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "x-vercel-ip-country",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "cf-ipcountry",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "Haversine|haversine|Math\\.asin|Math\\.atan2",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "geo\\.js",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "geo\\.d\\.ts",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "checks_passed": 5,
+          "checks_total": 5,
+          "check_details": [
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.test.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.test.ts",
+              "check": "contains \"geo\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.test.ts",
+              "check": "contains \"geoDistance\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.test.ts",
+              "check": "contains \"isInRegion\"",
+              "passed": true
+            },
+            {
+              "path": "packages/next/src/server/web/spec-extension/geo.test.ts",
+              "check": "contains \"Headers\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 2451
+  },
+  "session_id": "9e7c166d-2396-4371-afd8-80bc84072373"
+}
