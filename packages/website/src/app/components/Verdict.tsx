@@ -28,7 +28,7 @@ function pctDiff(a: number, b: number): number {
 export default function Verdict({ overall, totalTasks, model }: Props) {
   const oneshot = overall.normal ?? { avgScore: 0, avgCost: 0, avgDurationMs: 0, n: 0 };
 
-  // Average the two plan modes for comparison
+  // Average the two plan mode for comparison
   const planModes = [overall["plan-resume"], overall["plan-clear"]].filter(
     (s) => s?.n > 0
   );
@@ -60,7 +60,7 @@ export default function Verdict({ overall, totalTasks, model }: Props) {
         <p className="mt-14 max-w-5xl text-lg leading-relaxed text-muted-foreground">
           does planning before coding actually help?
           we tested 3 modes across {totalTasks} tasks on real codebases
-          like vLLM, T3 Code, llama.cpp, unsloth, and diffusers.
+          like vLLM, bun, T3 Code, llama.cpp, unsloth, diffusers, transformers.js, and AI SDK.
           plan mode costs more, takes longer, and doesn&apos;t improve accuracy
         </p>
       </div>
@@ -85,7 +85,7 @@ export default function Verdict({ overall, totalTasks, model }: Props) {
             </span>
             <span className="text-muted-foreground">vs</span>
             <span>
-              plan modes{" "}
+              plan mode{" "}
               <span className="text-foreground font-medium">
                 {(planAvgScore * 100).toFixed(0)}%
               </span>
@@ -100,7 +100,7 @@ export default function Verdict({ overall, totalTasks, model }: Props) {
             cost per task
           </div>
           <div className="text-5xl sm:text-6xl font-heading tabular-nums tracking-tight text-red-400">
-            +{costDiff.toFixed(0)}% more
+            +{costDiff.toFixed(0)}% pricier
           </div>
           <div className="mt-4 flex items-baseline gap-3 text-sm font-mono text-muted-foreground">
             <span>
@@ -111,7 +111,7 @@ export default function Verdict({ overall, totalTasks, model }: Props) {
             </span>
             <span className="text-muted-foreground">vs</span>
             <span>
-              plan modes{" "}
+              plan mode{" "}
               <span className="text-foreground font-medium">
                 ${planAvgCost.toFixed(2)}
               </span>
@@ -137,7 +137,7 @@ export default function Verdict({ overall, totalTasks, model }: Props) {
             </span>
             <span className="text-muted-foreground">vs</span>
             <span>
-              plan modes{" "}
+              plan mode{" "}
               <span className="text-foreground font-medium">
                 {formatDuration(planAvgDuration)}
               </span>
