@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "Add REST API Client Generator to Prisma",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-05T12:05:28.712Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 1186732,
+    "duration_api_ms": 1110764,
+    "num_turns": 62,
+    "total_cost_usd": 3.9687212999999995,
+    "input_tokens": 56,
+    "output_tokens": 24415,
+    "cache_read_tokens": 1620029,
+    "cache_creation_tokens": 126507,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 773873,
+    "plan_api_ms": 767651,
+    "plan_tokens_in": 31,
+    "plan_tokens_out": 9936,
+    "plan_cost_usd": 2.78518695,
+    "plan_content": "The plan is ready for your review. Here's a quick summary:\n\n**New package**: `packages/generator-rest-client/` implementing the Prisma generator protocol via `generatorHandler()` from `@prisma/generator-helper`.\n\n**8 implementation steps**:\n1. **Scaffold** — `package.json`, `tsconfig.json`, `tsconfig.build.json`, `helpers/build.ts` following monorepo conventions (modeled after `packages/json-protocol/`)\n2. **Type mapping** — Prisma scalars (`String`→`string`, `Int`→`number`, `DateTime`→`Date`, etc.)\n3. **DMMF helpers** — Parse models, fields, and enums from `DMMF.Document` into simple intermediate structures\n4. **Code generator** — Assemble the full `rest-client.ts` output: enums, model interfaces, CreateInput/UpdateInput/WhereUniqueInput types, and a `RestClient` class with typed `findMany`/`findUnique`/`create`/`update`/`delete` methods per model\n5. **Generator handlers** — `onManifest` (returns metadata) and `onGenerate` (writes file to output dir)\n6. **Entry point** — Wires `generatorHandler()` for JSON-RPC IPC with the Prisma CLI\n7. **Tests** — Unit tests for type mapping, DMMF parsing, code generation, plus an integration test for file output\n8. **Monorepo integration** — `tsconfig.build.bundle.json` path entry + CI workflow test steps",
+    "execute_duration_ms": 412859,
+    "execute_api_ms": 343113,
+    "execute_tokens_in": 25,
+    "execute_tokens_out": 14479,
+    "execute_cost_usd": 1.1835343499999997
+  },
+  "evaluation": {
+    "overall_score": 0.91,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.9,
+        "weight": 0.4,
+        "weighted_score": 0.36000000000000004,
+        "passed": false,
+        "details": {
+          "checks_passed": 9,
+          "checks_total": 10,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"prisma\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"generator\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"generatorHandler\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"onGenerate\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"dmmf\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"findMany\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"create\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.6666666666666666,
+        "weight": 0.15,
+        "weighted_score": 0.09999999999999999,
+        "passed": false,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "findUnique|findMany",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "model|Model",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "interface|type",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "generatorHandler",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "onGenerate|onManifest",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 308601
+  },
+  "session_id": "540b9019-58dd-4653-af00-396537be2b04"
+}

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-clear",
+  "run_number": 8,
+  "timestamp": "2026-04-05T13:43:38.204Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 750251,
+    "duration_api_ms": 900178,
+    "num_turns": 55,
+    "total_cost_usd": 3.62486455,
+    "input_tokens": 48,
+    "output_tokens": 18061,
+    "cache_read_tokens": 1319946,
+    "cache_creation_tokens": 100498,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 481015,
+    "plan_api_ms": 632978,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 7799,
+    "plan_cost_usd": 2.3846935499999997,
+    "plan_content": "Here's a summary of the plan:\n\n**Goal:** Add ONNX export support for LoRA adapters in unsloth, following existing export patterns (GGUF, GGML, TorchAO).\n\n**3 files to modify:**\n\n1. **`unsloth/save.py`** (main change):\n   - Add `unsloth_export_to_onnx()` function (~80 lines) after the existing GGML export functions (line 2262)\n   - It extracts LoRA A/B matrices and scaling factors using the existing `get_lora_parameters_bias()` helper and `LLAMA_WEIGHTS` iteration pattern\n   - Stores them as named ONNX graph initializers with metadata (rank, alpha, target modules)\n   - Update `__all__` to export the new function\n   - Register as `model.export_to_onnx` in `patch_saving_functions()` via `types.MethodType`\n\n2. **`pyproject.toml`**: Add `onnx` optional dependency group (`pip install unsloth[onnx]`)\n\n3. **`tests/saving/test_unsloth_save.py`**: Add `test_export_to_onnx` following the existing `test_save_torchao` pattern with skip-if-not-installed decorator\n\n**Key design decisions:**\n- `onnx` is imported locally (optional dependency) — mirrors TorchAO pattern\n- Exports **only** adapter weights (not merged model) — keeps files small (~MB not GB)\n- Reuses `get_lora_parameters_bias()` and `LLAMA_WEIGHTS` — no duplicated logic\n- ONNX graph uses a minimal Identity node + initializers (standard weight container pattern)",
+    "execute_duration_ms": 269236,
+    "execute_api_ms": 267200,
+    "execute_tokens_in": 28,
+    "execute_tokens_out": 10262,
+    "execute_cost_usd": 1.240171
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 90
+  },
+  "session_id": "bec4ebcf-317b-44c2-bb12-343930dde621"
+}

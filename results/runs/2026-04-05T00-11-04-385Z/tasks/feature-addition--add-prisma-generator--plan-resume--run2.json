@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "Add REST API Client Generator to Prisma",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-05T11:38:27.054Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 548522,
+    "duration_api_ms": 993200,
+    "num_turns": 27,
+    "total_cost_usd": 4.009892799999999,
+    "input_tokens": 25,
+    "output_tokens": 10804,
+    "cache_read_tokens": 659779,
+    "cache_creation_tokens": 51487,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 545159,
+    "plan_api_ms": 682664,
+    "plan_tokens_in": 22,
+    "plan_tokens_out": 10765,
+    "plan_cost_usd": 1.8872500499999998,
+    "plan_content": "The plan is ready for your review. Here's a quick summary:\n\n**New package**: `packages/generator-rest-client/` — 10 files total, no existing files modified.\n\n**Architecture**: External generator using `generatorHandler()` from `@prisma/generator-helper`. Prisma spawns `dist/bin.js` as a child process, communicates via JSON-RPC over stdio. On `generate`, the DMMF is parsed to produce a single `rest-client.ts` file with:\n\n- Enum string union types\n- Typed model interfaces (scalar fields)\n- `CreateInput`/`UpdateInput`/`WhereUniqueInput` types per model\n- A fetch-based `PrismaRestClient` class with `findMany`, `findUnique`, `create`, `update`, `delete` per model\n\n**Key design decisions**:\n- Separate `src/bin.ts` (executable) vs `src/index.ts` (library exports)\n- Build uses `adapterConfig` (CJS+ESM) plus a custom bin target with shebang banner\n- `WhereUniqueInput` derived from `@id` / `@@id` / first `@unique` field\n- Relation fields excluded from interfaces (REST payloads are flat)\n- All DMMF scalar types mapped to appropriate TS types (`DateTime` → `string`, `Decimal` → `string`, etc.)",
+    "execute_duration_ms": 3363,
+    "execute_api_ms": 310536,
+    "execute_tokens_in": 3,
+    "execute_tokens_out": 39,
+    "execute_cost_usd": 2.12264275
+  },
+  "evaluation": {
+    "overall_score": 0.40499999999999997,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.7,
+        "weight": 0.4,
+        "weighted_score": 0.27999999999999997,
+        "passed": false,
+        "details": {
+          "checks_passed": 7,
+          "checks_total": 10,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"prisma\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"generator\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"generatorHandler\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"onGenerate\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"dmmf\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"findMany\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"create\"",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 2,
+          "output": "src/__tests__/generate-rest-client.test.ts(14,5): error TS2783: 'name' is specified more than once, so this usage will be overwritten.\nsrc/__tests__/generate-rest-client.test.ts(20,5): error TS2783: 'type' is specified more than once, so this usage will be overwritten.\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.3333333333333333,
+        "weight": 0.15,
+        "weighted_score": 0.049999999999999996,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "findUnique|findMany",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "model|Model",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "interface|type",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.15,
+        "weighted_score": 0.075,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "generatorHandler",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "onGenerate|onManifest",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1843
+  },
+  "session_id": "3a4eda34-72a9-4490-b63e-326bc8b79044"
+}

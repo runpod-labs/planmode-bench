@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-05T13:38:08.469Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 779335,
+    "duration_api_ms": 974671,
+    "num_turns": 50,
+    "total_cost_usd": 3.3921810499999996,
+    "input_tokens": 44,
+    "output_tokens": 23864,
+    "cache_read_tokens": 1157268,
+    "cache_creation_tokens": 93823,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 381813,
+    "plan_api_ms": 579738,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 7903,
+    "plan_cost_usd": 1.9360357999999998,
+    "plan_content": "",
+    "execute_duration_ms": 397522,
+    "execute_api_ms": 394933,
+    "execute_tokens_in": 27,
+    "execute_tokens_out": 15961,
+    "execute_cost_usd": 1.45614525
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 96
+  },
+  "session_id": "01ab8e4d-236e-4a9c-87c3-69ac131a1c7d"
+}

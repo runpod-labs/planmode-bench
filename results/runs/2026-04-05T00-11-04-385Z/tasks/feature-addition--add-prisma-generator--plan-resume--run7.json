@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "Add REST API Client Generator to Prisma",
+  "mode": "plan-resume",
+  "run_number": 7,
+  "timestamp": "2026-04-05T11:43:33.538Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 1177058,
+    "duration_api_ms": 1074953,
+    "num_turns": 48,
+    "total_cost_usd": 4.084943000000001,
+    "input_tokens": 60,
+    "output_tokens": 21497,
+    "cache_read_tokens": 2381754,
+    "cache_creation_tokens": 143513,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 930691,
+    "plan_api_ms": 855139,
+    "plan_tokens_in": 31,
+    "plan_tokens_out": 8090,
+    "plan_cost_usd": 2.508037750000001,
+    "plan_content": "",
+    "execute_duration_ms": 246367,
+    "execute_api_ms": 219814,
+    "execute_tokens_in": 29,
+    "execute_tokens_out": 13407,
+    "execute_cost_usd": 1.5769052500000003
+  },
+  "evaluation": {
+    "overall_score": 0.6607142857142857,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.7142857142857143,
+        "weight": 0.4,
+        "weighted_score": 0.28571428571428575,
+        "passed": false,
+        "details": {
+          "checks_passed": 5,
+          "checks_total": 7,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"prisma\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"generator\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"generatorHandler\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"onGenerate\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/generator-rest-client/src/generator.ts"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.15,
+        "weighted_score": 0.075,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "generatorHandler",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "onGenerate|onManifest",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1553
+  },
+  "session_id": "98eabd21-1a17-4a19-a4e1-fef50499058f"
+}

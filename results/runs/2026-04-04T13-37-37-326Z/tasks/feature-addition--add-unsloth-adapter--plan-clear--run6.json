@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-clear",
+  "run_number": 6,
+  "timestamp": "2026-04-05T00:05:29.339Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 628579,
+    "duration_api_ms": 1078142,
+    "num_turns": 21,
+    "total_cost_usd": 2.3911850999999995,
+    "input_tokens": 22,
+    "output_tokens": 13288,
+    "cache_read_tokens": 426882,
+    "cache_creation_tokens": 50814,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 626067,
+    "plan_api_ms": 763739,
+    "plan_tokens_in": 19,
+    "plan_tokens_out": 13198,
+    "plan_cost_usd": 1.6626860999999995,
+    "plan_content": "Here's the complete plan I've created, ready for your approval:\n\n---\n\n## Plan Summary: ONNX Export for LoRA Adapters\n\n### What I found by reading the code\n\nAll save/export logic is in a single file: **`unsloth/save.py`** (2,678 lines). The pattern for every export method (`save_pretrained_gguf`, `save_pretrained_torchao`, etc.) is:\n1. Define a top-level function taking `self` as first arg\n2. Register it in `patch_saving_functions()` via `types.MethodType`\n3. List in `__all__`\n\nLoRA A/B matrices are already accessible via `get_lora_parameters_bias(module)` (imported at line 29) — the same utility `_merge_lora()` uses.\n\n### Only 4 edit locations (all in `unsloth/save.py`) + 1 new test file\n\n| # | Where | What |\n|---|-------|------|\n| 1 | Line 47 (after `from pathlib import Path`) | Add `import json` and `import numpy as np` |\n| 2 | Lines 48–54 (`__all__`) | Add `\"unsloth_export_to_onnx\"` |\n| 3 | After line 2562 (before `not_implemented_save`) | Insert `unsloth_export_to_onnx` function |\n| 4 | Line 2668 (`patch_saving_functions` non-vision block) | Add `model.export_to_onnx = types.MethodType(unsloth_export_to_onnx, model)` |\n| 5 | New | `tests/saving/test_onnx_export.py` |\n\n### ONNX design\n\n- **Single file** `lora_adapters.onnx` with one subgraph per LoRA module\n- Each subgraph: `x → MatMul(A.T) → h → MatMul(B.T) → pre_scale → Mul(scale) → output_delta`\n- A and B are **pre-transposed** as initializers (no Transpose nodes at inference time)\n- Dot-separated module names (e.g. `model.layers.0.self_attn.q_proj`) replaced with `__` for ONNX tensor name safety\n- Metadata (rank, alpha, target_modules, scaling factors) in `model.doc_string` as JSON + companion `lora_adapter_metadata.json`\n- `onnx` is a **soft optional dep** — lazy import with `pip install onnx` error message\n- Vision models **excluded** (consistent with GGML pattern)",
+    "execute_duration_ms": 2512,
+    "execute_api_ms": 314403,
+    "execute_tokens_in": 3,
+    "execute_tokens_out": 90,
+    "execute_cost_usd": 0.7284990000000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 83
+  },
+  "session_id": "37a0f7e5-a95e-4037-9fbc-20a3ebd0c65e"
+}

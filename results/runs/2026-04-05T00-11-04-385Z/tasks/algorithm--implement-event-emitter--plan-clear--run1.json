@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "task_id": "algorithm/implement-event-emitter",
+  "task_name": "Implement Full-Featured Event Emitter",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-05T00:14:48.773Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 113443,
+    "duration_api_ms": 110277,
+    "num_turns": 25,
+    "total_cost_usd": 0.4334680000000001,
+    "input_tokens": 20,
+    "output_tokens": 6404,
+    "cache_read_tokens": 199111,
+    "cache_creation_tokens": 27794,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 80799,
+    "plan_api_ms": 79559,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 4558,
+    "plan_cost_usd": 0.29516925000000005,
+    "plan_content": "The plan is ready for your review. Here's a quick summary:\n\n**Single file to change:** `src/event-emitter.ts`\n\n**Core design:** A `Map<string, Listener[]>` stores per-event listener arrays. The critical implementation detail is that `emit()` iterates a **copy** of the listener array, which prevents crashes when listeners remove themselves or others mid-iteration.\n\n**Method highlights:**\n- **`on`** — pushes to the array, returns `() => this.off(event, listener)`\n- **`once`** — wraps listener in a self-removing wrapper, registers via `on`\n- **`emit`** — snapshots the array, iterates the copy, returns `true`/`false`\n- **`off`** — finds by reference, splices out, deletes empty map keys\n- **`removeAllListeners`** — `map.delete(event)` or `map.clear()`\n- **`listenerCount`** / **`eventNames`** — simple map lookups",
+    "execute_duration_ms": 32644,
+    "execute_api_ms": 30718,
+    "execute_tokens_in": 7,
+    "execute_tokens_out": 1846,
+    "execute_cost_usd": 0.13829875
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 1,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775347972499-itsbhj\n\n ✓ tests/event-emitter.test.ts (29 tests) 5ms\n\n Test Files  1 passed (1)\n      Tests  29 passed (29)\n   Start at  02:14:48\n   Duration  216ms (transform 39ms, setup 0ms, collect 36ms, tests 5ms, environment 0ms, prepare 39ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/event-emitter.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"on(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"emit(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"once(\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1094
+  },
+  "session_id": "3c34c820-d4eb-43d0-844c-41b40a1aa652"
+}

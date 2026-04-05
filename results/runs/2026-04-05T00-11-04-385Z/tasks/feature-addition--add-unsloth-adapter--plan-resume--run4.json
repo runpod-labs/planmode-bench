@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-05T13:30:34.086Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 567156,
+    "duration_api_ms": 687632,
+    "num_turns": 42,
+    "total_cost_usd": 2.8021568,
+    "input_tokens": 36,
+    "output_tokens": 16120,
+    "cache_read_tokens": 1090223,
+    "cache_creation_tokens": 111497,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 424783,
+    "plan_api_ms": 547410,
+    "plan_tokens_in": 24,
+    "plan_tokens_out": 8603,
+    "plan_cost_usd": 1.93532255,
+    "plan_content": "",
+    "execute_duration_ms": 142373,
+    "execute_api_ms": 140222,
+    "execute_tokens_in": 12,
+    "execute_tokens_out": 7517,
+    "execute_cost_usd": 0.86683425
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 90
+  },
+  "session_id": "a13fd162-42d3-4838-ab20-bc6c912bfd13"
+}

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-resume",
+  "run_number": 7,
+  "timestamp": "2026-04-04T23:57:34.997Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 694751,
+    "duration_api_ms": 851851,
+    "num_turns": 29,
+    "total_cost_usd": 2.204990350000001,
+    "input_tokens": 28,
+    "output_tokens": 24534,
+    "cache_read_tokens": 813744,
+    "cache_creation_tokens": 108282,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 598233,
+    "plan_api_ms": 755402,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 18864,
+    "plan_cost_usd": 1.7562982000000011,
+    "plan_content": "Here's a summary of what the plan covers, based on a thorough exploration of all relevant source files:\n\n---\n\n## Plan Summary: ONNX Export for LoRA Adapters\n\n### Key findings from codebase exploration\n\n- **Single target file**: All changes go in `unsloth/save.py` (2678 lines). No other files need modification.\n- **`__init__.py` is already set up**: It does `from .save import *`, so only `__all__` needs updating.\n- **All required imports already exist** at the top of `save.py`: `Bnb_Linear4bit`, `Peft_Linear4bit`, `Peft_Linear`, `get_lora_parameters_bias`, `gc`, `os`, `torch`.\n- **No existing ONNX code** anywhere in the codebase — this is a greenfield addition.\n\n### The 4 targeted changes to `unsloth/save.py`\n\n| # | Location | Change |\n|---|---|---|\n| 1 | Lines 48–54 (`__all__`) | Add `\"save_lora_to_onnx\"` |\n| 2 | Before line 2564 | Add `save_lora_to_onnx()` core function (~90 lines) |\n| 3 | After step 2 | Add `unsloth_save_pretrained_onnx()` thin wrapper (~20 lines) |\n| 4 | Line 2667 in `patch_saving_functions()` | Add `model.save_pretrained_onnx = types.MethodType(...)` |\n\n### Design rationale\n\n- **`onnx.helper` proto API** (not `torch.onnx.export`) — LoRA weights are stored constants, not traced computations. Direct proto building avoids dummy inputs, produces minimal graphs, and gives full topology control.\n- **Detection via `isinstance(module, (Bnb_Linear4bit, Peft_Linear4bit, Peft_Linear))`** — reuses the exact same check from `_merge_lora()`, which is the authoritative LoRA layer detection in the codebase.\n- **Graph**: `MatMul(B, A)` → `Mul(result, scaling)` → `delta_W [out_features, in_features]`\n- **One `.onnx` file per layer** + `metadata.json` with rank, alpha, target_modules, per-layer shapes/scaling",
+    "execute_duration_ms": 96518,
+    "execute_api_ms": 96449,
+    "execute_tokens_in": 10,
+    "execute_tokens_out": 5670,
+    "execute_cost_usd": 0.44869215
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 84
+  },
+  "session_id": "e0593a67-424d-49ed-a9b8-38864524b9aa"
+}

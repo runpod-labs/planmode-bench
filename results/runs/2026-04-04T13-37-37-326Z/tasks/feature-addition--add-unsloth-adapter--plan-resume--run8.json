@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-resume",
+  "run_number": 8,
+  "timestamp": "2026-04-04T23:55:03.027Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 478369,
+    "duration_api_ms": 644500,
+    "num_turns": 28,
+    "total_cost_usd": 1.53707685,
+    "input_tokens": 27,
+    "output_tokens": 23292,
+    "cache_read_tokens": 683357,
+    "cache_creation_tokens": 86657,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 394777,
+    "plan_api_ms": 560995,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 18030,
+    "plan_cost_usd": 1.13301525,
+    "plan_content": "Here's the complete plan. All changes go in **one file: `unsloth/save.py`** — three targeted edits:\n\n---\n\n## Summary\n\n### What's being built\nA `model.save_pretrained_onnx(output_dir, tokenizer, opset_version=17)` method that exports each LoRA-adapted layer as its own `.onnx` file plus an `onnx_adapter_metadata.json`.\n\n### The 3 edits to `unsloth/save.py`\n\n**Edit 1 — `__all__` (~line 48)**\nAdd `\"unsloth_save_pretrained_onnx\"` to the public exports list.\n\n**Edit 2 — New class + function (~line 2560, just before `not_implemented_save`)**\n\nInsert a tiny `_LoraAdapterOnnx(nn.Module)` helper that holds `lora_A`, `lora_B`, `scaling` as buffers and implements the LoRA delta forward pass (`x @ A.T @ B.T * scaling`). This is what `torch.onnx.export` traces.\n\nThen insert `unsloth_save_pretrained_onnx(self, save_directory, tokenizer=None, opset_version=17)` which:\n1. Reads `model.peft_config[\"default\"]` for `r`, `lora_alpha`, `target_modules`\n2. Walks `model.named_modules()` looking for modules with `lora_A`/`lora_B`, respecting `merged`/`disable_adapters` state\n3. For each LoRA layer: wraps weights in `_LoraAdapterOnnx`, calls `torch.onnx.export` with dynamic batch/sequence axes, writes `<module_name_with_dots_as_underscores>.onnx`\n4. Writes `onnx_adapter_metadata.json` with the config + module→file map\n\n**Edit 3 — `patch_saving_functions()` (~line 2668)**\nAppend inside the `if not vision: if hasattr(model, \"config\"):` block:\n```python\nmodel.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)\n```\n\n### Key design decisions\n- **Per-layer files** (not one monolithic graph) — mirrors PEFT's per-weight-file convention\n- **`float32`** — LoRA A/B are never quantized; safe to cast and export as-is\n- **Dynamic axes** — supports variable batch/sequence length without re-export\n- **No new dependencies** — only `torch.onnx` (already required), `json`, and `os`\n- **`tokenizer=None`** — for API consistency with all other `save_pretrained_*` methods",
+    "execute_duration_ms": 83592,
+    "execute_api_ms": 83505,
+    "execute_tokens_in": 11,
+    "execute_tokens_out": 5262,
+    "execute_cost_usd": 0.4040616
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 83
+  },
+  "session_id": "932bba28-2672-44ef-a0a5-3bdb9f8f82bd"
+}

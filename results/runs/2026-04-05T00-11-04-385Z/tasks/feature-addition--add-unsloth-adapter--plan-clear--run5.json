@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-05T13:42:56.575Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 797830,
+    "duration_api_ms": 947304,
+    "num_turns": 49,
+    "total_cost_usd": 2.9625542500000006,
+    "input_tokens": 2010,
+    "output_tokens": 15276,
+    "cache_read_tokens": 842881,
+    "cache_creation_tokens": 59953,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 481069,
+    "plan_api_ms": 632233,
+    "plan_tokens_in": 1990,
+    "plan_tokens_out": 8263,
+    "plan_cost_usd": 2.1638411500000005,
+    "plan_content": "The plan is ready for your review. Here's a quick summary:\n\n**What we're doing:** Adding an `export_to_onnx()` method to unsloth models that exports LoRA adapter weights (A, B matrices + scaling) to ONNX format with metadata.\n\n**Only one file changes:** `unsloth/save.py` (with an optional `pyproject.toml` touch for the `onnx` optional dependency).\n\n**4 edits to `save.py`:**\n1. Add `\"unsloth_export_to_onnx\"` to `__all__`\n2. Add `get_lora_parameters` to the existing kernels import\n3. Insert the new `unsloth_export_to_onnx()` function (~80 lines) after `unsloth_save_pretrained_torchao`, using the `onnx` helper API to store all LoRA A/B/scaling tensors as ONNX initializers + a metadata JSON\n4. Register `model.export_to_onnx` in `patch_saving_functions()` (both vision and non-vision blocks)\n\n**Key design choices:**\n- Uses direct `onnx` graph construction (not `torch.onnx.export`) since we're exporting weight tensors, not tracing a forward pass\n- Architecture-agnostic: uses `isinstance` checks on module types (same as `_merge_lora`) rather than hardcoded weight names\n- Lazy imports `onnx` with a clear error message (same pattern as TorchAO export)\n- Single ONNX file + JSON metadata (not 200+ per-module files)",
+    "execute_duration_ms": 316761,
+    "execute_api_ms": 315071,
+    "execute_tokens_in": 20,
+    "execute_tokens_out": 7013,
+    "execute_cost_usd": 0.7987131000000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 91
+  },
+  "session_id": "0ec0c158-5c0b-453f-8748-376f9767cd1e"
+}

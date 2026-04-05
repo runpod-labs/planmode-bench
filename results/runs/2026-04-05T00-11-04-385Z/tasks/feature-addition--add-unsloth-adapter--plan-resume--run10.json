@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "Add ONNX LoRA Adapter Export to Unsloth",
+  "mode": "plan-resume",
+  "run_number": 10,
+  "timestamp": "2026-04-05T13:32:54.506Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 545906,
+    "duration_api_ms": 669611,
+    "num_turns": 43,
+    "total_cost_usd": 2.7969355499999997,
+    "input_tokens": 33,
+    "output_tokens": 15441,
+    "cache_read_tokens": 873615,
+    "cache_creation_tokens": 94214,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 453832,
+    "plan_api_ms": 578691,
+    "plan_tokens_in": 23,
+    "plan_tokens_out": 9241,
+    "plan_cost_usd": 2.11691305,
+    "plan_content": "Here's a summary of the plan:\n\n**Single file to modify:** `unsloth/save.py` — 4 surgical changes:\n\n1. **`__all__`** (line 48): Add `\"unsloth_export_to_onnx\"` to exports\n2. **`_check_onnx_installed()`** (after line 54): Lazy import helper with clear error if `onnx` isn't installed (optional dependency)\n3. **`unsloth_export_to_onnx()`** (~100 lines, inserted after line 2561): The main function that:\n   - Extracts adapter config (rank, alpha, target_modules) from `self.peft_config`\n   - Iterates `self.named_modules()`, uses existing `get_lora_parameters_bias()` to extract A/B matrices + scaling per LoRA layer\n   - Builds an ONNX graph with `MatMul→MatMul→Mul` nodes per layer (representing `delta = x @ A^T @ B^T * scaling`)\n   - Stores metadata as ONNX model properties\n   - Saves to `{output_dir}/lora_adapter.onnx`\n4. **`patch_saving_functions()`** (lines 2667, 2675): Register `model.export_to_onnx` via `types.MethodType` for both text and vision models\n\nThe approach reuses existing infrastructure (`get_lora_parameters_bias`, `isinstance` checks, `types.MethodType` registration) and works across all model architectures without architecture-specific code.",
+    "execute_duration_ms": 92074,
+    "execute_api_ms": 90920,
+    "execute_tokens_in": 10,
+    "execute_tokens_out": 6200,
+    "execute_cost_usd": 0.6800225
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 93
+  },
+  "session_id": "190cb9ec-4a52-468c-95bf-ec6b432cee1e"
+}

@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "Add Top-A Sampling Strategy to vLLM",
+  "mode": "plan-clear",
+  "run_number": 9,
+  "timestamp": "2026-04-05T14:16:24.775Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 864999,
+    "duration_api_ms": 975542,
+    "num_turns": 96,
+    "total_cost_usd": 5.507109550000001,
+    "input_tokens": 82,
+    "output_tokens": 30721,
+    "cache_read_tokens": 4145969,
+    "cache_creation_tokens": 149490,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 503834,
+    "plan_api_ms": 616057,
+    "plan_tokens_in": 23,
+    "plan_tokens_out": 11682,
+    "plan_cost_usd": 2.79992335,
+    "plan_content": "The plan is ready for your review. Here's a quick summary:\n\n**8 files modified** across 3 code paths (V0 legacy, V1 GPU, V1 TPU):\n\n1. **`vllm/sampling_params.py`** — Add `top_a: float = 0.0` field with docstring, validation (`[0, 1]`), greedy override, and `from_optional()` support\n2. **`vllm/v1/sample/logits_processor.py`** — New `TopALogitsProcessor` class (mirrors `MinPLogitsProcessor` exactly), registered as an `argmax_invariant` processor. This is the cleanest approach — no changes needed to `gpu_input_batch.py`, V1 `SamplingMetadata`, or V1 `sampler.py`\n3. **`vllm/model_executor/sampling_metadata.py`** — Add `top_as` tensor to V0 `SamplingTensors`\n4. **`vllm/model_executor/layers/sampler.py`** — Add `_apply_top_a()` function (same formula as `_apply_min_p`), wire into V0 `forward()`\n5. **`vllm/v1/worker/tpu_input_batch.py`** — Add top_a tensors/tracking (mirrors `min_p` pattern)\n6. **`vllm/v1/sample/tpu/metadata.py`** — Add `top_a` to TPU metadata\n7. **`vllm/v1/sample/tpu/sampler.py`** — Add `apply_top_a()` method\n8. **`vllm/v1/spec_decode/utils.py`** — Mark `top_a > 0` as spec-decode-unsupported",
+    "execute_duration_ms": 361165,
+    "execute_api_ms": 359485,
+    "execute_tokens_in": 59,
+    "execute_tokens_out": 19039,
+    "execute_cost_usd": 2.7071862000000015
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "contains \"top_a\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "top_a.*float|float.*top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "0\\.0.*top_a|top_a.*0\\.0",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "python3 -c 'import ast; ast.parse(open(\"vllm/sampling_params.py\").read()); print(\"Syntax OK\")'",
+          "exit_code": 0,
+          "output": "Syntax OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 26
+  },
+  "session_id": "117bd629-f81b-4757-997c-49855cec7bfd"
+}

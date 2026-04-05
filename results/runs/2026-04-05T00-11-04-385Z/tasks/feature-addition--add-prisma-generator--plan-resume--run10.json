@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "Add REST API Client Generator to Prisma",
+  "mode": "plan-resume",
+  "run_number": 10,
+  "timestamp": "2026-04-05T11:50:31.853Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 811355,
+    "duration_api_ms": 791039,
+    "num_turns": 43,
+    "total_cost_usd": 3.1271818500000004,
+    "input_tokens": 37,
+    "output_tokens": 20862,
+    "cache_read_tokens": 1302702,
+    "cache_creation_tokens": 102315,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 467038,
+    "plan_api_ms": 583271,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 7091,
+    "plan_cost_usd": 1.8889001000000003,
+    "plan_content": "",
+    "execute_duration_ms": 344317,
+    "execute_api_ms": 207768,
+    "execute_tokens_in": 21,
+    "execute_tokens_out": 13771,
+    "execute_cost_usd": 1.23828175
+  },
+  "evaluation": {
+    "overall_score": 0.45499999999999996,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.7,
+        "weight": 0.4,
+        "weighted_score": 0.27999999999999997,
+        "passed": false,
+        "details": {
+          "checks_passed": 7,
+          "checks_total": 10,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"prisma\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"generator\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"generatorHandler\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"onGenerate\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"dmmf\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"findMany\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"create\"",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 2,
+          "output": "src/__tests__/generator.test.ts(22,5): error TS2783: 'name' is specified more than once, so this usage will be overwritten.\nsrc/__tests__/generator.test.ts(29,5): error TS2783: 'type' is specified more than once, so this usage will be overwritten.\nsrc/__tests__/generator.test.ts(71,7): error TS2741: Property 'fieldRefTypes' is missing in type '{ inputObjectTypes: { prisma: never[]; }; outputObjectTypes: { model: never[]; prisma: never[]; }; enumTypes: { prisma: never[]; }; }' but required in type 'ReadonlyDeep<ReadonlyDeep<{ rootQueryType?: string | undefined; rootMutationType?: string | undefined; inputObjectTypes: { model?: ReadonlyDeep<{ name: string; constraints: { maxNumFields: number | null; minNumFields: number | null; fields?: string[] | undefined; }; meta?: { ...; } | undefined; fields: ReadonlyDeep<...'.\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.6666666666666666,
+        "weight": 0.15,
+        "weighted_score": 0.09999999999999999,
+        "passed": false,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "findUnique|findMany",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "model|Model",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "interface|type",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.15,
+        "weighted_score": 0.075,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "generatorHandler",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "onGenerate|onManifest",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1206
+  },
+  "session_id": "d3b8856e-286d-4da9-9e7a-304fab20d58b"
+}
