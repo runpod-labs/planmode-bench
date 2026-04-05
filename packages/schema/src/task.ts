@@ -57,12 +57,6 @@ export const EvaluationStrategy = z.discriminatedUnion("type", [
     weight: z.number().min(0).max(1),
   }),
   z.object({
-    type: z.literal("diff"),
-    reference_dir: z.string().default("reference"),
-    files: z.array(z.string()),
-    weight: z.number().min(0).max(1),
-  }),
-  z.object({
     type: z.literal("custom"),
     command: z.string(),
     weight: z.number().min(0).max(1),
@@ -91,13 +85,6 @@ export const TaskSetup = z.object({
 
 export type TaskSetupType = z.infer<typeof TaskSetup>;
 
-export const PlanQualityHints = z
-  .object({
-    should_mention: z.array(z.string()).optional(),
-    description: z.string().optional(),
-  })
-  .optional();
-
 export const TaskSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+\/[a-z0-9-]+$/),
   name: z.string().min(1).max(200),
@@ -120,7 +107,6 @@ export const TaskSchema = z.object({
       },
       { message: "Evaluation weights must sum to 1.0" }
     ),
-  plan_quality_hints: PlanQualityHints,
 });
 
 export type Task = z.infer<typeof TaskSchema>;

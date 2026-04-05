@@ -48,17 +48,6 @@ export async function evaluate(
           await evaluateBuild(workDir, prefix(strategy.command), strategy.weight)
         );
         break;
-      case "diff":
-        // Diff evaluation: simplified to file-check for now
-        strategyResults.push({
-          type: "diff",
-          score: 0,
-          weight: strategy.weight,
-          weighted_score: 0,
-          passed: false,
-          details: { note: "Diff strategy not yet implemented" },
-        });
-        break;
       case "test-integrity":
         strategyResults.push(
           await evaluateTestIntegrity(workDir, strategy.weight)

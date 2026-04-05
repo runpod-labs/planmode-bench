@@ -3,7 +3,6 @@ export {
   DifficultyEnum,
   EvaluationStrategy,
   TaskSetup,
-  PlanQualityHints,
   TaskSchema,
   type Category,
   type Difficulty,
