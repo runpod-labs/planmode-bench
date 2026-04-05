@@ -39,9 +39,6 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-screen bg-background text-foreground">
-        {/* Gradient accent line */}
-        <div className="fixed top-0 left-0 right-0 h-px z-50 bg-gradient-to-r from-mode-n via-mode-g to-mode-pc opacity-50" />
-
         <nav className="relative px-6 pt-8">
           <div className="mx-auto flex max-w-5xl items-center justify-between">
             <a
