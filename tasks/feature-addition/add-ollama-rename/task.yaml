@@ -26,93 +26,20 @@ setup:
     ref: "v0.20.2"
   install_command: "echo 'source-only task -- no build required'"
   timeout_minutes: 30
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  # Check 1: RenameRequest type exists in api/types.go
-  - type: "file-check"
-    checks:
-      - path: "api/types.go"
-        must_exist: true
-        must_contain:
-          - "RenameRequest"
-          - "Source"
-          - "Destination"
-    weight: 0.15
-
-  # Check 2: Client.Rename method exists in api/client.go
-  - type: "file-check"
-    checks:
-      - path: "api/client.go"
-        must_exist: true
-        must_contain:
-          - "func (c *Client) Rename"
-          - "/api/rename"
-          - "RenameRequest"
-    weight: 0.15
-
-  # Check 3: RenameHandler and route registration in server/routes.go
-  - type: "file-check"
-    checks:
-      - path: "server/routes.go"
-        must_exist: true
-        must_contain:
-          - "func (s *Server) RenameHandler"
-          - "RenameRequest"
-          - "/api/rename"
-          - "CopyModel"
-          - ".Remove()"
-    weight: 0.2
-
-  # Check 4: CLI rename command in cmd/cmd.go
-  - type: "file-check"
-    checks:
-      - path: "cmd/cmd.go"
-        must_exist: true
-        must_contain:
-          - "RenameHandler"
-          - "renameCmd"
-          - "Rename a model"
-          - "rename SOURCE DESTINATION"
-    weight: 0.15
-
-  # Check 5: Regex patterns for structural correctness
-  - type: "regex"
-    file: "api/types.go"
-    patterns:
-      - pattern: 'type RenameRequest struct'
-        should_match: true
-      - pattern: 'Source\s+string\s+`json:"source"`'
-        should_match: true
-      - pattern: 'Destination\s+string\s+`json:"destination"`'
-        should_match: true
-    weight: 0.1
-
-  # Check 6: Server handler regex checks
-  - type: "regex"
-    file: "server/routes.go"
-    patterns:
-      - pattern: 'func \(s \*Server\) RenameHandler\(c \*gin\.Context\)'
-        should_match: true
-      - pattern: 'r\.POST\("/api/rename"'
-        should_match: true
-      - pattern: 'StatusConflict|409'
-        should_match: true
-    weight: 0.1
-
-  # Check 7: Go syntax check on modified files
-  - type: "build"
-    command: "python3 -c \"import subprocess, sys; files=['api/types.go','api/client.go','server/routes.go','cmd/cmd.go']; [print(f'Checking {f}...') or None for f in files]; result=subprocess.run(['grep','-c','RenameRequest','api/types.go'],capture_output=True,text=True); print(f'RenameRequest occurrences in api/types.go: {result.stdout.strip()}'); sys.exit(0 if int(result.stdout.strip())>=1 else 1)\""
-    weight: 0.05
-
-  # Check 8: CLI command registration check
-  - type: "regex"
-    file: "cmd/cmd.go"
-    patterns:
-      - pattern: 'renameCmd'
-        should_match: true
-      - pattern: 'cobra\.ExactArgs\(2\)'
-        should_match: true
-      - pattern: 'func RenameHandler\(cmd \*cobra\.Command, args \[\]string\) error'
-        should_match: true
-    weight: 0.1
+  - type: "llm-judge"
+    rubric: |
+      The agent should add a model rename feature to Ollama with API, client, server,
+      and CLI layers. Check the diff for:
+      - A RenameRequest struct in the API types with Source and Destination string fields
+        (json-tagged as "source" and "destination")
+      - A Client.Rename method in the API client that POSTs to /api/rename
+      - A RenameHandler on the Server in routes that copies the model then deletes the
+        source, returns 404 if source missing and 409 if destination exists
+      - Route registration: r.POST("/api/rename", ...) wired to the handler
+      - A CLI command "ollama rename SOURCE DEST" using cobra with ExactArgs(2)
+      - The CLI RenameHandler function calls the client Rename method
+      - No existing test files are modified; all existing code remains intact
+    weight: 1.0

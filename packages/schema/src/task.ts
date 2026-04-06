@@ -65,6 +65,12 @@ export const EvaluationStrategy = z.discriminatedUnion("type", [
     type: z.literal("test-integrity"),
     weight: z.number().min(0).max(1),
   }),
+  z.object({
+    type: z.literal("llm-judge"),
+    rubric: z.string(),
+    model: z.string().default("claude-haiku-4-5-20251001"),
+    weight: z.number().min(0).max(1),
+  }),
 ]);
 
 export type EvaluationStrategyType = z.infer<typeof EvaluationStrategy>;

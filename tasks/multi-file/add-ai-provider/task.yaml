@@ -24,46 +24,20 @@ setup:
     ref: "ai@6.0.145"
   install_command: "pnpm install --no-frozen-lockfile"
   timeout_minutes: 30
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  - type: "file-check"
-    checks:
-      - path: "packages/pixelart/package.json"
-        must_exist: true
-      - path: "packages/pixelart/src/index.ts"
-        must_exist: true
-        must_contain:
-          - "createPixelArt"
-      - path: "packages/pixelart/src/pixelart-provider.ts"
-        must_exist: true
-        must_contain:
-          - "pixelart"
-      - path: "packages/pixelart/src/pixelart-image-model.ts"
-        must_exist: true
-        must_contain:
-          - "generateImage"
-          - "pixelDensity"
-    weight: 0.4
-
-  - type: "build"
-    command: "cd packages/pixelart && npx tsc --noEmit"
-    weight: 0.3
-
-  - type: "regex"
-    file: "packages/pixelart/src/index.ts"
-    patterns:
-      - pattern: "export.*createPixelArt"
-        should_match: true
-      - pattern: "PixelArtProvider"
-        should_match: true
-    weight: 0.15
-
-  - type: "regex"
-    file: "packages/pixelart/src/pixelart-image-model.ts"
-    patterns:
-      - pattern: "pixel.*8bit|8bit.*pixel|style"
-        should_match: true
-      - pattern: "api\\.pixelart\\.ai"
-        should_match: true
-    weight: 0.15
+  - type: "llm-judge"
+    rubric: |
+      The agent should add a fictional "PixelArt" AI provider to the Vercel AI SDK
+      that only supports image generation (no text, chat, or embeddings).
+      Check the diff for:
+      - A new provider package under packages/ with a package.json
+      - An exported createPixelArt factory function
+      - A PixelArtProvider class or object that creates image models
+      - An image model implementation with a generateImage method
+      - Image settings supporting size, style ("pixel", "retro", "8bit"), and pixel density
+      - Base URL set to "https://api.pixelart.ai/v1"
+      - The package follows the same structure as existing AI SDK providers
+      - No existing provider packages are modified; only new files are created
+    weight: 1.0

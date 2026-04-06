@@ -22,84 +22,21 @@ setup:
     ref: "0.11.3"
   install_command: "echo 'source-only task'"
   timeout_minutes: 25
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  # ── 1. CLI definition: StatsArgs struct + CacheCommand::Stats variant ──
-  - type: "file-check"
-    checks:
-      - path: "crates/uv-cli/src/lib.rs"
-        must_exist: true
-        must_contain:
-          - "Stats"
-          - "StatsArgs"
-          - "per-bucket"
-    weight: 0.15
-
-  - type: "regex"
-    file: "crates/uv-cli/src/lib.rs"
-    patterns:
-      - pattern: "Stats\\(StatsArgs\\)"
-        should_match: true
-      - pattern: "struct StatsArgs"
-        should_match: true
-      - pattern: "human.*bool|bool.*human"
-        should_match: true
-    weight: 0.10
-
-  # ── 2. New command implementation file ──
-  - type: "file-check"
-    checks:
-      - path: "crates/uv/src/commands/cache_stats.rs"
-        must_exist: true
-        must_contain:
-          - "cache_stats"
-          - "CacheBucket"
-          - "DiskUsage"
-          - "ExitStatus"
-          - "human_readable_bytes"
-          - "total"
-    weight: 0.25
-
-  - type: "regex"
-    file: "crates/uv/src/commands/cache_stats.rs"
-    patterns:
-      - pattern: "pub\\(crate\\) fn cache_stats"
-        should_match: true
-      - pattern: "CacheBucket::iter\\(\\)"
-        should_match: true
-      - pattern: "cache\\.bucket\\("
-        should_match: true
-      - pattern: "DiskUsage"
-        should_match: true
-      - pattern: "ExitStatus::Success"
-        should_match: true
-    weight: 0.20
-
-  # ── 3. Module registration in mod.rs ──
-  - type: "file-check"
-    checks:
-      - path: "crates/uv/src/commands/mod.rs"
-        must_exist: true
-        must_contain:
-          - "cache_stats"
-    weight: 0.10
-
-  - type: "regex"
-    file: "crates/uv/src/commands/mod.rs"
-    patterns:
-      - pattern: "mod cache_stats;"
-        should_match: true
-      - pattern: "use cache_stats::cache_stats"
-        should_match: true
-    weight: 0.05
-
-  # ── 4. Dispatch wiring in lib.rs ──
-  - type: "regex"
-    file: "crates/uv/src/lib.rs"
-    patterns:
-      - pattern: "CacheCommand::Stats"
-        should_match: true
-      - pattern: "commands::cache_stats"
-        should_match: true
-    weight: 0.15
+  - type: "llm-judge"
+    rubric: |
+      The agent should add a `uv cache stats` subcommand to the uv CLI.
+      Check the diff for:
+      - A new CLI variant/subcommand for "stats" in the cache command enum
+        (Stats(StatsArgs) variant and a StatsArgs struct with a human bool flag)
+      - A new command implementation that iterates over cache buckets (CacheBucket::iter())
+        and computes disk sizes using DiskUsage
+      - The function is pub(crate) fn cache_stats and returns ExitStatus::Success
+      - A --human flag for human-readable output using human_readable_bytes
+      - Output includes per-bucket lines and a total line
+      - Module registration: mod cache_stats and use cache_stats::cache_stats in mod.rs
+      - Dispatch wiring: CacheCommand::Stats matched in lib.rs calling commands::cache_stats
+      - Code follows the same patterns as the existing `cache size` command
+    weight: 1.0

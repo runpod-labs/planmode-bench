@@ -30,81 +30,23 @@ setup:
     - "corepack enable pnpm || true"
     - "git config core.hooksPath /dev/null"
   timeout_minutes: 30
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  # 1. Stepper component file — existence and key exports
-  - type: "file-check"
-    checks:
-      - path: "apps/v4/registry/new-york-v4/ui/stepper.tsx"
-        must_exist: true
-        must_contain:
-          - "use client"
-          - "Stepper"
-          - "StepperItem"
-          - "StepperTrigger"
-          - "StepperTitle"
-          - "StepperSeparator"
-          - "StepperContent"
-          - "data-slot"
-          - "cn("
-    weight: 0.30
-
-  # 2. Component structural patterns
-  - type: "regex"
-    file: "apps/v4/registry/new-york-v4/ui/stepper.tsx"
-    patterns:
-      - pattern: 'data-slot="stepper"'
-        should_match: true
-      - pattern: 'data-slot="stepper-item"'
-        should_match: true
-      - pattern: 'data-slot="stepper-trigger"'
-        should_match: true
-      - pattern: 'data-slot="stepper-separator"'
-        should_match: true
-      - pattern: 'data-slot="stepper-content"'
-        should_match: true
-      - pattern: "createContext|useContext"
-        should_match: true
-      - pattern: 'orientation.*horizontal.*vertical|horizontal.*vertical'
-        should_match: true
-      - pattern: "export function Stepper"
-        should_match: true
-    weight: 0.20
-
-  # 3. Demo example file
-  - type: "file-check"
-    checks:
-      - path: "apps/v4/registry/new-york-v4/examples/stepper-demo.tsx"
-        must_exist: true
-        must_contain:
-          - "Stepper"
-          - "StepperItem"
-          - "StepperTrigger"
-          - "StepperContent"
-          - "useState"
-    weight: 0.15
-
-  # 4. Registry entries
-  - type: "regex"
-    file: "apps/v4/registry/new-york-v4/ui/_registry.ts"
-    patterns:
-      - pattern: '"stepper"'
-        should_match: true
-      - pattern: 'registry:ui'
-        should_match: true
-    weight: 0.10
-
-  - type: "regex"
-    file: "apps/v4/registry/new-york-v4/examples/_registry.ts"
-    patterns:
-      - pattern: '"stepper-demo"'
-        should_match: true
-      - pattern: 'registry:example'
-        should_match: true
-    weight: 0.10
-
-  # 5. TypeScript compilation check
-  - type: "build"
-    command: "cd apps/v4 && npx tsc --noEmit --strict --jsx react-jsx --moduleResolution bundler --module ESNext --target ES2022 --esModuleInterop --skipLibCheck --paths '{\"@/*\": [\"./\"]}' registry/new-york-v4/ui/stepper.tsx 2>&1 | tail -20"
-    weight: 0.15
+  - type: "llm-judge"
+    rubric: |
+      The agent should add a Stepper compound component to the shadcn/ui library for
+      multi-step wizards. Check the diff for:
+      - A stepper component file marked with "use client" that exports: Stepper,
+        StepperItem, StepperTrigger, StepperTitle, StepperDescription, StepperSeparator,
+        StepperContent
+      - Each sub-component uses a data-slot attribute (e.g., data-slot="stepper",
+        data-slot="stepper-item", etc.) and the cn() utility for class merging
+      - React context (createContext/useContext) to share state between sub-components
+      - Support for both horizontal and vertical orientations
+      - A demo example file using Stepper, StepperItem, StepperTrigger, StepperContent
+        with useState for active step management
+      - Registry entries for both the "stepper" UI component and "stepper-demo" example
+        in their respective _registry.ts files
+      - No existing component files are modified
+    weight: 1.0

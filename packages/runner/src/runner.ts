@@ -387,7 +387,7 @@ function generateSummary(
 
     const modeAvgs = modes.map((m) => ({ mode: m, avg: modeScores[m].avg }));
     modeAvgs.sort((a, b) => b.avg - a.avg);
-    const winner = modeAvgs[0].avg - modeAvgs[1].avg < 0.01 ? "tie" : modeAvgs[0].mode;
+    const winner = modeAvgs.length < 2 ? modeAvgs[0]?.mode ?? "tie" : (modeAvgs[0].avg - modeAvgs[1].avg < 0.01 ? "tie" : modeAvgs[0].mode);
 
     const normalScores = modeScores["normal"]?.scores ?? [];
     const planModes = modes.filter((m) => m.startsWith("plan-"));

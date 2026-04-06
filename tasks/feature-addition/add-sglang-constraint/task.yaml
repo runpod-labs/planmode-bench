@@ -22,20 +22,17 @@ setup:
     ref: "v0.5.9"
   install_command: "echo 'source-only task'"
   timeout_minutes: 25
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  - type: "file-check"
-    checks:
-      - path: "python/sglang"
-        must_exist: true
-    weight: 0.3
-  - type: "build"
-    command: "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt"
-    weight: 0.4
-  - type: "regex"
-    file: "python/sglang/lang/ir.py"
-    patterns:
-      - pattern: "json_path|JsonPath"
-        should_match: true
-    weight: 0.3
+  - type: "llm-judge"
+    rubric: |
+      The agent should add a "json_path" output constraint to SGLang that validates
+      generated output contains a specified JSON path pattern (e.g., "$.store.book[*].author").
+      Check the diff for:
+      - A new constraint class or function for json_path in the SGLang lang/IR layer
+      - The constraint validates that output is valid JSON containing the specified path
+      - Registration alongside existing constraints so it can be used in SGLang programs
+      - The json_path or JsonPath identifier appears in the IR definitions
+      - The implementation follows the same patterns as existing SGLang constraints
+    weight: 1.0

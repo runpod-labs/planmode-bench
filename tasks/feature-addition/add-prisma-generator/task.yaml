@@ -22,49 +22,22 @@ setup:
     ref: "7.6.0"
   install_command: "pnpm install --no-frozen-lockfile"
   timeout_minutes: 30
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  - type: "file-check"
-    checks:
-      - path: "packages/generator-rest-client/package.json"
-        must_exist: true
-        must_contain:
-          - "prisma"
-          - "generator"
-      - path: "packages/generator-rest-client/src/index.ts"
-        must_exist: true
-        must_contain:
-          - "generatorHandler"
-          - "onGenerate"
-      - path: "packages/generator-rest-client/src/generator.ts"
-        must_exist: true
-        must_contain:
-          - "dmmf"
-          - "findMany"
-          - "create"
-    weight: 0.4
-
-  - type: "build"
-    command: "cd packages/generator-rest-client && npx tsc --noEmit"
-    weight: 0.3
-
-  - type: "regex"
-    file: "packages/generator-rest-client/src/generator.ts"
-    patterns:
-      - pattern: "findUnique|findMany"
-        should_match: true
-      - pattern: "model|Model"
-        should_match: true
-      - pattern: "interface|type"
-        should_match: true
-    weight: 0.15
-
-  - type: "regex"
-    file: "packages/generator-rest-client/src/index.ts"
-    patterns:
-      - pattern: "generatorHandler"
-        should_match: true
-      - pattern: "onGenerate|onManifest"
-        should_match: true
-    weight: 0.15
+  - type: "llm-judge"
+    rubric: |
+      The agent should add a new Prisma generator package that generates a typed REST
+      API client from a Prisma schema, following the existing monorepo package structure.
+      Check the diff for:
+      - A new package directory under packages/ with a package.json referencing prisma
+        and generator
+      - An entry point file using generatorHandler with onGenerate (and optionally
+        onManifest) callbacks from the Prisma generator protocol
+      - A generator implementation that reads dmmf (Prisma's data model meta format)
+        and iterates over models
+      - For each model, generates a TypeScript interface and CRUD methods: findMany,
+        findUnique, create, update, delete with proper types
+      - The generated output is written to the generator output directory
+      - Code follows TypeScript conventions and the standard Prisma generator patterns
+    weight: 1.0

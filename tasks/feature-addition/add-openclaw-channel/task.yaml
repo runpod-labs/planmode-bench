@@ -28,101 +28,24 @@ setup:
     - "corepack enable pnpm || true"
     - "git config core.hooksPath /dev/null"
   timeout_minutes: 30
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  # 1. Package manifest files
-  - type: "file-check"
-    checks:
-      - path: "extensions/pulseboard/package.json"
-        must_exist: true
-        must_contain:
-          - "@openclaw/pulseboard"
-          - "openclaw"
-          - "pulseboard"
-          - "module"
-          - "setupEntry"
-      - path: "extensions/pulseboard/openclaw.plugin.json"
-        must_exist: true
-        must_contain:
-          - "pulseboard"
-          - "channels"
-          - "configSchema"
-    weight: 0.15
-
-  # 2. Types file
-  - type: "file-check"
-    checks:
-      - path: "extensions/pulseboard/src/types.ts"
-        must_exist: true
-        must_contain:
-          - "PulseBoardAccount"
-          - "PulseBoardConfig"
-          - "PulseBoardMessage"
-          - "boardUrl"
-          - "apiToken"
-    weight: 0.10
-
-  # 3. Runtime store
-  - type: "file-check"
-    checks:
-      - path: "extensions/pulseboard/src/runtime.ts"
-        must_exist: true
-        must_contain:
-          - "createPluginRuntimeStore"
-          - "getPulseBoardRuntime"
-          - "setPulseBoardRuntime"
-    weight: 0.10
-
-  # 4. Channel plugin (the core of the task)
-  - type: "file-check"
-    checks:
-      - path: "extensions/pulseboard/src/channel.ts"
-        must_exist: true
-        must_contain:
-          - "createChatChannelPlugin"
-          - "pulseboard"
-          - "PulseBoard"
-          - "capabilities"
-          - "outbound"
-          - "sendText"
-          - "gateway"
-          - "messaging"
-    weight: 0.25
-
-  - type: "regex"
-    file: "extensions/pulseboard/src/channel.ts"
-    patterns:
-      - pattern: "createChatChannelPlugin"
-        should_match: true
-      - pattern: "chatTypes.*direct.*group|chatTypes.*group.*direct"
-        should_match: true
-      - pattern: "textChunkLimit.*4000"
-        should_match: true
-      - pattern: "deliveryMode.*direct"
-        should_match: true
-      - pattern: "normalizeTarget"
-        should_match: true
-    weight: 0.15
-
-  # 5. Entry points
-  - type: "file-check"
-    checks:
-      - path: "extensions/pulseboard/index.ts"
-        must_exist: true
-        must_contain:
-          - "defineChannelPluginEntry"
-          - "pulseBoardPlugin"
-          - "setPulseBoardRuntime"
-          - "pulseboard"
-      - path: "extensions/pulseboard/setup-entry.ts"
-        must_exist: true
-        must_contain:
-          - "defineSetupPluginEntry"
-          - "pulseBoardPlugin"
-    weight: 0.15
-
-  # 6. Build check — TypeScript compilation
-  - type: "build"
-    command: "cd extensions/pulseboard && npx tsc --noEmit --strict --moduleResolution bundler --module ESNext --target ES2022 --esModuleInterop --skipLibCheck src/types.ts 2>&1 | tail -20"
-    weight: 0.10
+  - type: "llm-judge"
+    rubric: |
+      The agent should add a fictional "PulseBoard" channel plugin to OpenClaw,
+      following the same extension structure as existing channel plugins (IRC, Nostr, Telegram).
+      Check the diff for:
+      - A package.json with @openclaw/pulseboard scoped name and setupEntry field
+      - An openclaw.plugin.json with channels and configSchema definitions
+      - Types file with PulseBoardAccount, PulseBoardConfig, PulseBoardMessage interfaces
+        including boardUrl and apiToken fields
+      - A runtime store using createPluginRuntimeStore with get/set accessors
+      - A channel plugin file using createChatChannelPlugin with:
+        - chatTypes supporting both direct and group
+        - textChunkLimit of 4000
+        - outbound sendText capability, gateway, messaging, and normalizeTarget
+      - An index entry point using defineChannelPluginEntry
+      - A setup entry point using defineSetupPluginEntry
+      - No existing files are modified; only new files in the pulseboard extension directory
+    weight: 1.0

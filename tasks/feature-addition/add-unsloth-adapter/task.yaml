@@ -23,15 +23,20 @@ setup:
     ref: "September-2025-v3"
   install_command: "echo 'source-only task'"
   timeout_minutes: 25
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  - type: "build"
-    command: "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt"
-    weight: 0.4
-  - type: "build"
-    command: "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt"
-    weight: 0.3
-  - type: "build"
-    command: "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt"
-    weight: 0.3
+  - type: "llm-judge"
+    rubric: |
+      The agent should add an export_to_onnx method to unsloth for exporting LoRA
+      adapter weights to ONNX format. Check the diff for:
+      - A new export_to_onnx function or method that saves LoRA adapter A and B matrices
+      - The method accepts an output directory path and an opset_version parameter
+        (defaulting to 17)
+      - Metadata is saved alongside the ONNX file (rank, alpha, target modules)
+      - The function is exposed alongside existing save and export methods (e.g.,
+        registered in the model class or exported from a module init)
+      - The implementation uses ONNX export utilities (e.g., torch.onnx.export or
+        onnx helper libraries)
+      - Code follows the existing unsloth patterns and conventions
+    weight: 1.0

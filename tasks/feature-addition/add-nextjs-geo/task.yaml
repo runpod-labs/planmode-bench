@@ -26,80 +26,22 @@ setup:
     - "git config core.hooksPath /dev/null"
     - "corepack enable pnpm || true"
   timeout_minutes: 30
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  - type: "file-check"
-    checks:
-      - path: "packages/next/src/server/web/spec-extension/geo.ts"
-        must_exist: true
-        must_contain:
-          - "Geo"
-          - "geo"
-          - "geoFromHeaders"
-          - "isInRegion"
-          - "geoDistance"
-          - "x-vercel-ip-city"
-          - "COUNTRY_NAMES"
-      - path: "packages/next/geo.js"
-        must_exist: true
-        must_contain:
-          - "require"
-          - "geo"
-          - "geoFromHeaders"
-          - "isInRegion"
-          - "geoDistance"
-      - path: "packages/next/geo.d.ts"
-        must_exist: true
-        must_contain:
-          - "Geo"
-          - "geo"
-          - "geoFromHeaders"
-          - "isInRegion"
-          - "geoDistance"
-    weight: 0.35
-
-  - type: "build"
-    command: "cd packages/next && npx tsc --noEmit --strict --moduleResolution node --module ESNext --target ES2018 --esModuleInterop --jsx react-jsx src/server/web/spec-extension/geo.ts 2>&1 | tail -20"
-    weight: 0.25
-
-  - type: "regex"
-    file: "packages/next/src/server/web/spec-extension/geo.ts"
-    patterns:
-      - pattern: "interface Geo"
-        should_match: true
-      - pattern: "export function geo"
-        should_match: true
-      - pattern: "export function geoFromHeaders"
-        should_match: true
-      - pattern: "export function isInRegion"
-        should_match: true
-      - pattern: "export function geoDistance"
-        should_match: true
-      - pattern: "x-vercel-ip-country"
-        should_match: true
-      - pattern: "cf-ipcountry"
-        should_match: true
-      - pattern: "Haversine|haversine|Math\\.asin|Math\\.atan2"
-        should_match: true
-    weight: 0.2
-
-  - type: "regex"
-    file: "packages/next/package.json"
-    patterns:
-      - pattern: "geo\\.js"
-        should_match: true
-      - pattern: "geo\\.d\\.ts"
-        should_match: true
-    weight: 0.1
-
-  - type: "file-check"
-    checks:
-      - path: "packages/next/src/server/web/spec-extension/geo.test.ts"
-        must_exist: true
-        must_contain:
-          - "geo"
-          - "geoDistance"
-          - "isInRegion"
-          - "Headers"
-    weight: 0.1
+  - type: "llm-judge"
+    rubric: |
+      The agent should add a next/geo utility module to the Next.js framework.
+      Check the diff for:
+      - A Geo interface and exported functions: geoFromHeaders, isInRegion, geoDistance
+      - geoFromHeaders extracts geo data from Vercel x-vercel-ip-* headers with
+        Cloudflare cf-ipcountry as fallback
+      - A COUNTRY_NAMES lookup from country codes to country names
+      - isInRegion checks region membership
+      - geoDistance implements Haversine distance calculation (uses Math.asin or Math.atan2)
+      - A public entry point (JS file) that re-exports the functions via require
+      - A TypeScript declaration file (.d.ts) with proper type signatures
+      - The package.json is updated to register the geo entry point
+      - A test file covering geo, geoDistance, isInRegion with Headers usage
+      - All existing code remains unchanged
+    weight: 1.0

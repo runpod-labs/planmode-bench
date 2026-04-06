@@ -23,30 +23,20 @@ setup:
     ref: "v0.9.2"
   install_command: "echo 'source-only task'"
   timeout_minutes: 25
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  - type: "file-check"
-    checks:
-      - path: "vllm/sampling_params.py"
-        must_exist: true
-        must_contain:
-          - "top_a"
-    weight: 0.35
-  - type: "regex"
-    file: "vllm/sampling_params.py"
-    patterns:
-      - pattern: "top_a.*float|float.*top_a"
-        should_match: true
-      - pattern: "0\\.0.*top_a|top_a.*0\\.0"
-        should_match: true
-    weight: 0.25
-  - type: "build"
-    command: "python3 -c 'import ast; ast.parse(open(\"vllm/sampling_params.py\").read()); print(\"Syntax OK\")'"
-    weight: 0.2
-  - type: "regex"
-    file: "vllm/sampling_params.py"
-    patterns:
-      - pattern: "top_a"
-        should_match: true
-    weight: 0.2
+  - type: "llm-judge"
+    rubric: |
+      The agent should add "Top-A" sampling to vLLM. Top-A keeps only tokens whose
+      probability is at least top_a * max_probability, then renormalizes.
+      Check the diff for:
+      - A top_a parameter added to the sampling params class as a float with default 0.0
+        (meaning disabled) and valid range [0.0, 1.0]
+      - The filtering logic implemented in the sampler: compute max probability, mask
+        tokens below top_a * max_prob, then renormalize
+      - The top_a value is threaded through any intermediate data structures between
+        sampling params and the sampler
+      - The parameter has proper documentation/docstring
+      - Code is syntactically valid Python following vLLM conventions
+    weight: 1.0

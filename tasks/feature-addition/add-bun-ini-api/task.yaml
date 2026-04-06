@@ -25,84 +25,22 @@ setup:
     ref: "bun-v1.3.11"
   install_command: "echo 'source-only task — no build required'"
   timeout_minutes: 30
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  # 1. Core Zig implementation file
-  - type: "file-check"
-    checks:
-      - path: "src/bun.js/api/INIObject.zig"
-        must_exist: true
-        must_contain:
-          - "create"
-          - "parse"
-          - "stringify"
-          - "jsc.JSGlobalObject"
-          - "jsc.JSValue"
-          - "bun.JSError"
-    weight: 0.25
-
-  # 2. INIObject.zig follows Zig patterns
-  - type: "regex"
-    file: "src/bun.js/api/INIObject.zig"
-    patterns:
-      - pattern: "pub fn create\\(globalThis: \\*jsc\\.JSGlobalObject\\) jsc\\.JSValue"
-        should_match: true
-      - pattern: "pub fn parse\\("
-        should_match: true
-      - pattern: "pub fn stringify\\("
-        should_match: true
-      - pattern: 'ZigString\.static\("parse"\)'
-        should_match: true
-      - pattern: 'ZigString\.static\("stringify"\)'
-        should_match: true
-      - pattern: "jsc\\.JSFunction\\.create"
-        should_match: true
-      - pattern: "@import\\(\"bun\"\\)"
-        should_match: true
-    weight: 0.15
-
-  # 3. BunObject.zig wiring
-  - type: "regex"
-    file: "src/bun.js/api/BunObject.zig"
-    patterns:
-      - pattern: "INI.*toJSLazyPropertyCallback|toJSLazyPropertyCallback.*INI"
-        should_match: true
-      - pattern: "getINIObject"
-        should_match: true
-      - pattern: "INIObject"
-        should_match: true
-    weight: 0.15
-
-  # 4. C++ header exports
-  - type: "regex"
-    file: "src/bun.js/bindings/BunObject+exports.h"
-    patterns:
-      - pattern: "macro\\(INI\\)"
-        should_match: true
-    weight: 0.10
-
-  # 5. C++ hash table entry
-  - type: "regex"
-    file: "src/bun.js/bindings/BunObject.cpp"
-    patterns:
-      - pattern: "INI.*BunObject_lazyPropCb_wrap_INI|BunObject_lazyPropCb_wrap_INI.*INI"
-        should_match: true
-    weight: 0.10
-
-  # 6. TypeScript type definitions
-  - type: "regex"
-    file: "packages/bun-types/bun.d.ts"
-    patterns:
-      - pattern: "namespace INI"
-        should_match: true
-      - pattern: "parse.*input.*string"
-        should_match: true
-      - pattern: "stringify.*input"
-        should_match: true
-    weight: 0.15
-
-  # 7. Syntax validation of the Zig file (basic check)
-  - type: "build"
-    command: "grep -c 'pub fn' src/bun.js/api/INIObject.zig | xargs test 1 -lt"
-    weight: 0.10
+  - type: "llm-judge"
+    rubric: |
+      The agent should add a Bun.INI namespace API with parse and stringify methods,
+      following the same pattern as Bun.TOML, Bun.JSONC, Bun.JSON5, and Bun.YAML.
+      Check the diff for:
+      - A new Zig implementation file for the INI object with create, parse, and stringify
+        public functions that accept JSGlobalObject and return JSValue
+      - The parse function handles INI sections (nested objects), key=value pairs, and
+        comment lines (both ; and #)
+      - Wiring in BunObject.zig via a lazy property callback for "INI"
+      - C++ exports header updated with a macro entry for INI
+      - C++ hash table entry for the INI lazy property callback
+      - TypeScript type definitions with a namespace INI containing parse and stringify signatures
+      - The INI parser is self-contained (does not import the internal npm INI parser)
+      - Code follows Zig conventions: uses jsc.JSFunction.create, ZigString.static, @import("bun")
+    weight: 1.0

@@ -23,34 +23,21 @@ setup:
     ref: "b8657"
   install_command: "echo 'No build needed -- evaluation checks source files only'"
   timeout_minutes: 25
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  - type: "file-check"
-    checks:
-      - path: "common/chat.cpp"
-        must_exist: true
-        must_contain:
-          - "mistral_instruct_v3"
-          - "common_chat_params_init_mistral_instruct_v3"
-          - "[INST]"
-          - "[/INST]"
-          - "COMMON_CHAT_FORMAT_CONTENT_ONLY"
-    weight: 0.4
-
-  - type: "regex"
-    file: "common/chat.cpp"
-    patterns:
-      - pattern: "static common_chat_params common_chat_params_init_mistral_instruct_v3"
-        should_match: true
-      - pattern: "\\[INST\\].*\\[/INST\\]"
-        should_match: true
-      - pattern: "LOG_DBG.*[Mm]istral [Ii]nstruct v3"
-        should_match: true
-      - pattern: "common_chat_params_init_mistral_instruct_v3\\(tmpl, params\\)"
-        should_match: true
-    weight: 0.3
-
-  - type: "build"
-    command: "grep -c 'mistral_instruct_v3' common/chat.cpp"
-    weight: 0.3
+  - type: "llm-judge"
+    rubric: |
+      The agent should add a "mistral-instruct-v3" chat template handler to llama.cpp.
+      Check the diff for:
+      - A new static function common_chat_params_init_mistral_instruct_v3 in the chat source
+      - The handler wraps user turns with [INST]/[/INST] markers
+      - System messages are prepended to the first user turn
+      - </s> is appended after assistant turns
+      - Template auto-detection is registered, distinguishing from the existing Ministral 3
+        handler by checking for the absence of [SYSTEM_PROMPT]
+      - A LOG_DBG call identifying the Mistral Instruct v3 template
+      - Uses COMMON_CHAT_FORMAT_CONTENT_ONLY as the format
+      - The handler is dispatched from the template detection function with (tmpl, params)
+      - No existing handlers or the header file are modified
+    weight: 1.0

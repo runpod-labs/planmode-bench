@@ -5,6 +5,7 @@ import { evaluateFileCheck } from "./strategies/file-check.js";
 import { evaluateRegex } from "./strategies/regex.js";
 import { evaluateCustom } from "./strategies/custom.js";
 import { evaluateTestIntegrity } from "./strategies/test-integrity.js";
+import { evaluateLLMJudge } from "./strategies/llm-judge.js";
 
 export async function evaluate(
   workDir: string,
@@ -51,6 +52,11 @@ export async function evaluate(
       case "test-integrity":
         strategyResults.push(
           await evaluateTestIntegrity(workDir, strategy.weight)
+        );
+        break;
+      case "llm-judge":
+        strategyResults.push(
+          await evaluateLLMJudge(workDir, strategy.rubric, strategy.model ?? "claude-haiku-4-5-20251001", strategy.weight)
         );
         break;
     }

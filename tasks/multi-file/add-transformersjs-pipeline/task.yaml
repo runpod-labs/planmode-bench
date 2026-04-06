@@ -24,48 +24,20 @@ setup:
     ref: "3.8.1"
   install_command: "npm install"
   timeout_minutes: 30
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  - type: "file-check"
-    checks:
-      - path: "src/pipelines.js"
-        must_exist: true
-        must_contain:
-          - "ImageTextToTextPipeline"
-          - "image-text-to-text"
-          - "AutoModelForImageTextToText"
-    weight: 0.3
-
-  - type: "build"
-    command: "node -e \"const p = require('./src/pipelines.js'); if (typeof p.ImageTextToTextPipeline !== 'function') { process.exit(1); } console.log('OK')\""
-    expected_output: "OK"
-    weight: 0.3
-
-  - type: "regex"
-    file: "src/pipelines.js"
-    patterns:
-      - pattern: "class ImageTextToTextPipeline"
-        should_match: true
-      - pattern: "async _call\\("
-        should_match: true
-      - pattern: "\"image-text-to-text\":\\s*\\{"
-        should_match: true
-      - pattern: "AutoModelForImageTextToText"
-        should_match: true
-      - pattern: "generate\\("
-        should_match: true
-      - pattern: "@typedef.*ImageTextToText"
-        should_match: true
-    weight: 0.2
-
-  - type: "regex"
-    file: "src/pipelines.js"
-    patterns:
-      - pattern: "\"type\":\\s*\"multimodal\""
-        should_match: true
-      - pattern: "generated_text"
-        should_match: true
-      - pattern: "pixel_values"
-        should_match: true
-    weight: 0.2
+  - type: "llm-judge"
+    rubric: |
+      The agent should add an image-text-to-text pipeline to the Transformers.js library.
+      Check the diff for:
+      - A new ImageTextToTextPipeline class with an async _call method
+      - The pipeline accepts an image and a text prompt, processes both through the model
+      - Uses AutoModelForImageTextToText for the model
+      - Calls generate() to produce output text
+      - Handles pixel_values for image processing and returns generated_text
+      - Registered in the supported tasks mapping as "image-text-to-text" with type "multimodal"
+      - Proper JSDoc documentation including @typedef for ImageTextToText
+      - Follows the existing pipeline class patterns in the codebase
+      - No existing pipeline classes or their behavior are modified
+    weight: 1.0

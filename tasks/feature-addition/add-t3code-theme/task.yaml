@@ -25,35 +25,20 @@ setup:
     ref: "v0.0.9"
   install_command: "bun install"
   timeout_minutes: 30
-  max_budget_usd: 25.00
+  max_budget_usd: 40.00
 
 evaluation:
-  - type: "file-check"
-    checks:
-      - path: "packages/shared/src/themes.ts"
-        must_exist: true
-        must_contain:
-          - "t3-dark"
-          - "t3-light"
-          - "getTheme"
-          - "listThemes"
-    weight: 0.35
-
-  - type: "build"
-    command: "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt"
-    weight: 0.25
-
-  - type: "regex"
-    file: "packages/shared/src/themes.ts"
-    patterns:
-      - pattern: "interface.*Theme|type.*Theme"
-        should_match: true
-      - pattern: "background|foreground|accent"
-        should_match: true
-      - pattern: "t3-midnight"
-        should_match: true
-    weight: 0.2
-
-  - type: "build"
-    command: "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'"
-    weight: 0.2
+  - type: "llm-judge"
+    rubric: |
+      The agent should add a custom theme system to the T3 Code editor.
+      Check the diff for:
+      - A theme type definition (interface or type) in the shared package with color
+        properties for background, foreground, accent, sidebar, editor, terminal,
+        and status bar
+      - At least 3 built-in themes: "t3-dark", "t3-light", and "t3-midnight"
+      - Exported getTheme and listThemes utility functions in the shared package
+      - A ThemeProvider component and useTheme hook in the web app that persists
+        the selected theme to local storage and applies CSS custom properties
+      - A ThemeSelector component with preview swatches for theme selection
+      - No build configuration changes or new dependencies added
+    weight: 1.0
