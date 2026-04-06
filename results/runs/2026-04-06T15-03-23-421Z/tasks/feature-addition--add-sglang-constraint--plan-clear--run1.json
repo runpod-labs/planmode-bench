@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T16:49:41.812Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1010568,
+    "duration_api_ms": 1185251,
+    "num_turns": 62,
+    "total_cost_usd": 2.8353245,
+    "input_tokens": 58,
+    "output_tokens": 44087,
+    "cache_read_tokens": 1950348,
+    "cache_creation_tokens": 118880,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 787767,
+    "plan_api_ms": 964515,
+    "plan_tokens_in": 28,
+    "plan_tokens_out": 30878,
+    "plan_cost_usd": 2.11684185,
+    "plan_content": "Here is the complete implementation plan:\n\n---\n\n## Plan: Add `json_path` Output Constraint to SGLang\n\n### Strategy\n\nConvert JSONPath → JSON Schema inside a new `dispatch_json_path()` method on `BaseGrammarBackend`, then delegate to the existing `dispatch_json()` pipeline. **No grammar backends are modified** — xgrammar, outlines, and llguidance all get the feature for free.\n\n---\n\n### 7 Files, Bottom-Up Order\n\n#### 1. `python/sglang/srt/constrained/utils.py` — New converter (pure Python)\n\nAdd `json_path_to_schema(path)` + two private helpers `_parse_segments()` and `_build_schema()`. The tokenizer handles three segment types via a single compiled regex:\n- `.field` → `{\"type\": \"object\", \"required\": [\"field\"], \"properties\": {\"field\": …}}`\n- `['field']` → same as `.field`\n- `[*]` → `{\"type\": \"array\", \"items\": …}`\n\nExample: `$.store.book[*].author` produces a nested object→array→object schema.\n\n#### 2. `python/sglang/srt/constrained/base_grammar_backend.py`\n\n- Add `from sglang.srt.constrained.utils import json_path_to_schema`\n- Add `dispatch_json_path()` concrete method to `BaseGrammarBackend` (calls `json_path_to_schema` → `dispatch_json`)\n- Add `elif key_type == \"json_path\":` branch in `_init_value_dispatch()` (between `structural_pattern_v2` and the fallback `else`)\n\n#### 3. `python/sglang/srt/constrained/grammar_manager.py`\n\nIn `process_req_with_grammar()`, three targeted edits:\n- Extend the `if` condition to include `or req.sampling_params.json_path is not None`\n- Update error message string to include `json_path`\n- Add `elif req.sampling_params.json_path is not None: key = (\"json_path\", req.sampling_params.json_path)` after the `structural_tag` branch\n\n#### 4. `python/sglang/srt/sampling/sampling_params.py`\n\n- Add `json_path: Optional[str] = None` to `__init__()` signature and body\n- Add `self.json_path` to the mutually-exclusive grammar list in `verify()` alongside `json_schema`, `regex`, `ebnf`\n\n#### 5. `python/sglang/srt/managers/tokenizer_manager.py`\n\nIn `_request_has_grammar()`, add: `or obj.sampling_params.get(\"json_path\", None)`\n\n#### 6. `python/sglang/lang/ir.py`\n\n- Add `json_path: Optional[str] = None` to `SglSamplingParams` dataclass (after `json_schema`, before `dtype`)\n- Add `self.json_path` as the 19th positional arg in `clone()` (after `self.json_schema`)\n- Add `\"json_path\": self.json_path` to `to_srt_kwargs()`\n- Add `json_path` param to `SglGen.__init__()` and pass it through to `SglSamplingParams()`\n\n#### 7. `python/sglang/lang/api.py`\n\n- Add `json_path: Optional[str] = None` to `gen()` signature\n- Add validation: `if json_path is not None and not json_path.startswith(\"$\"): raise ValueError(...)`\n- Pass `json_path` as a positional arg to `SglGen()`\n\n---\n\n### Verification\n\n**Unit test** (no server needed): call `json_path_to_schema()` directly and assert the schema shape for simple fields, nested fields, arrays, and bracket notation.\n\n**Integration**: `sgl.gen(\"result\", json_path=\"$.store.book[*].author\")` → parse response JSON → assert `data[\"store\"][\"book\"][0][\"author\"]` exists.\n\n**HTTP smoke test**:\n```bash\ncurl http://localhost:30000/generate \\\n  -d '{\"text\": \"...\", \"sampling_params\": {\"json_path\": \"$.name\", \"max_new_tokens\": 50}}'\n```",
+    "execute_duration_ms": 222801,
+    "execute_api_ms": 220736,
+    "execute_tokens_in": 30,
+    "execute_tokens_out": 13209,
+    "execute_cost_usd": 0.71848265
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation that fully meets the rubric requirements. The agent successfully: (1) Created a new json_path_to_schema() converter function with proper JSONPath parsing and JSON Schema generation in utils.py; (2) Implemented constraint validation through delegation to dispatch_json() after conversion; (3) Registered json_path as a new constraint type in GrammarManager with proper branching logic and error messages; (4) Added json_path to IR definitions (SglSamplingParams, SglGen, and api.gen()); (5) Followed all existing constraint patterns consistently across SamplingParams, BaseGrammarBackend, TokenizerManager, and validation chains. All 7 files identified in the plan were modified correctly with proper mutual-exclusivity validation and parameter threading. Minor deduction: PLAN.md was created as extra documentation (not required by the rubric, though not harmful). The core implementation is comprehensive, internally consistent, and properly integrated across the codebase.",
+          "diff_length": 15005,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19653
+  },
+  "session_id": "f86924e2-845a-4049-a76d-430ff66b04ff"
+}

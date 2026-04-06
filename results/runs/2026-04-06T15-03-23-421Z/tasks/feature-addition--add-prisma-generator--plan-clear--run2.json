@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T16:26:51.313Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1125798,
+    "duration_api_ms": 1272850,
+    "num_turns": 67,
+    "total_cost_usd": 3.0340742499999998,
+    "input_tokens": 50,
+    "output_tokens": 32186,
+    "cache_read_tokens": 1538593,
+    "cache_creation_tokens": 135344,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 732466,
+    "plan_api_ms": 880669,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 10225,
+    "plan_cost_usd": 2.1531800499999996,
+    "plan_content": "Here is the complete implementation plan, ready for your approval:\n\n---\n\n## Summary: `@prisma/client-generator-rest-api`\n\n### What gets created\n\n**New package `packages/client-generator-rest-api/`** with 10 files:\n\n| File | Role |\n|---|---|\n| `src/generator.ts` | `RestApiClientGenerator` class implementing the `Generator` interface (`name = 'prisma-client-rest-api'`) |\n| `src/generate-client.ts` | Orchestration — validates output path, reads `baseUrl` config, calls renderer, writes `rest-client.ts` |\n| `src/type-mapper.ts` | Maps Prisma scalar types → TS types (`Decimal`→`string`, `DateTime`→`string`, `BigInt`→`bigint`, etc.) |\n| `src/render.ts` | Pure string renderer with 5 individually-exported functions: `renderEnum`, `renderModelInterface`, `renderModelClient`, `renderRestApiClient`, `renderGeneratedFile` |\n| `src/__tests__/render.test.ts` | ~25 Vitest unit tests covering all renderer functions with in-memory DMMF fixtures |\n| `src/index.ts` | Public re-exports |\n| `package.json` | Matches `client-generator-ts` pattern; depends on `@prisma/dmmf`, `@prisma/generator`, `@prisma/internals` |\n| `tsconfig.json` / `tsconfig.build.json` / `helpers/build.ts` | Standard monorepo package config using `adapterConfig` (CJS+ESM bundle) |\n\n**4 files modified:**\n\n1. **`tsconfig.build.bundle.json`** — add `\"@prisma/client-generator-rest-api\": [\"./packages/client-generator-rest-api/src\"]` path alias\n2. **`packages/client-generator-registry/package.json`** — add `\"@prisma/client-generator-rest-api\": \"workspace:*\"` dependency\n3. **`packages/client-generator-registry/src/default.ts`** — `defaultRegistry.add(new RestApiClientGenerator())`\n4. **`packages/client-generator-registry/src/default.test.ts`** — extend the generator name array to include `'prisma-client-rest-api'`\n\n### Key design decisions\n\n- **Relation fields skipped** (`kind === 'object'` and `kind === 'unsupported'`) — only scalars and enums appear in interfaces\n- **Optional fields** use `T | null` (not `?`) — REST payloads include the key with a null value\n- **Enums** become TypeScript union type aliases (`export type Role = 'ADMIN' | 'USER'`)\n- **Composite `@@id` models** get `id: unknown` with a JSDoc warning; `create` uses the full interface type\n- **`fetch` global** used in generated code (Node 18+ / browsers); no polyfill emitted\n- **Naive pluralization** (`User` → `/users`) — no external `pluralize` dep for v1\n- **`baseUrl`** configurable via `generator { config { baseUrl = \"/api/v1\" } }`, defaults to `'/api'`",
+    "execute_duration_ms": 393332,
+    "execute_api_ms": 392181,
+    "execute_tokens_in": 33,
+    "execute_tokens_out": 21961,
+    "execute_cost_usd": 0.8808942000000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete implementation meeting all rubric requirements. The new package @prisma/client-generator-rest-api is properly structured under packages/, includes a package.json with correct Prisma dependencies (@prisma/dmmf, @prisma/generator, @prisma/internals), and implements the Generator interface with both getManifest and generate methods. The generator reads DMMF datamodel and iterates over models/enums. For each model, it generates TypeScript interfaces (renderModelInterface) and CRUD client classes (renderModelClient) with all five required methods (findMany, findUnique, create, update, delete) with proper typing including Partial<T> for updates and null handling. Generated output is written to rest-client.ts in the configured output directory. Code follows TypeScript conventions, uses the Prisma generator protocol correctly, includes comprehensive type mapping (mapPrismaTypeToTs), handles edge cases (composite @id, relations, unsupported fields), and has ~25 unit tests validating all renderer functions. Integration is complete with path aliases, registry registration, and dependency management. The implementation is well-documented and follows existing monorepo patterns.",
+          "diff_length": 29223,
+          "new_files": "PLAN.md\npackages/client-generator-rest-api/helpers/build.ts\npackages/client-generator-rest-api/package.json\npackages/client-generator-rest-api/src/__tests__/render.test.ts\npackages/client-generator-rest-api/src/generate-client.ts\npackages/client-generator-rest-api/src/generator.ts\npackages/client-generator-rest-api/src/index.ts\npackages/client-generator-rest-api/src/render.ts\npackages/client-generator-rest-api/src/type-mapper.ts\npackages/client-generator-rest-api/tsconfig.build.json\npackages/client-generator-rest-api/tsconfig.json"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 17558
+  },
+  "session_id": "1d436a9c-8b00-465f-aca6-556444f269cb"
+}

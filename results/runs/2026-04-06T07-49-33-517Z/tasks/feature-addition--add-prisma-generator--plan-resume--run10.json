@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-resume",
+  "run_number": 10,
+  "timestamp": "2026-04-06T10:23:55.825Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 626079,
+    "duration_api_ms": 809545,
+    "num_turns": 51,
+    "total_cost_usd": 2.2054974000000005,
+    "input_tokens": 41,
+    "output_tokens": 27431,
+    "cache_read_tokens": 1929349,
+    "cache_creation_tokens": 135852,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 496756,
+    "plan_api_ms": 681279,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 18557,
+    "plan_cost_usd": 1.3877011500000003,
+    "plan_content": "The plan is complete. Here's a summary of what will be built:\n\n---\n\n## New Package: `@prisma/rest-client-generator`\n\n**Location:** `packages/rest-client-generator/`\n\n### What it generates\nFor every Prisma model, a single `index.ts` is emitted into the configured output directory containing:\n- **Enum types** (TypeScript `enum`) for each `DatamodelEnum` in the schema\n- **TypeScript interfaces** for each model (scalar + enum fields; relation fields excluded)\n- **Per-model CRUD client factories** with 5 typed methods using native `fetch`:\n  - `findMany({ skip?, take? })` → `GET /modelname`\n  - `findUnique({ id })` → `GET /modelname/:id`\n  - `create(data)` → `POST /modelname`\n  - `update({ id }, data)` → `PUT /modelname/:id`\n  - `delete({ id })` → `DELETE /modelname/:id`\n- **`createRestClient(baseUrl)`** top-level factory returning `{ user: ..., post: ..., ... }`\n\n### Architecture\n- External process generator via `generatorHandler` from `@prisma/generator-helper` (standard community generator pattern — no internal registry coupling)\n- Single bundled output (`adapterConfig` style) with shebang banner for CLI use\n- Split into 4 focused source modules\n\n### Files to create (9 new files)\n| File | Purpose |\n|------|---------|\n| `packages/rest-client-generator/package.json` | Manifest with `bin` entry + workspace deps |\n| `packages/rest-client-generator/tsconfig.json` | Extends root tsconfig |\n| `packages/rest-client-generator/tsconfig.build.json` | Extends `tsconfig.build.regular.json` |\n| `packages/rest-client-generator/helpers/build.ts` | `adapterConfig` + shebang `banner` |\n| `packages/rest-client-generator/src/index.ts` | Entry: calls `generatorHandler` |\n| `packages/rest-client-generator/src/generator.ts` | `onManifest` + `onGenerate` |\n| `packages/rest-client-generator/src/generate-interface.ts` | DMMF model → TS interface string |\n| `packages/rest-client-generator/src/generate-crud.ts` | Per-model CRUD factory string |\n| `packages/rest-client-generator/src/generate-client.ts` | Assembles everything into `{ 'index.ts': content }` |\n\n### Files to modify (2 existing files)\n- **`tsconfig.build.bundle.json`** — add path mapping for editor go-to-definition\n- **`.github/workflows/test-template.yml`** — add test steps to `others` + `no-docker` jobs",
+    "execute_duration_ms": 129323,
+    "execute_api_ms": 128266,
+    "execute_tokens_in": 23,
+    "execute_tokens_out": 8874,
+    "execute_cost_usd": 0.81779625
+  },
+  "evaluation": {
+    "overall_score": 0,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.4,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 3,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 1,
+          "output": "/bin/bash: line 0: cd: packages/generator-rest-client: No such file or directory\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/generator-rest-client/src/generator.ts"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/generator-rest-client/src/index.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 3
+  },
+  "session_id": "2135df85-975c-4e56-b4f4-d6009802b56e"
+}

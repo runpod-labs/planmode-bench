@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-resume",
+  "run_number": 3,
+  "timestamp": "2026-04-06T15:33:58.284Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 327979,
+    "duration_api_ms": 340332,
+    "num_turns": 21,
+    "total_cost_usd": 0.8994551000000002,
+    "input_tokens": 20,
+    "output_tokens": 14823,
+    "cache_read_tokens": 412533,
+    "cache_creation_tokens": 75284,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 297397,
+    "plan_api_ms": 309831,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 12739,
+    "plan_cost_usd": 0.6638507000000001,
+    "plan_content": "Here is the complete implementation plan.\n\n---\n\n## Plan: Add `mistral-instruct-v3` Chat Template Handler\n\n### Context\n\n`common/chat.cpp` contains all specialized chat-template handlers. The Mistral Instruct v0.3 family (\"v3\" / \"v3-tekken\" in Mistral's naming) wraps user turns with `[INST]`/`[/INST]`, prepends the system message into the first user turn, and appends `</s>` after assistant turns. It is distinguishable from the existing Ministral 3 handler by the **absence** of `[SYSTEM_PROMPT]`.\n\n**Only file touched:** `common/chat.cpp` — two insertions, zero modifications to existing code.\n\n---\n\n### Step 1 — New handler function (insert after line 1517, before `namespace workaround`)\n\n```cpp\nstatic common_chat_params common_chat_params_init_mistral_instruct_v3(\n        const common_chat_template &          tmpl,\n        const autoparser::generation_params & inputs) {\n    common_chat_params data;\n\n    data.prompt            = common_chat_template_direct_apply_impl(tmpl, inputs);\n    data.format            = COMMON_CHAT_FORMAT_PEG_NATIVE;\n    data.supports_thinking = false;\n    data.preserved_tokens  = {\n        \"[INST]\",\n        \"[/INST]\",\n    };\n\n    auto parser = build_chat_peg_parser([&](common_chat_peg_builder & p) {\n        return p.prefix(inputs.generation_prompt) + p.content(p.rest());\n    });\n\n    data.parser = parser.save();\n\n    return data;\n}\n```\n\nKey design decisions:\n- **No message pre-processing** — the Jinja template already handles system-into-first-user placement; no `reasoning_content` restructuring is needed (unlike Ministral 3).\n- **`supports_thinking = false`** — the v3 template has no `[THINK]`/`[/THINK]` markers.\n- **Preserved tokens** `[INST]` / `[/INST]` — prevents the tokeniser from splitting these bracket tokens (same defensive practice as Ministral 3).\n- **Minimal PEG parser** `prefix + content(rest())` — the v3 template ends user turns with `[/INST]` and emits no explicit generation-prompt suffix, so `content(rest())` cleanly captures the model's output.\n- **No grammar/tool-call section** — the task specifies only the basic conversational format.\n\n---\n\n### Step 2 — Detection branch (insert before `return std::nullopt` at line 1690)\n\n```cpp\n// Mistral Instruct v3 / v3-tekken - [INST]/[/INST] markers with system prepended\n// to the first user turn; distinguished from Ministral/v7 by the absence of [SYSTEM_PROMPT]\nif (src.find(\"[INST]\") != std::string::npos &&\n    src.find(\"[/INST]\") != std::string::npos &&\n    src.find(\"[SYSTEM_PROMPT]\") == std::string::npos) {\n    LOG_DBG(\"Using specialized template: Mistral Instruct v3\\n\");\n    return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n}\n```\n\nWhy this is safe:\n- **Mutually exclusive with Ministral 3** — that check requires `[SYSTEM_PROMPT]` to be *present*; the new check requires it to be *absent*.\n- **All other handlers** key on entirely different markers (`<|channel|>`, `>>>all`, `<|tool_calls_section_begin|>`, etc.) and are unaffected.\n- **Placed last** (just before `return std::nullopt`) so it cannot shadow any future more-specific handler.\n\n---\n\n### Verification\n\n1. `cmake --build build -j` — must compile clean.\n2. `./build/bin/test-chat-template` — all existing cases must still pass (Ministral 3, GPT-OSS, Functionary, Kimi K2, LFM2, LFM2.5, GigaChatV3).\n3. Manual spot-check with the \"Mistral-Large-Instruct-2407\" v3 template string from the test file confirms the debug log fires and the prompt is correctly rendered with system prepended to the first `[INST]` turn.",
+    "execute_duration_ms": 30582,
+    "execute_api_ms": 30501,
+    "execute_tokens_in": 7,
+    "execute_tokens_out": 2084,
+    "execute_cost_usd": 0.23560440000000002
+  },
+  "evaluation": {
+    "overall_score": 0.5,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.5,
+        "weight": 1,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation has the correct structure and detection logic, but fails on critical requirements: (1) Uses COMMON_CHAT_FORMAT_PEG_NATIVE instead of the required COMMON_CHAT_FORMAT_CONTENT_ONLY format, (2) Missing '</s>' in preserved_tokens for appending after assistant turns, (3) The actual wrapping of user turns with [INST]/[/INST] markers is delegated to common_chat_template_direct_apply_impl without explicit verification it's implemented, (4) System message prepending logic is not shown in the handler. Positive aspects: Correct auto-detection logic distinguishing from Ministral by checking absence of [SYSTEM_PROMPT], LOG_DBG call present, handler correctly dispatched with (tmpl, params), no modifications to existing handlers or headers.",
+          "diff_length": 1722,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 11467
+  },
+  "session_id": "6089db0f-4db8-447a-bb6d-a5751429b10d"
+}

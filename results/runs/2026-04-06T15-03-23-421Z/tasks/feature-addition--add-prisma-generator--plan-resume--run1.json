@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T16:21:10.190Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1170099,
+    "duration_api_ms": 1321709,
+    "num_turns": 56,
+    "total_cost_usd": 3.6414780999999996,
+    "input_tokens": 51,
+    "output_tokens": 33779,
+    "cache_read_tokens": 2564741,
+    "cache_creation_tokens": 168046,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 852814,
+    "plan_api_ms": 1005597,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 13050,
+    "plan_cost_usd": 2.3383380999999996,
+    "plan_content": "The plan is written to `/Users/timpietrusky/.claude/plans/rippling-gliding-dolphin.md`. Here's a concise summary:\n\n---\n\n## Plan: `@prisma/generator-rest-client`\n\nA new monorepo package that implements the standard Prisma generator protocol and emits a typed TypeScript REST API client from any Prisma schema.\n\n### New package: `packages/generator-rest-client/`\n\n**6 source files:**\n\n| File | Role |\n|---|---|\n| `src/type-mapper.ts` | `SCALAR_MAP` constant + `mapScalarToTs()` + `mapFieldToTs()` covering all 9 Prisma scalar types |\n| `src/code-builder.ts` | `CodeBuilder` class — lightweight line accumulator with native `#lines` private field |\n| `src/generate-client.ts` | `generateRestClient(dmmf)` → `string` via 5 emitters: header, enums, model interfaces, model CRUD client classes, root client |\n| `src/generator.ts` | `RestClientGenerator implements Generator` — inlines `parseEnvValue` logic to avoid `@prisma/internals` as a prod dep |\n| `src/bin.ts` | `generatorHandler` wiring with `#!/usr/bin/env node` shebang for external binary use |\n| `src/index.ts` | Exports `RestClientGenerator` and `generateRestClient` |\n\n**Build (`helpers/build.ts`):** `adapterConfig` for the library (CJS + ESM from `src/index.ts`) plus a CJS-only filtered entry for `dist/bin.js`.\n\n**Dependencies:** only `@prisma/dmmf`, `@prisma/generator`, `@prisma/generator-helper`, `@prisma/debug` in production. `@prisma/internals` + `vitest` as devDeps.\n\n### Key design choices\n- **Single output file** `client.ts` per run — all enums, interfaces, model clients, and the `RestClient` root class\n- **No external runtime deps** in generated code — native `fetch` only\n- **`Omit` for write types** — `create(data: Omit<User, 'id' | 'posts'>)` excludes auto-generated IDs (`isId && hasDefaultValue`) and relation fields (`kind === 'object'`)\n- **Composite PK support** — `where` type built from all fields where `isId === true`\n- **camelCase property names** on `RestClient` — first letter lowercased (e.g. `BlogPost` → `blogPost`)\n\n### 2 monorepo files to modify\n1. **`tsconfig.build.bundle.json`** — add `\"@prisma/generator-rest-client\": [\"./packages/generator-rest-client/src\"]` after the `@prisma/generator-helper` entry (line 21)\n2. **`.github/workflows/test-template.yml`** — add a `pnpm run test` step in the `others` job after the `generator` package entry",
+    "execute_duration_ms": 317285,
+    "execute_api_ms": 316112,
+    "execute_tokens_in": 34,
+    "execute_tokens_out": 20729,
+    "execute_cost_usd": 1.30314
+  },
+  "evaluation": {
+    "overall_score": 0.98,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.98,
+        "weight": 1,
+        "weighted_score": 0.98,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation meeting all rubric requirements. The agent created a complete Prisma generator package with: (1) proper monorepo structure under packages/ with dependencies on @prisma/generator and @prisma/generator-helper; (2) entry point bin.ts using generatorHandler with onManifest and onGenerate callbacks; (3) generator.ts implementing the Generator interface reading DMMF and resolving output paths; (4) comprehensive code generation for TypeScript interfaces and all five CRUD methods (findMany, findUnique, create, update, delete) with correct HTTP verbs and proper typing; (5) proper output written to client.ts in the output directory; (6) excellent TypeScript conventions including type mapper, code builder utility, and clean architecture. Additional strengths: comprehensive test coverage (type mapping, generator behavior, output snapshot), proper build configuration with shebang for bin file, CI integration in workflows, and correct handling of edge cases (composite keys, auto-generated IDs, relations, nullability). No significant issues detected.",
+          "diff_length": 31630,
+          "new_files": "packages/generator-rest-client/helpers/build.ts\npackages/generator-rest-client/package.json\npackages/generator-rest-client/src/__tests__/generate-client.test.ts\npackages/generator-rest-client/src/__tests__/generator.test.ts\npackages/generator-rest-client/src/__tests__/type-mapper.test.ts\npackages/generator-rest-client/src/bin.ts\npackages/generator-rest-client/src/code-builder.ts\npackages/generator-rest-client/src/generate-client.ts\npackages/generator-rest-client/src/generator.ts\npackages/generator-rest-client/src/index.ts\npackages/generator-rest-client/src/type-mapper.ts\npackages/generator-rest-client/tsconfig.build.json\npackages/generator-rest-client/tsconfig.json"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 17274
+  },
+  "session_id": "f8af928b-313f-4dde-bc65-918ad28b1e2c"
+}

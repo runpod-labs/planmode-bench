@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-resume",
+  "run_number": 8,
+  "timestamp": "2026-04-06T09:01:41.428Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 661515,
+    "duration_api_ms": 758211,
+    "num_turns": 50,
+    "total_cost_usd": 2.0517902,
+    "input_tokens": 49,
+    "output_tokens": 31724,
+    "cache_read_tokens": 2226795,
+    "cache_creation_tokens": 161010,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 603801,
+    "plan_api_ms": 700577,
+    "plan_tokens_in": 41,
+    "plan_tokens_out": 28785,
+    "plan_cost_usd": 1.5798008000000001,
+    "plan_content": "Here's a summary of the plan I've written:\n\n## Plan Summary\n\n**Only one file changes:** `common/chat.cpp`\n\n### What I found\n\n- The **Ministral 3** specialized handler (lines 825–940) detects templates that have `[SYSTEM_PROMPT]` + `[TOOL_CALLS]` + `[ARGS]` — this matches Devstral and the Ministral/Magistral family.\n- The **Mistral Nemo Instruct 2407** template (the canonical v0.3 format) uses `[INST]/[/INST]` + `[AVAILABLE_TOOLS]` but has **no** `[SYSTEM_PROMPT]` — so it falls through today to the auto-parser.\n- The PEG builder exposes `p.standard_json_tools(...)` (declared in `chat-peg-parser.h:108`) which perfectly handles the `[TOOL_CALLS][{\"name\":…,\"arguments\":…,\"id\":…}]` JSON-array format.\n\n### Two additions (no edits to existing code)\n\n1. **New function** `common_chat_params_init_mistral_instruct_v3` — inserted after line 940 (after `common_chat_params_init_ministral_3`). Uses `common_chat_template_direct_apply_impl` for the prompt and builds a PEG parser with `p.standard_json_tools` for the `[TOOL_CALLS]` JSON-array format. Content-only path uses `p.content(p.rest())`.\n\n2. **New detection block** inside `common_chat_try_specialized_template` — inserted after line 1644 (after the Ministral 3 block). Detects: `[INST]` present + `[AVAILABLE_TOOLS]` present + `[SYSTEM_PROMPT]` **absent**. This is precise: Llama-2 lacks `[AVAILABLE_TOOLS]`, Ministral/Devstral have `[SYSTEM_PROMPT]`, so there's no overlap.",
+    "execute_duration_ms": 57714,
+    "execute_api_ms": 57634,
+    "execute_tokens_in": 8,
+    "execute_tokens_out": 2939,
+    "execute_cost_usd": 0.47198939999999995
+  },
+  "evaluation": {
+    "overall_score": 0.925,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 6,
+          "check_details": [
+            {
+              "path": "common/chat.cpp",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"mistral_instruct_v3\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"common_chat_params_init_mistral_instruct_v3\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"[INST]\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"[/INST]\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"COMMON_CHAT_FORMAT_CONTENT_ONLY\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.75,
+        "weight": 0.3,
+        "weighted_score": 0.22499999999999998,
+        "passed": false,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 4,
+          "pattern_results": [
+            {
+              "pattern": "static common_chat_params common_chat_params_init_mistral_instruct_v3",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "\\[INST\\].*\\[/INST\\]",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "LOG_DBG.*[Mm]istral [Ii]nstruct v3",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "common_chat_params_init_mistral_instruct_v3\\(tmpl, params\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -c 'mistral_instruct_v3' common/chat.cpp",
+          "exit_code": 0,
+          "output": "2\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1123
+  },
+  "session_id": "a2a6e6f4-47a9-4600-9b07-f620aa80578c"
+}

@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "task_id": "algorithm/implement-event-emitter",
+  "task_name": "implement full-featured event emitter",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T15:05:55.878Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 147230,
+    "duration_api_ms": 143897,
+    "num_turns": 9,
+    "total_cost_usd": 0.30146799999999996,
+    "input_tokens": 14,
+    "output_tokens": 6829,
+    "cache_read_tokens": 133889,
+    "cache_creation_tokens": 32877,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 123344,
+    "plan_api_ms": 122288,
+    "plan_tokens_in": 9,
+    "plan_tokens_out": 5499,
+    "plan_cost_usd": 0.2011093,
+    "plan_content": "Here's my complete plan for implementing the `EventEmitter` class.\n\n---\n\n## Data Structure\n\nA private `Map<string, ListenerEntry[]>` where each entry stores the raw function and a `once` flag:\n\n```typescript\ninterface ListenerEntry {\n  fn: Listener;\n  once: boolean;\n}\nprivate listeners: Map<string, ListenerEntry[]> = new Map();\n```\n\nStoring metadata alongside the function (rather than wrapping it in a closure) preserves reference equality for `off()`.\n\n---\n\n## Method-by-Method Plan\n\n| Method | Key behaviour |\n|--------|--------------|\n| `on(event, listener)` | Push `{fn, once: false}`, return `() => this.off(event, listener)` |\n| `once(event, listener)` | Push `{fn, once: true}` |\n| `off(event, listener)` | Splice first entry where `.fn === listener`; delete key if array becomes empty |\n| `emit(event, ...args)` | Snapshot the array first, return `false` if empty, remove `once` entries *before* calling them, then call each fn |\n| `removeAllListeners(event?)` | `clear()` if no arg, `delete(event)` otherwise |\n| `listenerCount(event)` | `get(event)?.length ?? 0` |\n| `eventNames()` | `Array.from(listeners.keys())` — safe because empty arrays are always deleted |\n\n---\n\n## Edge Cases Covered\n\n- **Self-removal / removal-by-sibling during emit** — handled by snapshotting the listener array before iteration; `splice` on the live array is safe because we iterate the copy.\n- **`once` + `listenerCount`** — entry is removed from the live array *before* the function is invoked, so `listenerCount` is immediately correct.\n- **`emit` return value** — `true`/`false` is determined before any removal happens (first emit of a `once` listener returns `true`; second returns `false`).\n- **`off` / `removeAllListeners` on non-existent events** — early-return, no throw.\n- **`eventNames` accuracy** — empty arrays are deleted from the map everywhere they can occur, so every key always has ≥ 1 listener.",
+    "execute_duration_ms": 23886,
+    "execute_api_ms": 21609,
+    "execute_tokens_in": 5,
+    "execute_tokens_out": 1330,
+    "execute_cost_usd": 0.1003587
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 1,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775487803433-ncp9i9\n\n ✓ tests/event-emitter.test.ts (29 tests) 6ms\n\n Test Files  1 passed (1)\n      Tests  29 passed (29)\n   Start at  17:05:55\n   Duration  215ms (transform 33ms, setup 0ms, collect 34ms, tests 6ms, environment 0ms, prepare 34ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/event-emitter.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"on(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"emit(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"once(\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1135
+  },
+  "session_id": "7b469ae9-647d-4b4d-a3ee-d2e3b1ad96f9"
+}

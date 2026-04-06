@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T10:16:48.753Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 485925,
+    "duration_api_ms": 601390,
+    "num_turns": 55,
+    "total_cost_usd": 1.9223866500000002,
+    "input_tokens": 52,
+    "output_tokens": 25534,
+    "cache_read_tokens": 2426114,
+    "cache_creation_tokens": 113474,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 277102,
+    "plan_api_ms": 395666,
+    "plan_tokens_in": 14,
+    "plan_tokens_out": 11440,
+    "plan_cost_usd": 0.82308885,
+    "plan_content": "## Plan: `@prisma/rest-client-generator`\n\nHere's the complete implementation plan I've designed after exploring the codebase:\n\n---\n\n### What the generator does\nGiven a Prisma schema, it generates three TypeScript files in a configurable output directory:\n- **`types.ts`** — enums, model interfaces, and four input types per model (`CreateInput`, `UpdateInput`, `WhereUniqueInput`, `FindManyParams`)\n- **`client.ts`** — a `RestApiClient` class with a namespaced property per model, each containing the five CRUD methods (`findMany`, `findUnique`, `create`, `update`, `delete`) using the global `fetch` API\n- **`index.ts`** — re-exports everything from both files\n\n---\n\n### New package: `packages/rest-client-generator/` (11 files)\n\n| Layer | Files |\n|---|---|\n| Scaffolding | `package.json`, `tsconfig.json`, `tsconfig.build.json`, `helpers/build.ts` |\n| Core logic | `src/prisma-type-to-ts.ts`, `src/file-generators/types-file.ts`, `src/file-generators/client-file.ts`, `src/file-generators/index-file.ts`, `src/generate-rest-client.ts`, `src/generator.ts`, `src/index.ts` |\n\nThe build setup uses the existing `adapterConfig` pattern (same as `adapter-pg` etc.) to produce CJS + ESM dual output.\n\n---\n\n### 3 existing files modified\n\n1. **`packages/client-generator-registry/src/default.ts`** — import and `defaultRegistry.add(new RestClientGenerator())`\n2. **`packages/client-generator-registry/package.json`** — add `\"@prisma/rest-client-generator\": \"workspace:*\"`\n3. **`tsconfig.build.bundle.json`** — add `\"@prisma/rest-client-generator\": [\"./packages/rest-client-generator/src\"]` to `paths`\n\n---\n\n### Key design decisions\n- **In-process generator** (no `bin` script) — same mechanism as the built-in `prisma-client-ts` generator; registered via `GeneratorRegistry`\n- **String templates** for code generation (not `@prisma/ts-builders`) — appropriate for this simpler output\n- **Relation fields excluded** — only `scalar` and `enum` kind fields appear in interfaces; relations aren't REST-serializable\n- **`fetch` only** — no HTTP library dependency; works Node ≥ 18 and browsers\n- **`CreateInput` omits** auto-generated/readOnly/updatedAt fields; marks as optional when `hasDefaultValue || !isRequired`\n\n---\n\n### Usage after implementation\n```prisma\ngenerator restClient {\n  provider = \"prisma-rest-client\"\n  output   = \"./src/generated/rest-client\"\n}\n```\n```typescript\nimport { RestApiClient } from './src/generated/rest-client'\nconst api = new RestApiClient('https://api.example.com')\nconst users = await api.user.findMany({ take: 10 })\n```",
+    "execute_duration_ms": 208823,
+    "execute_api_ms": 205724,
+    "execute_tokens_in": 38,
+    "execute_tokens_out": 14094,
+    "execute_cost_usd": 1.0992978000000002
+  },
+  "evaluation": {
+    "overall_score": 0,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.4,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 3,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 1,
+          "output": "/bin/bash: line 0: cd: packages/generator-rest-client: No such file or directory\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/generator-rest-client/src/generator.ts"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/generator-rest-client/src/index.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 37
+  },
+  "session_id": "ce8d05c9-55d1-4065-8ef8-fd52502365a3"
+}

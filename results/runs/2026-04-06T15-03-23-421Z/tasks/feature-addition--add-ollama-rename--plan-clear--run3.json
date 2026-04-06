@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-ollama-rename",
+  "task_name": "add model rename API endpoint and CLI command",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T15:48:40.111Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 321643,
+    "duration_api_ms": 448890,
+    "num_turns": 49,
+    "total_cost_usd": 1.126077,
+    "input_tokens": 39,
+    "output_tokens": 17000,
+    "cache_read_tokens": 720799,
+    "cache_creation_tokens": 53721,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 231770,
+    "plan_api_ms": 360236,
+    "plan_tokens_in": 19,
+    "plan_tokens_out": 10317,
+    "plan_cost_usd": 0.8668572000000001,
+    "plan_content": "Here's the complete plan I've designed after thoroughly reading the codebase:\n\n---\n\n## Plan: Add `ollama rename SOURCE DEST`\n\n**4 files, no new files, no new dependencies.**\n\n---\n\n### 1. `api/types.go` — Add `RenameRequest` struct\nInsert after `CopyRequest` (line 765) — identical shape, same JSON field names:\n```go\ntype RenameRequest struct {\n    Source      string `json:\"source\"`\n    Destination string `json:\"destination\"`\n}\n```\n\n---\n\n### 2. `api/client.go` — Add `Client.Rename()` method\nInsert after `Copy()` (line 387):\n```go\nfunc (c *Client) Rename(ctx context.Context, req *RenameRequest) error {\n    return c.do(ctx, http.MethodPost, \"/api/rename\", req, nil)\n}\n```\n\n---\n\n### 3. `server/routes.go` — `RenameHandler` + route registration\n**After `CopyHandler` (line 1483)** add the handler that:\n1. Binds + validates both names (400 on bad input)\n2. Calls `manifest.ParseNamedManifest(src)` → **404** if `os.IsNotExist`\n3. Calls `manifest.ParseNamedManifest(dst)` → **409** if it succeeds (destination exists)\n4. Calls `CopyModel(src, dst)` — copies only the manifest JSON; blobs are shared\n5. Calls `srcManifest.Remove()` → deletes source manifest file\n6. Calls `srcManifest.RemoveLayers()` → safely skips blob deletion because the new `dst` manifest still references all the same blobs\n\n**After line 1698** register: `r.POST(\"/api/rename\", s.RenameHandler)`\n\n---\n\n### 4. `cmd/cmd.go` — CLI wiring (3 sub-changes)\n- **After `CopyHandler` (line 1350):** Add `RenameHandler` func that calls `client.Rename()` and prints `renamed 'X' to 'Y'`\n- **After `copyCmd` (line 2263):** Define `renameCmd` with `Use: \"rename SOURCE DESTINATION\"`, `Args: cobra.ExactArgs(2)`\n- **In `envDocs` loop (line ~2298) and `rootCmd.AddCommand()` (line ~2345):** add `renameCmd` next to `copyCmd`\n\n---\n\n### Why this works correctly\n- **No blob duplication:** `CopyModel` only copies the ~KB manifest JSON; the large blob files on disk are shared by both names simultaneously.\n- **No blob deletion:** `RemoveLayers()` re-scans all remaining manifests before removing blobs; since the destination manifest was just created, all blobs are still \"in use\" and are preserved.\n- **Net effect:** The model is atomically renamed from the user's perspective.",
+    "execute_duration_ms": 89873,
+    "execute_api_ms": 88654,
+    "execute_tokens_in": 20,
+    "execute_tokens_out": 6683,
+    "execute_cost_usd": 0.2592198
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "All rubric requirements are fully met: (1) RenameRequest struct in api/types.go with correct json-tagged Source and Destination fields ✓; (2) Client.Rename method in api/client.go POSTs to /api/rename ✓; (3) RenameHandler in server/routes.go correctly copies model, deletes source, returns 404 if source missing (os.ErrNotExist check), and 409 if destination exists (ParseNamedManifest succeeds) ✓; (4) Route registration r.POST(\"/api/rename\", s.RenameHandler) present ✓; (5) CLI command with cobra.ExactArgs(2) defined correctly ✓; (6) CLI RenameHandler calls client.Rename ✓; (7) No existing test files modified, only additions made to existing files ✓. Implementation is complete, follows correct patterns, and all four layers (API types, client, server, CLI) are properly wired.",
+          "diff_length": 7732,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 12946
+  },
+  "session_id": "7a38e83a-9ba5-4b39-9b61-897ad5d082cc"
+}

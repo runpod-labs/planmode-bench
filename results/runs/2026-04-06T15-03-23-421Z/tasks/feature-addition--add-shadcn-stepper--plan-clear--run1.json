@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-shadcn-stepper",
+  "task_name": "add stepper component",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T17:03:58.245Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1161282,
+    "duration_api_ms": 1296925,
+    "num_turns": 66,
+    "total_cost_usd": 2.8340788999999997,
+    "input_tokens": 172,
+    "output_tokens": 63904,
+    "cache_read_tokens": 1778931,
+    "cache_creation_tokens": 141250,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 552078,
+    "plan_api_ms": 691259,
+    "plan_tokens_in": 25,
+    "plan_tokens_out": 19417,
+    "plan_cost_usd": 1.4921815999999999,
+    "plan_content": "Here's the full plan for implementing the `Stepper` compound component:\n\n---\n\n## What will be done\n\n### 4 files touched — 2 new, 2 modified (registry entries only)\n\n| Action | File |\n|--------|------|\n| **Create** | `apps/v4/registry/new-york-v4/ui/stepper.tsx` |\n| **Create** | `apps/v4/registry/new-york-v4/examples/stepper-demo.tsx` |\n| **Insert entry** | `apps/v4/registry/new-york-v4/ui/_registry.ts` |\n| **Append entry** | `apps/v4/registry/new-york-v4/examples/_registry.ts` |\n\n---\n\n### `stepper.tsx` — architecture\n\nThe component is **pure React** (no Radix primitive exists for steppers). It follows the exact patterns from `ToggleGroup` (React context), `Tabs` (orientation via `group/stepper` + `group-data-[orientation=...]` Tailwind selectors), and `Accordion` (`data-slot`, `cn()`, simple function components).\n\n**Two contexts:**\n- **`StepperContext`** (root) — carries `value`, `onValueChange`, `orientation`, `steps[]`, `registerStep`\n- **`StepperItemContext`** (per-item) — carries `value`, `state` (`\"active\"` / `\"completed\"` / `\"inactive\"`), `index`\n\nSteps self-register via `useEffect` on mount, building an ordered array used to compute completion state.\n\n**7 sub-components:**\n\n| Sub-component | Role |\n|---------------|------|\n| `Stepper` | Root container; manages state; provides root context |\n| `StepperItem` | Wraps one step; derives its state from context; provides item context |\n| `StepperTrigger` | Clickable `<button>`; renders numbered circle (or `CheckIcon` when completed) + children |\n| `StepperTitle` | `<p>` for step title; dims when inactive |\n| `StepperDescription` | `<p>` for subtitle text |\n| `StepperSeparator` | `<div>` line between items; `flex-1 h-px` (horizontal) or `w-px min-h-8 ml-4` (vertical) |\n| `StepperContent` | Content panel; hidden via `data-[state=inactive]:hidden` when not active |\n\n---\n\n### `stepper-demo.tsx` — interactive 3-step wizard\n\n- Manages `useState(\"step-1\")` locally\n- Controlled mode: passes `value={step}` and `onValueChange={setStep}` to `Stepper`\n- Each `StepperContent` panel has Back/Next buttons for navigation\n- Uses `button` registry dependency for the `Button` component\n\n---\n\n### Registry entries\n\n- **`ui/_registry.ts`**: insert `\"stepper\"` entry (depends on `lucide-react`) alphabetically between `\"spinner\"` and `\"switch\"`\n- **`examples/_registry.ts`**: append `\"stepper-demo\"` entry (registryDeps: `[\"stepper\", \"button\"]`) before the final `]`\n\n---\n\n### Verification\n\n1. `tsc --noEmit` — TypeScript clean\n2. Visual: indicator circles progress, check icons appear on completed steps\n3. Orientation: pass `orientation=\"vertical\"` to confirm column layout + left-aligned separators\n4. `pnpm registry:build` — new entries appear in `registry.json` without schema errors",
+    "execute_duration_ms": 609204,
+    "execute_api_ms": 605666,
+    "execute_tokens_in": 147,
+    "execute_tokens_out": 44487,
+    "execute_cost_usd": 1.3418973
+  },
+  "evaluation": {
+    "overall_score": 0.85,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.85,
+        "weight": 1,
+        "weighted_score": 0.85,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is functionally complete and correct. All 7 sub-components (Stepper, StepperItem, StepperTrigger, StepperTitle, StepperDescription, StepperSeparator, StepperContent) are properly exported from a 'use client' file. Each component correctly uses data-slot attributes and cn() utility. React context (StepperContext and StepperItemContext) properly shares state. Horizontal and vertical orientations are fully supported with appropriate conditional styling. Demo file uses all required components with useState for step management. Registry entries for both 'stepper' UI and 'stepper-demo' example are correctly added with proper dependencies. However, PLAN.md is an unnecessary file that should not be in the final diff—it appears to be planning documentation that was accidentally committed. No existing component files were improperly modified (only _registry.ts files, which are expected). Minor deduction for the extraneous file.",
+          "diff_length": 16279,
+          "new_files": "PLAN.md\napps/v4/registry/new-york-v4/examples/stepper-demo.tsx\napps/v4/registry/new-york-v4/ui/stepper.tsx"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16699
+  },
+  "session_id": "15ac7331-a34d-431b-bfcc-22e50b94a79f"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-openclaw-channel",
+  "task_name": "add fictional PulseBoard channel",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T16:42:25.091Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 3190000,
+    "duration_api_ms": 3071528,
+    "num_turns": 166,
+    "total_cost_usd": 10.154590800000001,
+    "input_tokens": 689,
+    "output_tokens": 116388,
+    "cache_read_tokens": 14090228,
+    "cache_creation_tokens": 394278,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1646862,
+    "plan_api_ms": 1776956,
+    "plan_tokens_in": 28,
+    "plan_tokens_out": 36913,
+    "plan_cost_usd": 4.678506150000001,
+    "plan_content": "The plan file has been written to `/Users/timpietrusky/.claude/plans/mutable-wondering-quill.md`. Here's a summary of what the plan covers:\n\n---\n\n## PulseBoard Channel Plugin — Plan Summary\n\n**17 new files** under `extensions/pulseboard/`. Zero existing files modified.\n\n### File Structure\n```\nextensions/pulseboard/\n├── openclaw.plugin.json      ← discovery manifest\n├── package.json              ← @openclaw/pulseboard, no prod deps\n├── index.ts                  ← defineChannelPluginEntry\n├── api.ts                    ← export * from ./runtime-api.js\n├── setup-entry.ts            ← defineSetupPluginEntry\n├── runtime-api.ts            ← aggregated re-exports from generic SDK subpaths\n└── src/\n    ├── types.ts              ← PulseBoardAccountConfig, ResolvedPulseBoardAccount, etc.\n    ├── config-schema.ts      ← Zod schema (apiKey, serverUrl, username, dmPolicy, allowFrom, boards)\n    ├── runtime.ts            ← createPluginRuntimeStore\n    ├── accounts.ts           ← single-account resolver + env var support\n    ├── normalize.ts          ← #board-name (group) vs username (DM) normalization\n    ├── send.ts               ← sendMessagePulseBoard stub\n    ├── monitor.ts            ← placeholder inbound monitor (WebSocket stub)\n    ├── setup-core.ts         ← ChannelSetupAdapter\n    ├── setup-surface.ts      ← ChannelSetupWizard with credentials + textInputs\n    ├── channel.ts            ← createChatChannelPlugin (the main plugin definition)\n    └── channel.test.ts       ← Vitest tests\n```\n\n### Key Design Decisions\n| Decision | Choice |\n|---|---|\n| Account model | Single-account (like Nostr), top-level `channels.pulseboard.*` |\n| Chat types | `[\"direct\", \"group\"]` |\n| Group target format | `#board-name` |\n| DM target format | `username` (strips `@`) |\n| Text chunk limit | **4000 characters** |\n| Auth | `apiKey` (SecretInput) + `serverUrl` + `username` |\n| Env vars | `PULSEBOARD_API_KEY`, `PULSEBOARD_SERVER_URL`, `PULSEBOARD_USERNAME` |\n| Outbound structure | IRC-style `base:` + `attachedResults:` within `createChatChannelPlugin` |\n| Default DM policy | `pairing` |\n| Production deps | None (fictional platform) |\n\n### Two Things to Verify During Implementation\n1. **`PAIRING_APPROVED_MESSAGE`** export location — likely `openclaw/plugin-sdk/channel-pairing` or `channel-plugin-common`; check before writing `runtime-api.ts`\n2. **`createChatChannelPlugin` outbound shape** — Nostr uses flat `outbound: { deliveryMode, textChunkLimit, sendText }` while IRC uses nested `outbound: { base: {...}, attachedResults: {...} }`; IRC's form is what the plan uses\n\n### Verification After Implementation\n```bash\npnpm test -- extensions/pulseboard/src/channel.test.ts\npnpm check\npnpm build\n```",
+    "execute_duration_ms": 1543138,
+    "execute_api_ms": 1294572,
+    "execute_tokens_in": 661,
+    "execute_tokens_out": 79475,
+    "execute_cost_usd": 5.476084650000001
+  },
+  "evaluation": {
+    "overall_score": 0.68,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.68,
+        "weight": 1,
+        "weighted_score": 0.68,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation has correct structure and includes all required file types (package.json, openclaw.plugin.json, runtime store, channel plugin with createChatChannelPlugin, entry points). Key strengths: chatTypes supports 'direct' and 'group' ✓, textChunkLimit is 4000 ✓, outbound has sendText, gateway, messaging, normalizeTarget ✓, defineChannelPluginEntry and defineSetupPluginEntry used correctly ✓. Critical issues: (1) Field naming diverges from rubric—uses 'serverUrl' and 'apiKey' instead of specified 'boardUrl' and 'apiToken' (evident in config-schema.ts, accounts.ts, and throughout); (2) types.ts file is listed as created but its content is completely absent from the diff, preventing verification of PulseBoardMessage, PulseBoardAccount, and PulseBoardConfig interface definitions; (3) Diff appears truncated at end of setup-surface.ts. While the plugin structure is sound, the missing types.ts visibility and field name divergence prevent full compliance verification.",
+          "diff_length": 50000,
+          "new_files": "PLAN.md\nextensions/pulseboard/api.ts\nextensions/pulseboard/index.ts\nextensions/pulseboard/openclaw.plugin.json\nextensions/pulseboard/package.json\nextensions/pulseboard/runtime-api.ts\nextensions/pulseboard/setup-entry.ts\nextensions/pulseboard/src/accounts.ts\nextensions/pulseboard/src/channel.test.ts\nextensions/pulseboard/src/channel.ts\nextensions/pulseboard/src/config-schema.ts\nextensions/pulseboard/src/monitor.ts\nextensions/pulseboard/src/normalize.ts\nextensions/pulseboard/src/runtime.ts\nextensions/pulseboard/src/send.ts\nextensions/pulseboard/src/setup-core.ts\nextensions/pulseboard/src/setup-surface.ts\nextensions/pulseboard/src/types.ts\nnode_modules\nui/node_modules"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19509
+  },
+  "session_id": "921d532e-4d07-454b-ba95-b2406eee51fa"
+}

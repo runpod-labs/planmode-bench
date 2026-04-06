@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-resume",
+  "run_number": 8,
+  "timestamp": "2026-04-06T10:57:47.928Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 295666,
+    "duration_api_ms": 653073,
+    "num_turns": 32,
+    "total_cost_usd": 2.83828365,
+    "input_tokens": 22,
+    "output_tokens": 13519,
+    "cache_read_tokens": 653813,
+    "cache_creation_tokens": 64885,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 293145,
+    "plan_api_ms": 378449,
+    "plan_tokens_in": 19,
+    "plan_tokens_out": 13494,
+    "plan_cost_usd": 1.10192745,
+    "plan_content": "Here is the full implementation plan, saved to the plan file:\n\n---\n\n## Summary\n\n**Strategy:** Convert each JSONPath expression into a JSON Schema, then delegate to the existing `dispatch_json` pipeline in every grammar backend. No new third-party dependencies needed — just a ~60-line pure-Python parser.\n\n### 10 files to touch\n\n| | File | What changes |\n|--|------|-------------|\n| **NEW** | `python/sglang/srt/constrained/json_path_utils.py` | `json_path_to_schema()` + `validate_json_path()` |\n| 2 | `base_grammar_backend.py` | Stub `dispatch_json_path()` + routing `elif` in `_init_value_dispatch()` |\n| 3 | `xgrammar_backend.py` | `dispatch_json_path()` → convert path → `dispatch_json()` |\n| 4 | `outlines_backend.py` | Same pattern |\n| 5 | `llguidance_backend.py` | Same pattern |\n| 6 | `sampling_params.py` | Add `json_path` param, store it, add to mutual-exclusion check in `verify()` |\n| 7 | `grammar_manager.py` | Add `or json_path is not None` to condition; add `elif` routing to `(\"json_path\", ...)` |\n| 8 | `protocol.py` | Add `json_path` to both pydantic `SamplingParams` classes + `has_existing_constraints` |\n| 9 | `lang/ir.py` | Add `json_path` to `SglSamplingParams`, `to_srt_kwargs()`, and `SglGen` |\n| 10 | `lang/api.py` | Add `json_path` parameter to `gen()` |\n\n### Key design decisions\n- **No new dependencies** — the JSONPath parser is self-contained (~60 lines using only `re` + `json`)\n- **Reuses all existing infrastructure** — the conversion to JSON Schema means every grammar backend automatically supports it with ~5 lines of glue code each\n- **`[n]` index tokens** are treated as `[*]` (items schema applies to all elements) because JSON Schema cannot enforce positional constraints in a simple way\n- **Early validation** — `SamplingParams.verify()` calls `validate_json_path()` to surface malformed paths before they reach the grammar compilation thread",
+    "execute_duration_ms": 2521,
+    "execute_api_ms": 274624,
+    "execute_tokens_in": 3,
+    "execute_tokens_out": 25,
+    "execute_cost_usd": 1.7363562
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 358
+  },
+  "session_id": "90b6ca2b-e8f3-4187-abbd-ae61863bd8f1"
+}

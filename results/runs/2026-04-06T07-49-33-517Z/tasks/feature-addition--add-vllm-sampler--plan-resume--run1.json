@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T12:34:56.900Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 648473,
+    "duration_api_ms": 807839,
+    "num_turns": 88,
+    "total_cost_usd": 3.317008200000001,
+    "input_tokens": 82,
+    "output_tokens": 35427,
+    "cache_read_tokens": 5567727,
+    "cache_creation_tokens": 141602,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 308523,
+    "plan_api_ms": 468296,
+    "plan_tokens_in": 12,
+    "plan_tokens_out": 12195,
+    "plan_cost_usd": 1.06465095,
+    "plan_content": "Here is the complete implementation plan:\n\n---\n\n## Plan: Add `top_a` Sampling to vLLM\n\n**Algorithm:** Filter out tokens where `prob < top_a × max_prob`, then proceed with normal sampling. Default `0.0` (disabled), range `[0.0, 1.0]`. Architecturally identical to `min_p` — the same code path is used.\n\n---\n\n### 5 files to change\n\n#### 1. `vllm/sampling_params.py`\n- Add `top_a: float = 0.0` field after `min_p` (line 214), with docstring\n- Add `top_a: float = 0.0` to `from_optional()` signature (line 261) and pass it through in the constructor call (line 304)\n- Add `self.top_a = 0.0` in the greedy-sampling reset block of `__post_init__` (line 381)\n- Add validation in `_verify_args()` after `min_p` check (line 428): `if not 0.0 <= self.top_a <= 1.0: raise ValueError(...)`\n- Add `f\"top_a={self.top_a}, \"` to `__repr__()` after `min_p` (line 572)\n\n#### 2. `vllm/model_executor/sampling_metadata.py` (V0 legacy path)\n- Add `top_as: torch.Tensor` field to the `SamplingTensors` dataclass after `min_ps` (line 379)\n- In `from_sampling_metadata()`: declare `top_as = []` and `do_top_a = False`, extract `top_a = sampling_params.top_a`, set flag when `top_a > _SAMPLING_EPS`, append to prefill and sampling branches, pass to `from_lists()`, return a 5-tuple including `do_top_a`\n- In `from_lists()`: add `top_as: list[float]` param, create a pinned-memory tensor for it, include it in the non-blocking device transfer and `cls(...)` constructor\n\n#### 3. `vllm/model_executor/layers/sampler.py` (V0 legacy path)\n- Unpack `do_top_a` from the new 5-tuple in `_init_sampling_tensors()` and store as `self._do_top_a`\n- In `forward()`: retrieve `do_top_a = self._do_top_a` and add `if do_top_a: logits = _apply_top_a(logits, sampling_tensors.top_as)` after the existing `_apply_min_p` block\n- Add `_apply_top_a(logits, top_a)` function immediately after `_apply_min_p`: softmax → `max` → scale by `top_a` → mask tokens below threshold to `-inf`\n\n#### 4. `vllm/v1/sample/logits_processor.py` (V1 new path)\n- Add `TopALogitsProcessor` class after `MinPLogitsProcessor` (line 306) — near-identical copy with `min_p` → `top_a` throughout; `is_argmax_invariant()` returns `True`\n- Register in `init_builtin_logitsprocs()`: instantiate and add to the `argmax_invariant=[min_p_logitproc, top_a_logitproc]` list\n\n#### 5. `vllm/entrypoints/openai/protocol.py` (API layer)\nApply same 4-part change to **`ChatCompletionRequest`**, **`CompletionRequest`**, and **`TranscriptionRequest`**:\n- Add `top_a: Optional[float] = None` field after `min_p`\n- Add `\"top_a\": 0.0` to each `_DEFAULT_SAMPLING_PARAMS` dict\n- Add default-resolution walrus block mirroring the `min_p` pattern\n- Pass `top_a=top_a` to `SamplingParams.from_optional()`",
+    "execute_duration_ms": 339950,
+    "execute_api_ms": 339543,
+    "execute_tokens_in": 70,
+    "execute_tokens_out": 23232,
+    "execute_cost_usd": 2.2523572500000006
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "contains \"top_a\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "top_a.*float|float.*top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "0\\.0.*top_a|top_a.*0\\.0",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "python3 -c 'import ast; ast.parse(open(\"vllm/sampling_params.py\").read()); print(\"Syntax OK\")'",
+          "exit_code": 0,
+          "output": "Syntax OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 28
+  },
+  "session_id": "b87e86b3-5839-44e1-9bca-cfbe3a896a8d"
+}

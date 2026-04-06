@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 3,
+  "timestamp": "2026-04-06T12:01:05.603Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 434837,
+    "duration_api_ms": 537751,
+    "num_turns": 45,
+    "total_cost_usd": 1.6907162500000001,
+    "input_tokens": 45,
+    "output_tokens": 19966,
+    "cache_read_tokens": 1752310,
+    "cache_creation_tokens": 114897,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 328447,
+    "plan_api_ms": 431443,
+    "plan_tokens_in": 22,
+    "plan_tokens_out": 13552,
+    "plan_cost_usd": 1.0158766000000001,
+    "plan_content": "Here is the complete implementation plan. **Only `unsloth/save.py` needs to be edited** — 5 targeted changes:\n\n---\n\n### Change 1 — Extend the `.kernels` import (line 29)\nAdd `get_lora_parameters` to the existing import (it's already exported by `kernels/__init__.py` but not yet pulled into `save.py`):\n```python\nfrom .kernels import fast_dequantize, QUANT_STATE, get_lora_parameters, get_lora_parameters_bias\n```\n\n### Change 2 — Add `import json` (~line 27)\n`json` is not currently imported and is needed to write `adapter_metadata.json`.\n\n### Change 3 — Extend `__all__` (lines 48–54)\nAdd `\"unsloth_export_to_onnx\"` so it's publicly importable via `from unsloth import *`.\n\n### Change 4 — Define `unsloth_export_to_onnx(self, save_directory, opset_version=17)` (insert before `not_implemented_save`, ~line 2564)\nThe function:\n- Lazily imports `onnx` (raises a clear `ImportError` if missing — same pattern as `torchao`)\n- Resolves the active adapter name via `self.active_adapters[0]` / `self.active_adapter`\n- Reads `rank`, `lora_alpha`, `target_modules` from `self.peft_config[active_adapter]`\n- Iterates `self.named_modules()`, checks `isinstance(module, (Bnb_Linear4bit, Peft_Linear4bit, Peft_Linear))` (same types as `_merge_lora`), calls `get_lora_parameters(module)` → skips layers where `A is None` (merged/disabled)\n- Converts A/B to `float32` numpy and wraps as named ONNX initializers (`{module_name}.lora_A.weight`, `{module_name}.lora_B.weight`)\n- Builds an ONNX graph with **no nodes, only initializers** (valid per ONNX spec for weight storage)\n- Stores metadata in both `onnx.metadata_props` (machine-readable) and `adapter_metadata.json` (human-readable)\n- Raises `ValueError` if no active LoRA layers are found\n\n### Change 5 — Register in `patch_saving_functions()` (lines 2657–2675)\nAdd one line in **both** the non-vision and vision branches:\n```python\nmodel.export_to_onnx = types.MethodType(unsloth_export_to_onnx, model)\n```\n\nAfter these changes, the usage is identical in style to all other export methods:\n```python\nmodel.export_to_onnx(\"./lora_onnx_output\", opset_version=17)\n# Produces: lora_onnx_output/lora_adapters.onnx\n#           lora_onnx_output/adapter_metadata.json\n```",
+    "execute_duration_ms": 106390,
+    "execute_api_ms": 106308,
+    "execute_tokens_in": 23,
+    "execute_tokens_out": 6414,
+    "execute_cost_usd": 0.67483965
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 148
+  },
+  "session_id": "91cda3d6-db20-442f-a4df-1919bd8165b0"
+}

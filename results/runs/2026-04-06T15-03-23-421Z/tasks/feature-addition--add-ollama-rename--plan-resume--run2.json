@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-ollama-rename",
+  "task_name": "add model rename API endpoint and CLI command",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T15:48:10.355Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 420532,
+    "duration_api_ms": 547683,
+    "num_turns": 52,
+    "total_cost_usd": 1.8315719499999998,
+    "input_tokens": 49,
+    "output_tokens": 21370,
+    "cache_read_tokens": 1943286,
+    "cache_creation_tokens": 98125,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 286935,
+    "plan_api_ms": 414190,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 11480,
+    "plan_cost_usd": 0.9686718999999997,
+    "plan_content": "Here is the complete implementation plan.\n\n---\n\n## Plan: Add `ollama rename` to Ollama\n\n### What & Why\nRather than requiring users to run `ollama cp A B && ollama rm A`, a new `POST /api/rename` endpoint performs copy-then-delete atomically. The handler returns 404 if the source doesn't exist and 409 if the destination already exists.\n\n---\n\n### Files to modify (4 files, 8 targeted edits)\n\n#### 1. `api/types.go` — Add `RenameRequest` (after line 765)\n```go\n// RenameRequest is the request passed to [Client.Rename].\ntype RenameRequest struct {\n    Source      string `json:\"source\"`\n    Destination string `json:\"destination\"`\n}\n```\nMirrors the existing `CopyRequest` struct.\n\n---\n\n#### 2. `api/client.go` — Add `Rename()` method (after `Copy()`, line 387)\n```go\nfunc (c *Client) Rename(ctx context.Context, req *RenameRequest) error {\n    if err := c.do(ctx, http.MethodPost, \"/api/rename\", req, nil); err != nil {\n        return err\n    }\n    return nil\n}\n```\nIdentical pattern to `Copy()`.\n\n---\n\n#### 3. `server/routes.go` — Add `RenameHandler` (after `CopyHandler`, line 1483)\n\nFull handler logic:\n1. Parse/validate **source** → `model.ParseName` + `getExistingName`\n2. Load source manifest → **404** on `os.IsNotExist`\n3. Parse/validate **destination** → `model.ParseName` + `getExistingName`\n4. Check dest doesn't exist → **409** if `manifest.ParseNamedManifest(dst)` succeeds\n5. `CopyModel(src, dst)` — copies manifest file only (layers are shared blobs)\n6. `srcManifest.Remove()` + `srcManifest.RemoveLayers()` — safe because dest now holds the blob references\n\nNo new imports needed — all packages (`manifest`, `model`, `os`, `fmt`, `errors`, `io`, `net/http`) are already imported.\n\n---\n\n#### 4. `server/routes.go` — Register route (line 1698, after the copy route)\n```go\nr.POST(\"/api/rename\", s.RenameHandler)\n```\n\n---\n\n#### 5. `cmd/cmd.go` — Add CLI handler (after `CopyHandler`, line 1350)\n```go\nfunc RenameHandler(cmd *cobra.Command, args []string) error {\n    client, err := api.ClientFromEnvironment()\n    if err != nil { return err }\n    req := api.RenameRequest{Source: args[0], Destination: args[1]}\n    if err := client.Rename(cmd.Context(), &req); err != nil { return err }\n    fmt.Printf(\"renamed '%s' to '%s'\\n\", args[0], args[1])\n    return nil\n}\n```\n\n---\n\n#### 6–8. `cmd/cmd.go` — Add cobra command + wire it up\n```go\nrenameCmd := &cobra.Command{\n    Use:     \"rename SOURCE DESTINATION\",\n    Short:   \"Rename a model\",\n    Args:    cobra.ExactArgs(2),\n    PreRunE: checkServerHeartbeat,\n    RunE:    RenameHandler,\n}\n```\nAdd `renameCmd` to: the env-docs loop slice (after `copyCmd`, ~line 2298), and `rootCmd.AddCommand(...)` (after `copyCmd`, ~line 2345).\n\n---\n\n### Key design decisions\n- **No new storage function** — `CopyModel` + `Remove` + `RemoveLayers` already compose into rename semantics\n- **`RemoveLayers` is lossless after copy** — once the dest manifest is written, all blobs are still referenced, so `RemoveLayers` deletes nothing\n- **`model.ParseName`** (not `parseNormalizePullModelRef`) — rename is local-only, no registry semantics needed; consistent with `CopyHandler`",
+    "execute_duration_ms": 133597,
+    "execute_api_ms": 133493,
+    "execute_tokens_in": 34,
+    "execute_tokens_out": 9890,
+    "execute_cost_usd": 0.86290005
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "All requirements met: RenameRequest struct with correct json tags (source/destination) present in api/types.go; Client.Rename method correctly POSTs to /api/rename in api/client.go; RenameHandler on Server properly copies model via CopyModel, deletes source via srcManifest.Remove/RemoveLayers, returns 404 (StatusNotFound) for missing source and 409 (StatusConflict) for existing destination in server/routes.go; Route registration r.POST(\"/api/rename\", s.RenameHandler) correctly wired; CLI command 'ollama rename SOURCE DESTINATION' defined with cobra.ExactArgs(2) and registered in both command groups in cmd/cmd.go; CLI RenameHandler calls client.Rename with proper context and request; no existing test files modified. Implementation is complete and correct.",
+          "diff_length": 5290,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 11397
+  },
+  "session_id": "665dbe69-abca-4dd2-890b-88c55c635467"
+}

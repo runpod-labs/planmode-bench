@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "normal",
+  "run_number": 2,
+  "timestamp": "2026-04-06T15:28:57.461Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 220139,
+    "duration_api_ms": 218242,
+    "num_turns": 13,
+    "total_cost_usd": 0.4356978000000001,
+    "input_tokens": 14,
+    "output_tokens": 8723,
+    "cache_read_tokens": 239948,
+    "cache_creation_tokens": 24646,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 0.35,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.35,
+        "weight": 1,
+        "weighted_score": 0.35,
+        "passed": false,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Critical issues found: (1) Format is COMMON_CHAT_FORMAT_PEG_NATIVE instead of the required COMMON_CHAT_FORMAT_CONTENT_ONLY - this is a direct rubric violation. (2) The handler delegates turn wrapping [INST]/[/INST] and </s> appending to the template via common_chat_template_direct_apply_impl rather than implementing them explicitly, contrary to rubric requirements that the handler should wrap and append. (3) No explicit handling of system message prepending. Positive aspects: detection logic correctly identifies Mistral Instruct v0.3 by checking for [INST], [/INST] presence and [SYSTEM_PROMPT] absence; LOG_DBG call is present; function signature and dispatch are correct; no existing code was modified.",
+          "diff_length": 2057,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 11646
+  },
+  "session_id": "7f407847-f15d-4669-a58d-8ae639c88ccf"
+}

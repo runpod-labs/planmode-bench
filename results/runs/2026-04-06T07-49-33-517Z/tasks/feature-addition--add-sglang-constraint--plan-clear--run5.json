@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T11:06:32.124Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 918553,
+    "duration_api_ms": 1117992,
+    "num_turns": 76,
+    "total_cost_usd": 3.37175865,
+    "input_tokens": 63,
+    "output_tokens": 38826,
+    "cache_read_tokens": 2577631,
+    "cache_creation_tokens": 136949,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 629365,
+    "plan_api_ms": 830896,
+    "plan_tokens_in": 26,
+    "plan_tokens_out": 19259,
+    "plan_cost_usd": 2.380518,
+    "plan_content": "Here is the complete implementation plan:\n\n---\n\n## Plan: Add `json_path` Output Constraint to SGLang\n\n### Architecture: JSONPath → JSON Schema (No Backend Changes Needed)\n\nThe cleanest design converts the JSONPath expression to a JSON Schema and dispatches it through the existing `(\"json\", schema_str)` pipeline. This means **zero changes to xgrammar, outlines, or llguidance backends** — they already handle `dispatch_json()`.\n\n**Conversion example** (`$.store.book[*].author` → nested JSON Schema built right-to-left):\n```\nauthor  → {\"type\":\"object\",\"properties\":{\"author\":{}},\"required\":[\"author\"]}\n[*]     → {\"type\":\"array\",\"items\":<above>}\nbook    → {\"type\":\"object\",\"properties\":{\"book\":<above>},\"required\":[\"book\"]}\nstore   → {\"type\":\"object\",\"properties\":{\"store\":<above>},\"required\":[\"store\"]}\n```\n\n---\n\n### 1 New File + 8 File Modifications\n\n| File | Change |\n|------|--------|\n| `srt/constrained/json_path_utils.py` | **NEW** — JSONPath tokenizer + schema builder (stdlib only) |\n| `srt/sampling/sampling_params.py` | Add `json_path` param; add to `verify()` mutex |\n| `srt/constrained/grammar_manager.py` | Add `json_path` condition + inline conversion to `(\"json\", schema)` key |\n| `srt/managers/tokenizer_manager.py` | Add `json_path` to `_request_has_grammar()` |\n| `lang/ir.py` | Add `json_path` to `SglSamplingParams`, `SglGen`, `clone()`, `to_srt_kwargs()` |\n| `lang/api.py` | Add `json_path` to `gen()` with parse-time validation |\n| `lang/interpreter.py` | Add `\"json_path\"` to `_resolve_sampling_params()` field list |\n| `srt/entrypoints/openai/protocol.py` | Add `json_path` to `CompletionRequest`, `ChatCompletionRequest`, `to_sampling_params()`, and `has_existing_constraints` |\n| `srt/entrypoints/openai/serving_completions.py` | Add `\"json_path\": request.json_path` to the sampling dict |\n\n**Key design notes:**\n- The JSONPath conversion happens lazily inside `grammar_manager.py` (inline import) before the cache key is formed — so cache deduplication works naturally\n- Supported segments: `.property`, `['property']`, `[*]`, `[n]` (index treated as array with warning)\n- Graceful fallback to `{}` with a log warning for `..` (recursive descent) and `[?...]` (filters), which have no JSON Schema equivalent\n- Frontend validation in `api.py` gives immediate `ValueError` at `sgl.gen()` call time; server-side validation calls `req.set_finish_with_abort()` for the REST path\n- No new library dependencies (pure stdlib: `json` + `logging`)",
+    "execute_duration_ms": 289188,
+    "execute_api_ms": 287096,
+    "execute_tokens_in": 37,
+    "execute_tokens_out": 19567,
+    "execute_cost_usd": 0.9912406499999998
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 366
+  },
+  "session_id": "41582da5-eabf-433d-857d-789926dd11dc"
+}

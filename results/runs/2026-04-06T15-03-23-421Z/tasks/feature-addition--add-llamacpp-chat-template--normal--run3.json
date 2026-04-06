@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "normal",
+  "run_number": 3,
+  "timestamp": "2026-04-06T15:28:16.144Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 175512,
+    "duration_api_ms": 173829,
+    "num_turns": 11,
+    "total_cost_usd": 0.3997216000000001,
+    "input_tokens": 14,
+    "output_tokens": 5739,
+    "cache_read_tokens": 198967,
+    "cache_creation_tokens": 19762,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 0.75,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.75,
+        "weight": 1,
+        "weighted_score": 0.75,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation successfully creates the required static function with proper template auto-detection (checking for [INST]/[/INST] absence of [SYSTEM_PROMPT]), includes the LOG_DBG call, and properly dispatches the handler with (tmpl, params). However, there is a critical requirement violation: the format is set to COMMON_CHAT_FORMAT_PEG_NATIVE instead of the required COMMON_CHAT_FORMAT_CONTENT_ONLY. The implementation also delegates actual wrapping logic to the template via common_chat_template_direct_apply_impl rather than explicitly implementing the [INST]/[/INST] wrapping in the handler itself, which may be acceptable depending on template design but differs from typical explicit handler implementations. All other requirements are met: preserved tokens are correctly set, comments document the format, no existing handlers are modified, and the detection logic properly distinguishes from Ministral 3 by checking for [SYSTEM_PROMPT] absence.",
+          "diff_length": 2203,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 9710
+  },
+  "session_id": "073fb730-a13d-4734-989d-0a2dacabd62e"
+}

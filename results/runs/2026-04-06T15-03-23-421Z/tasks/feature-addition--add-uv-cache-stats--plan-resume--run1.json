@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-uv-cache-stats",
+  "task_name": "add 'uv cache stats' subcommand",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T17:27:26.506Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 746393,
+    "duration_api_ms": 944366,
+    "num_turns": 72,
+    "total_cost_usd": 2.9377949500000007,
+    "input_tokens": 72,
+    "output_tokens": 37299,
+    "cache_read_tokens": 4108089,
+    "cache_creation_tokens": 144243,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 483260,
+    "plan_api_ms": 704888,
+    "plan_tokens_in": 22,
+    "plan_tokens_out": 22263,
+    "plan_cost_usd": 1.3188397,
+    "plan_content": "Here's the complete implementation plan for `uv cache stats`:\n\n---\n\n## What gets built\n\n`uv cache stats` — a preview-gated subcommand that walks the 10 standard cache buckets (`wheels-v6`, `sdists-v9`, `flat-index-v2`, `git-v0`, `interpreter-v4`, `simple-v21`, `archive-v0`, `builds-v0`, `environments-v2`, `binaries-v0`) and prints an aligned table with per-bucket sizes and a total. `--human` / `-H` / `--human-readable` switches to human-readable output (e.g. `1.2 GiB`).\n\n---\n\n## 8 files, each with a specific job\n\n| # | File | What changes |\n|---|------|-------------|\n| 1 | `crates/uv-preview/src/lib.rs` | Add `CacheStats = 1 << 28` to `PreviewFeature` enum + `\"cache-stats\"` in `as_str()` / `FromStr` / test |\n| 2 | `crates/uv-cli/src/lib.rs` | Add `Stats(StatsArgs)` variant to `CacheCommand` enum; add `StatsArgs { human: bool }` struct (identical pattern to `SizeArgs`) |\n| 3 | `crates/uv/src/lib.rs` | Add dispatch arm right after the `Size` arm (~line 1181): `CacheCommand::Stats(args) => commands::cache_stats(…)` |\n| 4 | `crates/uv/src/commands/mod.rs` | Add `mod cache_stats;` + `pub(crate) use cache_stats::cache_stats;` |\n| 5 | `crates/uv/src/commands/cache_stats.rs` | **New** — iterates `CacheBucket::iter()`, measures each bucket with `diskus::DiskUsage`, formats an aligned table, prints separator + total |\n| 6 | `crates/uv-test/src/lib.rs` | Add `cache_stats()` command helper + `with_filtered_cache_stats()` filter (mirrors `cache_size`/`with_filtered_cache_size`) |\n| 7 | `crates/uv/tests/it/main.rs` | Register `mod cache_stats` under `#[cfg(all(feature = \"test-python\", feature = \"test-pypi\"))]` |\n| 8 | `crates/uv/tests/it/cache_stats.rs` | **New** — 3 integration tests: empty cache, raw bytes after install, `--human` after install |\n\n---\n\n## Critical implementation note\n\n`CacheBucket::to_str()` is **private** to `uv-cache`. From the `uv` crate, use `format!(\"{bucket}\")` instead — `CacheBucket` has a public `Display` impl that delegates to `to_str()`. This means collecting `Vec<(String, u64)>` rather than `Vec<(&'static str, u64)>`.",
+    "execute_duration_ms": 263133,
+    "execute_api_ms": 239478,
+    "execute_tokens_in": 50,
+    "execute_tokens_out": 15036,
+    "execute_cost_usd": 1.6189552500000004
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "All rubric requirements fully met: (1) Stats(StatsArgs) variant with human bool flag properly added to CacheCommand enum, (2) cache_stats function correctly uses CacheBucket::iter() and DiskUsage, (3) function signature is pub(crate) fn returning Result<ExitStatus> with Ok(ExitStatus::Success), (4) --human flag implemented with human_readable_bytes utility, (5) output includes per-bucket lines and total line with proper formatting, (6) module registration in mod.rs complete, (7) dispatch wiring in lib.rs correct, (8) implementation follows existing cache size command patterns. Additional strengths: preview feature properly gated in uv-preview crate, comprehensive test coverage with empty cache and populated cache scenarios, test helper methods added (cache_stats command, with_filtered_cache_stats), and aligned tabular output formatting. No issues identified.",
+          "diff_length": 11469,
+          "new_files": "crates/uv/src/commands/cache_stats.rs\ncrates/uv/tests/it/cache_stats.rs"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16034
+  },
+  "session_id": "5e0a1613-334c-47e1-9697-e4109fdeb785"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-openclaw-channel",
+  "task_name": "add fictional PulseBoard channel",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T16:16:07.279Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1811662,
+    "duration_api_ms": 1999997,
+    "num_turns": 50,
+    "total_cost_usd": 4.065467099999999,
+    "input_tokens": 55,
+    "output_tokens": 91507,
+    "cache_read_tokens": 3251692,
+    "cache_creation_tokens": 213062,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 944866,
+    "plan_api_ms": 1119767,
+    "plan_tokens_in": 23,
+    "plan_tokens_out": 36630,
+    "plan_cost_usd": 1.8464225999999997,
+    "plan_content": "Here's a summary of the research findings and the plan I've prepared:\n\n---\n\n## Plan: PulseBoard Channel Plugin\n\n**24 new files** exclusively under `extensions/pulseboard/` — no modifications to any existing files.\n\n### Directory structure\n```\nextensions/pulseboard/\n├── openclaw.plugin.json\n├── package.json\n├── index.ts\n├── setup-entry.ts\n├── api.ts\n└── src/\n    ├── types.ts, config-schema.ts, config-ui-hints.ts\n    ├── accounts.ts + accounts.test.ts\n    ├── runtime.ts, runtime-api.ts\n    ├── channel.ts + channel.test.ts\n    ├── client.ts\n    ├── send.ts + send.test.ts\n    ├── inbound.ts + inbound.test.ts\n    ├── monitor.ts, normalize.ts, probe.ts\n    ├── setup-core.ts, setup-surface.ts\n```\n\n### Key design decisions\n\n1. **IRC as structural model** — channel.ts, accounts.ts, monitor.ts, inbound.ts all mirror IRC's patterns with PulseBoard-specific substitutions (`#board-name` for groups, username for DMs, API token auth).\n\n2. **SDK import path for generic runtime helpers** — Each bundled plugin uses a channel-specific `openclaw/plugin-sdk/<id>` facade. Since `src/plugin-sdk/pulseboard.ts` cannot be created (outside the extension directory), `src/runtime-api.ts` imports `dispatchInboundReplyWithBase`, `createChannelPairingController`, `deliverFormattedTextWithAttachments`, `chunkTextForOutbound`, and policy helpers from **`openclaw/plugin-sdk/nextcloud-talk`** — the only existing channel plugin that exports the complete set of these generic helpers. The plan notes to verify exact exports against `src/plugin-sdk/nextcloud-talk.ts` before writing that barrel.\n\n3. **PulseBoard-specific values**: `textChunkLimit: 4000`, `chatTypes: [\"direct\", \"group\"]`, `media: false`, `blockStreaming: true`, token via `PULSEBOARD_API_TOKEN` env or `apiToken` config, fictional HTTP long-polling transport in `client.ts`.\n\n4. **4 test files** covering account resolution, send paths, all 5 inbound policy gate paths (open DM, allowlist drop, pairing challenge, board dispatch, mention gate), and plugin shape smoke tests.",
+    "execute_duration_ms": 866796,
+    "execute_api_ms": 880230,
+    "execute_tokens_in": 32,
+    "execute_tokens_out": 54877,
+    "execute_cost_usd": 2.2190444999999994
+  },
+  "evaluation": {
+    "overall_score": 0.75,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.75,
+        "weight": 1,
+        "weighted_score": 0.75,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation demonstrates strong structure and most visible requirements are met: package.json has correct scoped name and setupEntry, openclaw.plugin.json defines channels and configSchema, channel.ts properly uses createChatChannelPlugin with chatTypes=['direct','group'], textChunkLimit=4000, and complete outbound/gateway/messaging sections, index.ts uses defineChannelPluginEntry, and setup-entry.ts uses defineSetupPluginEntry. However, the diff is incomplete/truncated: types.ts and runtime.ts file contents are missing, preventing verification of critical requirements including PulseBoardAccount/PulseBoardConfig/PulseBoardMessage interfaces with boardUrl and apiToken fields, and the createPluginRuntimeStore implementation. While imports and usage patterns suggest these files exist and are implemented correctly, the inability to verify them against the rubric's specific field requirements (boardUrl, apiToken) and the incomplete state of the diff (ending mid-word) represent significant gaps in verifiable compliance.",
+          "diff_length": 50000,
+          "new_files": "extensions/pulseboard/api.ts\nextensions/pulseboard/index.ts\nextensions/pulseboard/openclaw.plugin.json\nextensions/pulseboard/package.json\nextensions/pulseboard/setup-entry.ts\nextensions/pulseboard/src/accounts.test.ts\nextensions/pulseboard/src/accounts.ts\nextensions/pulseboard/src/channel.test.ts\nextensions/pulseboard/src/channel.ts\nextensions/pulseboard/src/client.ts\nextensions/pulseboard/src/config-schema.ts\nextensions/pulseboard/src/config-ui-hints.ts\nextensions/pulseboard/src/inbound.test.ts\nextensions/pulseboard/src/inbound.ts\nextensions/pulseboard/src/monitor.ts\nextensions/pulseboard/src/normalize.ts\nextensions/pulseboard/src/probe.ts\nextensions/pulseboard/src/runtime-api.ts\nextensions/pulseboard/src/runtime.ts\nextensions/pulseboard/src/send.test.ts\nextensions/pulseboard/src/send.ts\nextensions/pulseboard/src/setup-core.ts\nextensions/pulseboard/src/setup-surface.ts\nextensions/pulseboard/src/types.ts\nnode_modules\nui/node_modules"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 17466
+  },
+  "session_id": "9deb9f37-a5a6-4653-9865-66415af96339"
+}

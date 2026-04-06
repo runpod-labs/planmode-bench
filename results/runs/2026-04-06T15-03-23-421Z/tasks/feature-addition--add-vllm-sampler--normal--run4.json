@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "normal",
+  "run_number": 4,
+  "timestamp": "2026-04-06T17:30:26.860Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 508285,
+    "duration_api_ms": 504608,
+    "num_turns": 68,
+    "total_cost_usd": 2.3599748,
+    "input_tokens": 60,
+    "output_tokens": 30727,
+    "cache_read_tokens": 4631574,
+    "cache_creation_tokens": 101132,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete and correct implementation. All rubric requirements met: (1) top_a parameter added to SamplingParams as float with default 0.0 and validation for [0.0, 1.0] range; (2) Filtering logic correctly implemented computing max probability, masking tokens below top_a * max_prob, and setting to -inf for implicit renormalization; (3) top_a properly threaded through SamplingTensors, SamplingMetadata, input batches (GPU/TPU), and both main and v1 sampler implementations; (4) Comprehensive documentation in docstrings explaining the algorithm and parameter; (5) Syntactically valid Python following vLLM conventions, matching patterns of similar sampling methods (min_p, top_k, top_p). The do_top_a conditional flags are properly implemented and used. Coverage includes all necessary code paths: model executor sampler, v1 sampler, TPU sampler, and worker input batches.",
+          "diff_length": 22365,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 22361
+  },
+  "session_id": "76f5a5c8-ba4e-498f-8935-d91cb7af0c2d"
+}

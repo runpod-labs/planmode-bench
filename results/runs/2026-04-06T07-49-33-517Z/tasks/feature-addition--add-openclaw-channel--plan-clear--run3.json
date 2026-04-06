@@ -1,0 +1,346 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-openclaw-channel",
+  "task_name": "add fictional PulseBoard channel",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T10:38:02.482Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 3565694,
+    "duration_api_ms": 3750309,
+    "num_turns": 191,
+    "total_cost_usd": 10.6293027,
+    "input_tokens": 135,
+    "output_tokens": 179745,
+    "cache_read_tokens": 12345480,
+    "cache_creation_tokens": 481785,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1927006,
+    "plan_api_ms": 2115373,
+    "plan_tokens_in": 47,
+    "plan_tokens_out": 83215,
+    "plan_cost_usd": 5.397030850000001,
+    "plan_content": "Here's a summary of the comprehensive plan I've created at `/Users/timpietrusky/.claude/plans/rustling-leaping-shamir.md`:\n\n---\n\n## Plan Summary: PulseBoard Channel Plugin\n\n**21 new files** in `extensions/pulseboard/` — no existing files modified.\n\n### PulseBoard-Specific Design\n- **Board targets**: `@board-name` (e.g. `@general`) — groups\n- **DM targets**: `username` (e.g. `alice`) — direct  \n- **Auth**: `apiUrl` + `apiKey` + `username` (env vars: `PULSEBOARD_API_URL`, `PULSEBOARD_API_KEY`, `PULSEBOARD_USERNAME`)\n- **Text chunk limit**: 4000 chars (with newline-respecting inline chunker in `send.ts`)\n- **Client**: stub implementation (fictional platform — no external npm deps)\n\n### File Structure\n```\nextensions/pulseboard/\n├── package.json                # no external deps, channel.id = \"pulseboard\"\n├── openclaw.plugin.json        # id: \"pulseboard\", channels: [\"pulseboard\"]\n├── index.ts / setup-entry.ts  # defineChannelPluginEntry / defineSetupPluginEntry\n├── api.ts / channel-config-api.ts\n└── src/\n    ├── runtime-api.ts          # internal barrel (imports from 7 public SDK paths)\n    ├── runtime.ts              # createPluginRuntimeStore\n    ├── types.ts                # CoreConfig, PulseBoardAccountConfig, etc.\n    ├── accounts.ts             # resolvePulseBoardAccount, listPulseBoardAccountIds\n    ├── config-schema.ts        # Zod schema + buildChannelConfigSchema\n    ├── config-ui-hints.ts      # UI hints\n    ├── normalize.ts            # isBoardTarget, normalizePulseBoardMessagingTarget\n    ├── policy.ts               # resolvePulseBoardGroupMatch\n    ├── send.ts                 # sendMessagePulseBoard + chunkPulseBoardText\n    ├── inbound.ts              # handlePulseBoardInbound\n    ├── monitor.ts              # monitorPulseBoardProvider (stub wait loop)\n    ├── probe.ts                # probePulseBoard (stub)\n    ├── setup-core.ts           # pulseBoardSetupAdapter\n    ├── setup-surface.ts        # pulseBoardSetupWizard\n    └── channel.ts              # createChatChannelPlugin (main plugin)\n```\n\n### Key Design Decision: No `openclaw/plugin-sdk/pulseboard` facade\nIRC's internal barrel re-exports from `openclaw/plugin-sdk/irc` (a dedicated facade). Since creating `src/plugin-sdk/pulseboard.ts` would modify existing files, the PulseBoard `src/runtime-api.ts` imports directly from 7 generic public SDK paths — all verified to be in `scripts/lib/plugin-sdk-entrypoints.json`.\n\n### Verification\n- `pnpm tsgo` — type check\n- `pnpm check` — lint  \n- `test/plugin-npm-release.test.ts` — manifest invariant\n- `test/plugin-extension-import-boundary.test.ts` — boundary check\n- Workspace auto-picks up `extensions/pulseboard/` via `extensions/*` glob — no changes to `pnpm-workspace.yaml` needed",
+    "execute_duration_ms": 1638688,
+    "execute_api_ms": 1634936,
+    "execute_tokens_in": 88,
+    "execute_tokens_out": 96530,
+    "execute_cost_usd": 5.232271849999999
+  },
+  "evaluation": {
+    "overall_score": 0.9500000000000001,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "checks_passed": 10,
+          "checks_total": 10,
+          "check_details": [
+            {
+              "path": "extensions/pulseboard/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/package.json",
+              "check": "contains \"@openclaw/pulseboard\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/package.json",
+              "check": "contains \"openclaw\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/package.json",
+              "check": "contains \"pulseboard\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/package.json",
+              "check": "contains \"module\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/package.json",
+              "check": "contains \"setupEntry\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/openclaw.plugin.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/openclaw.plugin.json",
+              "check": "contains \"pulseboard\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/openclaw.plugin.json",
+              "check": "contains \"channels\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/openclaw.plugin.json",
+              "check": "contains \"configSchema\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 0.5,
+        "weight": 0.1,
+        "weighted_score": 0.05,
+        "passed": false,
+        "details": {
+          "checks_passed": 3,
+          "checks_total": 6,
+          "check_details": [
+            {
+              "path": "extensions/pulseboard/src/types.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/types.ts",
+              "check": "contains \"PulseBoardAccount\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/types.ts",
+              "check": "contains \"PulseBoardConfig\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/types.ts",
+              "check": "contains \"PulseBoardMessage\"",
+              "passed": false
+            },
+            {
+              "path": "extensions/pulseboard/src/types.ts",
+              "check": "contains \"boardUrl\"",
+              "passed": false
+            },
+            {
+              "path": "extensions/pulseboard/src/types.ts",
+              "check": "contains \"apiToken\"",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "extensions/pulseboard/src/runtime.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/runtime.ts",
+              "check": "contains \"createPluginRuntimeStore\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/runtime.ts",
+              "check": "contains \"getPulseBoardRuntime\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/runtime.ts",
+              "check": "contains \"setPulseBoardRuntime\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "checks_passed": 9,
+          "checks_total": 9,
+          "check_details": [
+            {
+              "path": "extensions/pulseboard/src/channel.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/channel.ts",
+              "check": "contains \"createChatChannelPlugin\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/channel.ts",
+              "check": "contains \"pulseboard\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/channel.ts",
+              "check": "contains \"PulseBoard\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/channel.ts",
+              "check": "contains \"capabilities\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/channel.ts",
+              "check": "contains \"outbound\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/channel.ts",
+              "check": "contains \"sendText\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/channel.ts",
+              "check": "contains \"gateway\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/src/channel.ts",
+              "check": "contains \"messaging\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 5,
+          "patterns_total": 5,
+          "pattern_results": [
+            {
+              "pattern": "createChatChannelPlugin",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "chatTypes.*direct.*group|chatTypes.*group.*direct",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "textChunkLimit.*4000",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "deliveryMode.*direct",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "normalizeTarget",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "checks_passed": 8,
+          "checks_total": 8,
+          "check_details": [
+            {
+              "path": "extensions/pulseboard/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/index.ts",
+              "check": "contains \"defineChannelPluginEntry\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/index.ts",
+              "check": "contains \"pulseBoardPlugin\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/index.ts",
+              "check": "contains \"setPulseBoardRuntime\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/index.ts",
+              "check": "contains \"pulseboard\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/setup-entry.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/setup-entry.ts",
+              "check": "contains \"defineSetupPluginEntry\"",
+              "passed": true
+            },
+            {
+              "path": "extensions/pulseboard/setup-entry.ts",
+              "check": "contains \"pulseBoardPlugin\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "command": "cd extensions/pulseboard && npx tsc --noEmit --strict --moduleResolution bundler --module ESNext --target ES2022 --esModuleInterop --skipLibCheck src/types.ts 2>&1 | tail -20",
+          "exit_code": 0,
+          "output": "script/bin/tsc\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)\n    at Function._load (node:internal/modules/cjs/loader:1055:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)\n    at Module.require (node:internal/modules/cjs/loader:1311:12)\n    at require (node:internal/modules/helpers:136:16)\n    at Object.<anonymous> (/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-bases/feature-addition-add-openclaw-channel/node_modules/typescript/bin/tsc:2:1)\n    at Module._compile (node:internal/modules/cjs/loader:1554:14)\n    at Object..js (node:internal/modules/cjs/loader:1706:10)\n    at Module.load (node:internal/modules/cjs/loader:1289:32) {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [\n    '/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-bases/feature-addition-add-openclaw-channel/node_modules/typescript/bin/tsc'\n  ]\n}\n\nNode.js v22.14.0\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 346
+  },
+  "session_id": "44782d1c-4479-461d-9a67-e4b03d03f39a"
+}

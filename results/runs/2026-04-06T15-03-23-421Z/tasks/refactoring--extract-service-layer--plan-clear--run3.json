@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "task_id": "refactoring/extract-service-layer",
+  "task_name": "extract service layer from route handlers",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T18:01:27.557Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 364753,
+    "duration_api_ms": 389076,
+    "num_turns": 28,
+    "total_cost_usd": 0.79788265,
+    "input_tokens": 27,
+    "output_tokens": 18880,
+    "cache_read_tokens": 354555,
+    "cache_creation_tokens": 45990,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 269972,
+    "plan_api_ms": 296207,
+    "plan_tokens_in": 12,
+    "plan_tokens_out": 11062,
+    "plan_cost_usd": 0.54117565,
+    "plan_content": "Here's the complete plan:\n\n---\n\n## What I found\n\nThe project is a TypeScript Express app with two route files (`products.ts`, `orders.ts`) that mix all business logic directly into handlers. There is no existing service layer. Tests are Vitest + Supertest integration tests that hit HTTP endpoints — they don't care about internal structure, they just need the same HTTP responses.\n\n---\n\n## The Plan\n\n**3 new files, 2 modified files, nothing else changes.**\n\n### New: `src/services/errors.ts`\nA single `ServiceError(statusCode, message)` class shared by both services. Services throw it; route handlers catch it with `instanceof` and use `err.statusCode` / `err.message` to respond. This keeps service return types clean (no `Result<T>` wrappers).\n\n### New: `src/services/productService.ts`\nExports `listProducts(filters)`, `getProduct(id)`, `adjustProductStock(id, adjustment)`. Moves in: category/price filtering, inventory summary stats, `isLowStock` + `inventoryValue` calculations, stock mutation and negativity guard.\n\n### New: `src/services/orderService.ts`\nExports `listOrders(filters)`, `getOrder(id)`, `createOrder(input)`, `updateOrderStatus(id, status)`. Moves in: userId/status filtering, revenue summary, product-name enrichment of order items, full order creation loop (validation + stock deduction + ID generation), status transition state machine.\n\n### Modified: `src/routes/products.ts` and `src/routes/orders.ts`\nEach handler is reduced to: (1) parse HTTP inputs, (2) call service, (3) send response or catch `ServiceError`. The clear boundary: **query string parsing, `typeof`/`isNaN` guards, and `Array.isArray` body checks stay in the router** (they're HTTP-layer concerns); **all domain rules and calculations move to services**.\n\n### Verification\n```bash\nnpm test       # all 13 tests must pass\nnpm run build  # TypeScript must compile clean\n```",
+    "execute_duration_ms": 94781,
+    "execute_api_ms": 92869,
+    "execute_tokens_in": 15,
+    "execute_tokens_out": 7818,
+    "execute_cost_usd": 0.256707
+  },
+  "evaluation": {
+    "overall_score": 0.8999999999999999,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775498119209-owjmg9\n\n ✓ tests/products.test.ts (5 tests) 15ms\n ✓ tests/orders.test.ts (9 tests) 26ms\n\n Test Files  2 passed (2)\n      Tests  14 passed (14)\n   Start at  20:01:26\n   Duration  410ms (transform 125ms, setup 0ms, collect 357ms, tests 41ms, environment 0ms, prepare 116ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 0.5,
+        "weight": 0.2,
+        "weighted_score": 0.1,
+        "passed": false,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/services/product-service.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "src/services/order-service.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "src/routes/products.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/orders.ts",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*product",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*order",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1772
+  },
+  "session_id": "56efe443-0285-49fc-9fcf-998b4c1926da"
+}

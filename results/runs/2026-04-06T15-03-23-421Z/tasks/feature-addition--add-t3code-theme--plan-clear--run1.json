@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T17:14:58.977Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 990527,
+    "duration_api_ms": 983652,
+    "num_turns": 59,
+    "total_cost_usd": 2.0958892000000002,
+    "input_tokens": 474,
+    "output_tokens": 52548,
+    "cache_read_tokens": 2087262,
+    "cache_creation_tokens": 114249,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 769322,
+    "plan_api_ms": 767202,
+    "plan_tokens_in": 21,
+    "plan_tokens_out": 39974,
+    "plan_cost_usd": 1.2086174500000002,
+    "plan_content": "Here's a summary of what the plan covers:\n\n---\n\n## Plan: Custom Theme System for T3 Code\n\n### What it does\nExtends the existing light/dark/system toggle into a full named-theme system with three built-in themes and per-surface color tokens.\n\n### 8 files to touch\n\n| File | Action |\n|---|---|\n| `packages/shared/src/theme.ts` | **New** — `ThemeName`, `ThemeColors`, `ThemeDefinition`, `BUILT_IN_THEMES` |\n| `packages/shared/package.json` | **Modify** — add `\"./theme\"` subpath export |\n| `apps/web/src/hooks/useTheme.ts` | **Rewrite** — extend with named themes + CSS var application |\n| `apps/web/src/components/ThemeProvider.tsx` | **New** — thin tree-anchor component |\n| `apps/web/src/components/ThemeSelector.tsx` | **New** — picker grid with color swatches |\n| `apps/web/src/index.css` | **Modify** — add `--sidebar`, `--editor`, `--terminal`, `--status-bar` CSS var slots |\n| `apps/web/src/routes/_chat.settings.tsx` | **Modify** — swap in `<ThemeSelector>` |\n| `apps/web/src/router.ts` | **Modify** — nest `ThemeProvider` in `Wrap` |\n\n### Key design decisions\n- **Module-level singleton preserved** — same `useSyncExternalStore` pattern as today; no React Context overhead\n- **`resolvedTheme: \"light\" | \"dark\"` preserved** — `DiffWorkerPoolProvider` continues to work with zero changes\n- **CSS vars set as inline styles on `<html>`** — overrides `:root` defaults with highest specificity; `applyColorTheme()` loops through all `ThemeColors` keys using a camelCase→kebab helper\n- **Migration built in** — old stored `\"light\"` / `\"dark\"` values transparently upgrade to `\"t3-light\"` / `\"t3-dark\"` on first read\n- **t3-midnight** is a new blue-tinted dark that demonstrates the palette system (not just a reskin of t3-dark)\n- **No new dependencies, no build config changes**",
+    "execute_duration_ms": 221205,
+    "execute_api_ms": 216450,
+    "execute_tokens_in": 453,
+    "execute_tokens_out": 12574,
+    "execute_cost_usd": 0.88727175
+  },
+  "evaluation": {
+    "overall_score": 0.75,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.75,
+        "weight": 1,
+        "weighted_score": 0.75,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation successfully covers most requirements: theme type definitions with all required color properties (background, foreground, accent, sidebar, editor, terminal, statusBar, statusBarForeground) are properly defined in the shared package; 3 built-in themes are provided (t3-dark, t3-light, t3-midnight); ThemeProvider component and useTheme hook are implemented with localStorage persistence and CSS custom property application; ThemeSelector component with color swatches is included and integrated; no build config or dependencies were added. However, the rubric explicitly requires 'Exported getTheme and listThemes utility functions in the shared package' - these functions are not present. While THEME_NAMES and isThemeName() are exported, getTheme() and listThemes() specifically are missing, which is a clear requirement gap.",
+          "diff_length": 20476,
+          "new_files": "PLAN.md\napps/web/src/components/ThemeProvider.tsx\napps/web/src/components/ThemeSelector.tsx\npackages/shared/src/theme.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 15695
+  },
+  "session_id": "b0628c1a-9546-4a63-9ee1-30dd92179e7e"
+}

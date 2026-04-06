@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-bun-ini-api",
+  "task_name": "add Bun.INI namespace API",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T15:18:04.196Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 675002,
+    "duration_api_ms": 760841,
+    "num_turns": 70,
+    "total_cost_usd": 2.3974800000000003,
+    "input_tokens": 61,
+    "output_tokens": 30387,
+    "cache_read_tokens": 2408063,
+    "cache_creation_tokens": 130577,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 297504,
+    "plan_api_ms": 386765,
+    "plan_tokens_in": 23,
+    "plan_tokens_out": 12052,
+    "plan_cost_usd": 1.1502786,
+    "plan_content": "The plan is ready for your review. Here's a summary of what it covers:\n\n## Plan: `Bun.INI` Namespace\n\n**8 files touched** — 2 created, 6 modified:\n\n### New files\n1. **`src/interchange/ini.zig`** — Self-contained INI parser. Reads line-by-line: skips blanks and `;`/`#` comments, parses `[section]` headers into nested objects, parses `key = value` pairs. Returns a custom `INIData` struct (string values, since INI has no types). Uses an `ArenaAllocator` to own all string memory.\n\n2. **`src/bun.js/api/INIObject.zig`** — The JS-facing API object. `parse()` calls the interchange parser and builds JS objects directly (global keys as top-level properties, sections as nested objects). `stringify()` walks the JS object — primitive values go as `key=value`, object-valued properties become `[section]` blocks.\n\n### Modified files (wiring)\n3. **`src/interchange.zig`** — `pub const ini = @import(\"./interchange/ini.zig\");`\n4. **`src/bun.js/api.zig`** — `pub const INIObject = @import(\"./api/INIObject.zig\");`\n5. **`src/bun.js/api/BunObject.zig`** — 4 additions: lazy property callback declaration, `@export`, getter function `getINIObject()`, and import alias\n6. **`src/bun.js/bindings/BunObject+exports.h`** — `macro(INI)` in `FOR_EACH_GETTER`\n7. **`src/bun.js/bindings/BunObject.cpp`** — row in `@begin bunObjectTable`\n\n### Test file\n8. **`test/js/bun/resolve/ini/ini.test.ts`** — covers: existence, global key parsing, sections, mixed global+sections, comment stripping, whitespace trimming, stringify, roundtrip, and error on non-string input",
+    "execute_duration_ms": 377498,
+    "execute_api_ms": 374076,
+    "execute_tokens_in": 38,
+    "execute_tokens_out": 18335,
+    "execute_cost_usd": 1.2472014000000002
+  },
+  "evaluation": {
+    "overall_score": 0.75,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.75,
+        "weight": 1,
+        "weighted_score": 0.75,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation successfully creates the core INI API with Zig implementation files (INIObject.zig and interchange/ini.zig), self-contained parser supporting sections, key=value pairs, and comments (both ; and #), proper wiring in BunObject.zig with lazy property callbacks, C++ bindings updates in both header and cpp files, and comprehensive test coverage. Code follows Zig conventions correctly. However, the diff is missing TypeScript type definitions for the Bun.INI namespace, which is explicitly required by the rubric. Without .d.ts files or type definition additions, TypeScript users lack proper type hints for parse() and stringify() methods. This is a significant omission for a public API despite the solid implementation foundation.",
+          "diff_length": 23746,
+          "new_files": "PLAN.md\nsrc/bun.js/api/INIObject.zig\nsrc/interchange/ini.zig\ntest/js/bun/ini/bun-ini.test.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18107
+  },
+  "session_id": "a2d83acd-0eea-4971-bc91-bf511d03018e"
+}

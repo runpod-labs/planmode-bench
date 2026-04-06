@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T15:39:13.738Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 612102,
+    "duration_api_ms": 663908,
+    "num_turns": 36,
+    "total_cost_usd": 1.6091077,
+    "input_tokens": 26,
+    "output_tokens": 29910,
+    "cache_read_tokens": 1149249,
+    "cache_creation_tokens": 143399,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 561069,
+    "plan_api_ms": 612965,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 26838,
+    "plan_cost_usd": 1.1556292000000001,
+    "plan_content": "Here is the complete plan. **Only `common/chat.cpp` is touched** — no headers, no existing handlers.\n\n---\n\n## What will be added\n\n### 1. Handler function — inserted before `namespace workaround` (~line 1518)\n\n`common_chat_params_init_mistral_instruct_v3()` follows the exact same skeleton as every other specialized handler:\n\n| Field | Value / behaviour |\n|---|---|\n| `prompt` | `common_chat_template_direct_apply_impl()` — Jinja renders `[INST]…[/INST]` and system-prepend natively |\n| `preserved_tokens` | `\"[INST]\"`, `\"[/INST]\"`, `\"[TOOL_CALLS]\"` |\n| No tools / `NONE` | `p.content(p.rest())` — plain text response |\n| With tools | `p.standard_json_tools(\"[TOOL_CALLS]\", \"\", ..., array_wrapped=true, name=\"name\", args=\"arguments\", call_id=\"id\")` — matches the Nemo format: `[TOOL_CALLS][{\"name\":\"fn\",\"arguments\":{…},\"id\":\"abc123def\"}]` |\n| Grammar trigger | `COMMON_GRAMMAR_TRIGGER_TYPE_WORD` on `\"[TOOL_CALLS]\"` (lazy for AUTO) |\n| Thinking | None (`supports_thinking` stays `false`) |\n\n### 2. Detection block — inserted in `common_chat_try_specialized_template()` right after the Ministral-3 block (~line 1644)\n\n```cpp\nif (src.find(\"[INST]\") != std::string::npos &&\n    src.find(\"[SYSTEM_PROMPT]\") == std::string::npos) {\n    LOG_DBG(\"Using specialized template: mistral-instruct-v3\\n\");\n    return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n}\n```\n\nThe two conditions are **mutually exclusive** with the existing Ministral-3 check (which *requires* `[SYSTEM_PROMPT]`), so ordering is safe.",
+    "execute_duration_ms": 51033,
+    "execute_api_ms": 50943,
+    "execute_tokens_in": 8,
+    "execute_tokens_out": 3072,
+    "execute_cost_usd": 0.45347849999999995
+  },
+  "evaluation": {
+    "overall_score": 0.85,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.85,
+        "weight": 1,
+        "weighted_score": 0.85,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation successfully adds the mistral-instruct-v3 handler with almost all requirements met: new static function created, proper auto-detection logic with [SYSTEM_PROMPT] absence check, LOG_DBG call present, handler dispatched correctly with (tmpl, params), and no modifications to existing handlers. However, the format is set to COMMON_CHAT_FORMAT_PEG_NATIVE instead of the required COMMON_CHAT_FORMAT_CONTENT_ONLY, which is an explicit requirement violation. The rest of the implementation is comprehensive and well-structured, including tool call support and grammar handling.",
+          "diff_length": 4102,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 11016
+  },
+  "session_id": "45580ff4-f350-41b4-8b95-10688b9b73f0"
+}

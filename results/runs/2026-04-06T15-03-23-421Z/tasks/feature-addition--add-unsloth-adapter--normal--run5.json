@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "normal",
+  "run_number": 5,
+  "timestamp": "2026-04-06T17:09:18.702Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 302493,
+    "duration_api_ms": 299239,
+    "num_turns": 17,
+    "total_cost_usd": 0.6624906500000001,
+    "input_tokens": 15,
+    "output_tokens": 13142,
+    "cache_read_tokens": 314532,
+    "cache_creation_tokens": 32385,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation that meets all rubric requirements. The diff adds unsloth_export_to_onnx() and unsloth_save_pretrained_onnx() functions that correctly extract LoRA A and B matrices, export them to ONNX format using torch.onnx.export(), and save comprehensive metadata (rank, alpha, target modules) to a JSON file. The function is properly exposed via __all__ and bound to the model class in patch_saving_functions(). The code follows existing unsloth conventions, handles both quantized and non-quantized layers, properly resolves active adapters, and includes edge case handling (disabled/merged adapters, alpha recovery fallback). The _LoRAGraph module correctly implements LoRA computation and uses register_buffer for proper ONNX constant folding. Minor note: the 'pass' statements after function definitions are unconventional in standard Python but appear consistent with this codebase's conventions.",
+          "diff_length": 8814,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16411
+  },
+  "session_id": "5a2bbbec-91e3-466b-a1af-95502dbadaa8"
+}

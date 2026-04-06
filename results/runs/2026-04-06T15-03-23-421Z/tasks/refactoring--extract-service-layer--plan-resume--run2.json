@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "task_id": "refactoring/extract-service-layer",
+  "task_name": "extract service layer from route handlers",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T17:57:16.851Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 224194,
+    "duration_api_ms": 249760,
+    "num_turns": 25,
+    "total_cost_usd": 0.68944125,
+    "input_tokens": 28,
+    "output_tokens": 14596,
+    "cache_read_tokens": 592647,
+    "cache_creation_tokens": 54381,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 140739,
+    "plan_api_ms": 168313,
+    "plan_tokens_in": 9,
+    "plan_tokens_out": 8487,
+    "plan_cost_usd": 0.32602574999999995,
+    "plan_content": "## Plan: Extract Service Layer\n\nHere's what I found and what I'm proposing:\n\n---\n\n### Current problem\nBoth route files are doing too much. `src/routes/products.ts` (99 lines) and `src/routes/orders.ts` (162 lines) embed filtering math, inventory calculations, stock mutations, order creation logic, and a status state machine directly in the handlers.\n\n### Proposed changes — 3 new files, 2 modified, nothing else touched\n\n**New `src/services/errors.ts`**  \nA `ServiceError` class that carries a `statusCode`. Services throw it; routes catch and forward it.\n\n**New `src/services/productService.ts`** — three exports:\n- `listProducts(filters)` — filter array + compute `totalInventoryValue` / `averagePrice`\n- `getProductById(id)` — find + compute `isLowStock` / `inventoryValue`, throw 404 if missing\n- `adjustProductStock(id, adjustment)` — validate new stock ≥ 0, mutate, return enriched product\n\n**New `src/services/orderService.ts`** — four exports:\n- `listOrders(filters)` — filter + compute `totalRevenue`\n- `getOrderById(id)` — find + enrich items with `productName`, throw 404 if missing\n- `createOrder(input)` — validate input, check product existence & stock, deduct stock, build & persist order\n- `updateOrderStatus(id, status)` — validate status value + state machine transition, mutate, return order\n\n**Modified `src/routes/products.ts`** and **`src/routes/orders.ts`**  \nEach handler becomes: parse request → call service → `res.json(result)` (or catch `ServiceError` → `res.status(err.statusCode).json({ error: err.message })`).\n\n**Unchanged:** `src/app.ts`, `src/data.ts`, `src/types.ts`, all test files.\n\n### Verification\n```bash\nnpm test   # all 12 existing tests must pass\n```",
+    "execute_duration_ms": 83455,
+    "execute_api_ms": 81447,
+    "execute_tokens_in": 19,
+    "execute_tokens_out": 6109,
+    "execute_cost_usd": 0.3634155
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775498009469-7dfg1z\n\n ✓ tests/products.test.ts (5 tests) 14ms\n ✓ tests/orders.test.ts (9 tests) 27ms\n\n Test Files  2 passed (2)\n      Tests  14 passed (14)\n   Start at  19:57:15\n   Duration  365ms (transform 133ms, setup 0ms, collect 340ms, tests 41ms, environment 0ms, prepare 84ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 0.5,
+        "weight": 0.2,
+        "weighted_score": 0.1,
+        "passed": false,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/services/product-service.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "src/services/order-service.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "src/routes/products.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/orders.ts",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*product",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*order",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1620
+  },
+  "session_id": "97f762ad-6b7e-413b-a47f-2e8aa1f05d3e"
+}

@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-clear",
+  "run_number": 6,
+  "timestamp": "2026-04-06T10:30:25.914Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 778070,
+    "duration_api_ms": 905974,
+    "num_turns": 73,
+    "total_cost_usd": 2.0033562,
+    "input_tokens": 57,
+    "output_tokens": 47997,
+    "cache_read_tokens": 1716087,
+    "cache_creation_tokens": 96071,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 413884,
+    "plan_api_ms": 543345,
+    "plan_tokens_in": 14,
+    "plan_tokens_out": 22600,
+    "plan_cost_usd": 1.03110495,
+    "plan_content": "Here's a summary of what I researched and the plan I've written:\n\n---\n\n## Findings\n\n**Generator protocol**: Existing generators (`client-generator-js`, `client-generator-ts`) implement the `Generator` interface from `@prisma/generator` with two methods: `getManifest()` and `generate(options)`. The `options.dmmf` gives full schema access via `dmmf.datamodel.models` (fields, types, relations).\n\n**Monorepo conventions**: Packages live in `packages/`, use `adapterConfig` for bundled single-entry builds (CJS+ESM), and follow a standard `package.json`/`tsconfig.json`/`tsconfig.build.json`/`helpers/build.ts` structure. New packages are auto-discovered via the `packages/*` pnpm workspace glob. Two files need edits: `tsconfig.build.bundle.json` (paths) and `.github/workflows/test-template.yml` (test step).\n\n---\n\n## Plan: 9 new files + 2 file modifications\n\n**New package `packages/rest-client-generator/`** with:\n\n1. **`src/dmmf-to-ts-type.ts`** — maps `String→string`, `Int/Float/Decimal/BigInt→number`, `Boolean→boolean`, `DateTime→Date`, `Json→unknown`, `Bytes→Uint8Array`, enums pass through\n2. **`src/generate-rest-client.ts`** — iterates `dmmf.datamodel.models`; for each model emits a `.ts` file containing:\n   - `interface <Model>` (scalar+enum fields only; `field.isRequired` controls `?`)\n   - `type <Model>WhereUnique` (union of `{ field: type }` for each `isId`/`isUnique` field)\n   - `interface <Model>FindManyArgs`, `<Model>CreateInput` (required = no default+required), `<Model>UpdateInput` (all optional)\n   - `class <Model>RestClient` with `findMany`, `findUnique`, `create`, `update`, `delete` methods using `fetch`\n   - Also emits `index.ts` and `prisma-rest-client.ts` (factory with a getter per model, plural name from `dmmf.mappings.modelOperations[n].plural`)\n3. **`src/generator.ts`** — `RestClientGenerator implements Generator`, name `'prisma-rest-client'`, default output `./generated/rest-client`\n4. **`src/index.ts`** — exports `RestClientGenerator` and `generateRestClient`\n5. **`src/__tests__/generate-rest-client.test.ts`** — 5 Vitest tests with inline mock DMMF, verifying interface shape, `WhereUnique` type, all 5 CRUD methods, `index.ts` exports, and `PrismaRestClient` factory\n\n**Modifications**: Add path to `tsconfig.build.bundle.json`; add test steps to `test-template.yml` in the `client-packages` job (line ~591) and `no-docker` job (line ~1241).",
+    "execute_duration_ms": 364186,
+    "execute_api_ms": 362629,
+    "execute_tokens_in": 43,
+    "execute_tokens_out": 25397,
+    "execute_cost_usd": 0.97225125
+  },
+  "evaluation": {
+    "overall_score": 0,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.4,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 3,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 1,
+          "output": "/bin/bash: line 0: cd: packages/generator-rest-client: No such file or directory\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/generator-rest-client/src/generator.ts"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/generator-rest-client/src/index.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 3
+  },
+  "session_id": "8a2182c9-7003-4af8-9152-4f3c85c2a7fe"
+}

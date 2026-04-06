@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-clear",
+  "run_number": 9,
+  "timestamp": "2026-04-06T11:56:03.999Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 910371,
+    "duration_api_ms": 997715,
+    "num_turns": 57,
+    "total_cost_usd": 2.4753902,
+    "input_tokens": 59,
+    "output_tokens": 48056,
+    "cache_read_tokens": 2245909,
+    "cache_creation_tokens": 112446,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 347601,
+    "plan_api_ms": 438185,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 8814,
+    "plan_cost_usd": 0.9940041499999999,
+    "plan_content": "Here's the complete plan I've designed after thorough codebase exploration:\n\n---\n\n## Plan: Custom Theme System\n\n### Architecture Decision\nUse **`data-theme` attribute + CSS blocks** — set `data-theme=\"<id>\"` on `<html>` and add one CSS block per theme in `index.css`. The existing `.dark` class and `@variant dark` mechanism stays completely untouched. `[data-theme]` attribute selectors have higher specificity than `:root`, so they cleanly override variables. No JS `style.setProperty()` hacks, no new dependencies, no build config changes.\n\n---\n\n### 8 Files — 3 New, 5 Modified\n\n**New files:**\n1. **`packages/shared/src/theme.ts`** — `ThemeId`, `ThemeColorSlots`, `ThemeDefinition` types + `BUILT_IN_THEMES` (3 entries) + `THEME_IDS` array. Pure TypeScript, no Effect.\n2. **`apps/web/src/components/ThemeProvider.tsx`** — Thin wrapper that calls `useTheme()` at root level to keep DOM in sync app-wide.\n3. **`apps/web/src/components/ThemeSelector.tsx`** — Settings component with \"System\" option + one card per built-in theme, each showing 4 color swatches rendered via inline `style={{ backgroundColor }}` from `ThemeDefinition.colors`.\n\n**Modified files:**\n4. **`packages/shared/package.json`** — Add `\"./theme\"` subpath export (same pattern as existing `\"./model\"`, `\"./git\"`, etc.)\n5. **`apps/web/src/hooks/useTheme.ts`** — Widen `Theme` type to `\"system\" | ThemeId`, migrate legacy `\"light\"`/`\"dark\"` localStorage values, add `data-theme` attribute setting in `applyTheme()`. `resolvedTheme: \"light\" | \"dark\"` stays unchanged → `DiffWorkerPoolProvider` needs zero changes.\n6. **`apps/web/src/index.css`** — Add 3 `[data-theme]` CSS blocks after `:root {}`. `t3-light` and `t3-dark` are intentionally empty (`:root` defaults cover them); `t3-midnight` has a full deep-black variable override.\n7. **`apps/web/src/routes/_chat.settings.tsx`** — Remove `THEME_OPTIONS` constant + existing radio group, add `ThemeSelector` import, replace Appearance section body with `<ThemeSelector />`.\n8. **`apps/web/src/routes/__root.tsx`** — Wrap `RootRouteView` with `<ThemeProvider>`.\n\n---\n\n### Key Design Points\n- **Legacy migration**: `getStored()` maps old `\"light\"` → `\"t3-light\"` and `\"dark\"` → `\"t3-dark\"` for users who had a prior theme saved\n- **System mode**: resolves to `t3-dark` or `t3-light` based on OS preference, same as before\n- **`t3-midnight`**: distinct from `t3-dark` — deeper black base (`oklch(0.095 0.012 264)`), cooler violet-shifted primary (`oklch(0.62 0.22 270)`)\n- **Verify**: `bun lint` + `bun typecheck` in both `packages/shared` and `apps/web`",
+    "execute_duration_ms": 562770,
+    "execute_api_ms": 559530,
+    "execute_tokens_in": 44,
+    "execute_tokens_out": 39242,
+    "execute_cost_usd": 1.4813860500000002
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.35,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/shared/src/themes.ts"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 723
+  },
+  "session_id": "634905b2-b55c-4b9d-92be-af7adf04ec2e"
+}

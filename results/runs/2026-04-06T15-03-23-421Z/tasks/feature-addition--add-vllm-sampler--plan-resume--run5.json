@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T17:36:24.074Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 645652,
+    "duration_api_ms": 777836,
+    "num_turns": 84,
+    "total_cost_usd": 3.5481755500000007,
+    "input_tokens": 72,
+    "output_tokens": 38107,
+    "cache_read_tokens": 6131232,
+    "cache_creation_tokens": 196621,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 289858,
+    "plan_api_ms": 422531,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 13999,
+    "plan_cost_usd": 1.0497370000000001,
+    "plan_content": "Here's the complete plan for adding Top-A sampling to vLLM.\n\n---\n\n## Summary\n\nTop-A keeps tokens with `prob ≥ top_a × max_prob`, which is the same formula as `min_p`. The implementation closely mirrors `min_p` across all three sampling stacks: **V0** (`model_executor`), **V1 GPU**, and **V1 TPU**.\n\n### 7 files to modify:\n\n| # | File | What changes |\n|---|------|-------------|\n| 1 | `vllm/sampling_params.py` | Add `top_a: float = 0.0` field, docstring, `from_optional()` param, validation in `_verify_args()`, greedy reset in `__post_init__`, and `__repr__` entry |\n| 2 | `vllm/model_executor/sampling_metadata.py` | Add `top_as: torch.Tensor` to `SamplingTensors`, extract + accumulate per-group, create pinned tensor, thread `do_top_a` flag, expand return tuple to 5-tuple |\n| 3 | `vllm/model_executor/layers/sampler.py` | Unpack 5-tuple, add `_apply_top_a()` function (softmax → max-prob → threshold mask), call it after `do_min_p` |\n| 4 | `vllm/v1/sample/logits_processor.py` | Add `TopALogitsProcessor` class (exact copy of `MinPLogitsProcessor` reading `params.top_a`), register in `init_builtin_logitsprocs()` as argmax-invariant |\n| 5 | `vllm/v1/worker/tpu_input_batch.py` | Add `top_a` tensor arrays + `top_a_reqs` set; handle add/remove/swap/condense and `no_top_a` property (mirror `min_p`) |\n| 6 | `vllm/v1/sample/tpu/metadata.py` | Add `top_a=0.0` default, `top_a: torch.Tensor = None` field, fill+copy in `from_input_batch()` |\n| 7 | `vllm/v1/sample/tpu/sampler.py` | Add `apply_top_a()` method, call it in `sample()` after `apply_min_p` |\n\n### Key design decisions:\n- **Argmax-invariant**: `top_a` can never filter out the max-prob token (since `max_prob ≥ top_a × max_prob` always holds when `top_a ≤ 1`), so it's safe to skip during greedy sampling — placed in the `argmax_invariant` bucket in V1 GPU.\n- **Zero overhead when disabled**: The `do_top_a` flag in V0 and `top_a_count` in V1 GPU short-circuit all filtering when `top_a == 0.0` (the default).\n- **No CUDA kernel needed**: Pure PyTorch ops suffice (same as `min_p`).\n- **One call site for the V0 tuple change**: `from_sampling_metadata()` is only called in `sampler.py`, so expanding to a 5-tuple is safe.",
+    "execute_duration_ms": 355794,
+    "execute_api_ms": 355305,
+    "execute_tokens_in": 54,
+    "execute_tokens_out": 24108,
+    "execute_cost_usd": 2.4984385500000004
+  },
+  "evaluation": {
+    "overall_score": 0.87,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.87,
+        "weight": 1,
+        "weighted_score": 0.87,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is comprehensive and meets all rubric requirements. The top_a parameter is properly added to SamplingParams with correct default (0.0), validation [0.0, 1.0], and documentation. The filtering logic is correctly implemented across multiple code paths (main sampler, v1 logits processor, TPU sampler) computing max probability, masking tokens below threshold, and renormalizing. The parameter is properly threaded through all intermediate structures (SamplingTensors, InputBatch, metadata classes) with correct tensor creation and device management. Code follows vLLM conventions and is syntactically valid. Minor deduction: the main sampler uses in-place unsqueeze_ operation on the top_a tensor (line 453), which is less ideal than the non-in-place approach used in the TPU version (line 167). While not incorrect, this inconsistency and potential for side effects if the tensor is reused represents a style issue. The v1 logits processor correctly implements is_argmax_invariant and integrates into the pipeline appropriately.",
+          "diff_length": 20787,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 23011
+  },
+  "session_id": "391d5a4e-4eef-460a-ab10-ef70444eee63"
+}

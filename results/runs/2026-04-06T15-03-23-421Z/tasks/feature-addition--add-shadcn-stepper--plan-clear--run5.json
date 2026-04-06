@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-shadcn-stepper",
+  "task_name": "add stepper component",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T17:08:11.378Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1178938,
+    "duration_api_ms": 1328308,
+    "num_turns": 51,
+    "total_cost_usd": 2.4304346,
+    "input_tokens": 41,
+    "output_tokens": 76930,
+    "cache_read_tokens": 990282,
+    "cache_creation_tokens": 115564,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 638346,
+    "plan_api_ms": 789442,
+    "plan_tokens_in": 22,
+    "plan_tokens_out": 37342,
+    "plan_cost_usd": 1.45004075,
+    "plan_content": "Here's a summary of my analysis and plan:\n\n---\n\n## What I found\n\nThe repo is an `apps/v4` Next.js monorepo with a Zod-validated registry system. Components live in `apps/v4/registry/new-york-v4/ui/`, demos in `…/examples/`. Each category has a `_registry.ts` that gets spread into the main `registry.ts` automatically — so I only need to touch **two existing files** (just to append new entries) and **create two new files**.\n\nKey patterns confirmed by reading `accordion.tsx`, `tabs.tsx`, `separator.tsx`, and `form.tsx`:\n- `\"use client\"` directive\n- `data-slot=\"…\"` on every element\n- `data-orientation` + Tailwind `data-[orientation=…]:` selectors for layout switching\n- `cn()` from `@/lib/utils` for class merging\n- `React.createContext` + custom `use*()` hooks that throw meaningful errors\n- Named exports at the bottom of the file\n\n---\n\n## The plan (4 changes total)\n\n| # | Action | File |\n|---|--------|------|\n| 1 | **Create** | `registry/new-york-v4/ui/stepper.tsx` |\n| 2 | **Create** | `registry/new-york-v4/examples/stepper-demo.tsx` |\n| 3 | **Add entry** | `registry/new-york-v4/ui/_registry.ts` (between `spinner` and `switch`) |\n| 4 | **Add entry** | `registry/new-york-v4/examples/_registry.ts` (between `spinner-item` and `switch-demo`) |\n\n**`stepper.tsx`** exports 7 sub-components: `Stepper`, `StepperItem`, `StepperTrigger`, `StepperTitle`, `StepperDescription`, `StepperSeparator`, `StepperPanel`. State is integer-based (`value: number`), supports controlled + uncontrolled modes, shares state via two React contexts (`StepperContext` at the stepper level, `StepperItemContext` at the item level). No new npm dependencies — only `lucide-react` (already in workspace) and `@/lib/utils`.\n\n**`stepper-demo.tsx`** is a `\"use client\"` 3-step wizard (Account → Profile → Review) with clickable step triggers, animated separator color transitions, `StepperPanel` content areas, and Previous/Next `Button` controls.",
+    "execute_duration_ms": 540592,
+    "execute_api_ms": 538866,
+    "execute_tokens_in": 19,
+    "execute_tokens_out": 39588,
+    "execute_cost_usd": 0.98039385
+  },
+  "evaluation": {
+    "overall_score": 0.85,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.85,
+        "weight": 1,
+        "weighted_score": 0.85,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation is well-structured and nearly complete. All requirements are met except for one critical naming mismatch: the rubric explicitly requires exporting 'StepperContent', but the implementation exports 'StepperPanel' instead. The component is functionally correct with proper 'use client' directive, data-slot attributes on all sub-components, cn() utility usage, React context implementation (StepperContext and StepperItemContext), support for horizontal/vertical orientations, a functional demo with useState for step management, and correct registry entries. No existing files were modified. The StepperPanel component serves the same purpose as StepperContent would, but the naming discrepancy represents a failure to meet the exact specification.",
+          "diff_length": 14216,
+          "new_files": "PLAN.md\napps/v4/registry/new-york-v4/examples/stepper-demo.tsx\napps/v4/registry/new-york-v4/ui/stepper.tsx"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 76450
+  },
+  "session_id": "71803fc4-b3d3-4890-a3df-ac41a74a13d8"
+}

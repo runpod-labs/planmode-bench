@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T10:57:17.165Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 666312,
+    "duration_api_ms": 752837,
+    "num_turns": 75,
+    "total_cost_usd": 2.902786,
+    "input_tokens": 73,
+    "output_tokens": 37436,
+    "cache_read_tokens": 4270779,
+    "cache_creation_tokens": 159641,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 385257,
+    "plan_api_ms": 472020,
+    "plan_tokens_in": 30,
+    "plan_tokens_out": 18823,
+    "plan_cost_usd": 1.2891157,
+    "plan_content": "Here's a summary of what the plan covers:\n\n## Plan: Add `json_path` Output Constraint to SGLang\n\n### Core Strategy\nConvert a JSONPath expression (e.g. `$.store.book[*].author`) into an equivalent JSON Schema at the grammar-backend layer, then reuse all existing constrained-decoding infrastructure (xgrammar, outlines, llguidance). No new grammar engine needed.\n\n### 8 Files to Touch\n\n| # | File | Change |\n|---|---|---|\n| 1 | `srt/constrained/json_path_converter.py` | **NEW** — pure-Python JSONPath→JSON Schema converter |\n| 2 | `srt/constrained/base_grammar_backend.py` | Add `dispatch_json_path()` method + `\"json_path\"` case in `_init_value_dispatch()` |\n| 3 | `srt/constrained/grammar_manager.py` | Add `json_path` branch in `process_req_with_grammar()` |\n| 4 | `srt/sampling/sampling_params.py` | Add `json_path` param; extend mutual-exclusion check in `verify()` |\n| 5 | `lang/ir.py` | Add `json_path` to `SglSamplingParams`, `clone()`, `to_srt_kwargs()`, non-SRT backend warnings, and `SglGen.__init__()` |\n| 6 | `lang/api.py` | Add `json_path` param to `gen()` with `$`-prefix validation |\n| 7 | `srt/managers/tokenizer_manager.py` | Add `json_path` to `_request_has_grammar()` |\n| 8 | `test/kits/json_path_constrained_kit.py` | **NEW** — test mixin following `regex_constrained_kit.py` pattern |\n\n### Key Design Decisions\n- **No external dependencies** — the JSONPath→Schema converter uses only `re` and `json` from stdlib\n- **Supports**: dot notation (`.key`), bracket keys (`['key']`), wildcards (`[*]`), integer indices (`[0]`)\n- **Rejects** unsupported syntax (filter `[?()]`, recursive descent `..`) with a clear `ValueError`\n- **Mutually exclusive** with `json_schema`, `regex`, `ebnf` — validated in `SamplingParams.verify()`\n- **Cached** by `(\"json_path\", path_string)` key, same as all other constraint types",
+    "execute_duration_ms": 281055,
+    "execute_api_ms": 280817,
+    "execute_tokens_in": 43,
+    "execute_tokens_out": 18613,
+    "execute_cost_usd": 1.6136703
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 340
+  },
+  "session_id": "07fb42e6-0b42-4e13-8026-5b6a2eec65cb"
+}

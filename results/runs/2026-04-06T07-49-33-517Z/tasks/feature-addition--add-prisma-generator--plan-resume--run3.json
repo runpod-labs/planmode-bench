@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-resume",
+  "run_number": 3,
+  "timestamp": "2026-04-06T10:21:38.785Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 720767,
+    "duration_api_ms": 867113,
+    "num_turns": 71,
+    "total_cost_usd": 2.9069385,
+    "input_tokens": 66,
+    "output_tokens": 45587,
+    "cache_read_tokens": 4193476,
+    "cache_creation_tokens": 152246,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 295148,
+    "plan_api_ms": 447237,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 14568,
+    "plan_cost_usd": 0.9466717500000001,
+    "plan_content": "Here's the complete implementation plan I've designed after thorough codebase exploration:\n\n---\n\n## Plan: `@prisma/generator-rest-client`\n\n### What gets created\n\n**New package** at `packages/generator-rest-client/` with this structure:\n\n```\npackages/generator-rest-client/\n├── package.json\n├── tsconfig.json / tsconfig.build.json\n├── helpers/build.ts\n└── src/\n    ├── index.ts              → public API\n    ├── generator.ts          → RestClientGenerator implements Generator\n    ├── generate-client.ts    → orchestrates file writes\n    ├── type-mapping.ts       → Prisma scalar → TypeScript type\n    ├── model-generator.ts    → per-model TS code string\n    ├── index-generator.ts    → barrel index.ts code string\n    └── generator.test.ts     → Vitest unit tests\n```\n\n### What gets generated for each Prisma model\n\nFor a model like `User`, the generator outputs `User.ts` containing:\n- `export interface User { … }` — all scalar/enum fields\n- `export interface CreateUserInput { … }` — writable fields (excludes auto-generated IDs, `@updatedAt`)\n- `export interface UpdateUserInput { … }` — all writable fields as optional\n- `export interface UserWhereUniqueInput { … }` — `@id` + `@unique` fields\n- `export class UserClient` with `findMany`, `findUnique`, `create`, `update`, `delete` using native `fetch`\n\nA top-level `index.ts` exports everything and provides a `PrismaRestClient` class with one typed sub-client property per model. URL resource paths are derived from `dmmf.mappings.modelOperations[i].plural` (already pluralised by DMMF).\n\n### Key reused utilities\n\n- `parseEnvValue` from `@prisma/internals` → resolves the `output` path from `GeneratorConfig`\n- `DMMF.Field/Model/DatamodelEnum/ModelMapping` from `@prisma/dmmf` → schema description\n- `@prisma/generator` → `Generator` interface, `GeneratorConfig`, `GeneratorOptions`, `GeneratorManifest`\n\n### Files modified (beyond the new package)\n\n| File | Change |\n|------|--------|\n| `tsconfig.build.bundle.json` | Add path alias `\"@prisma/generator-rest-client\": [\"./packages/generator-rest-client/src\"]` |\n| `packages/client-generator-registry/package.json` | Add `\"@prisma/generator-rest-client\": \"workspace:*\"` |\n| `packages/client-generator-registry/src/default.ts` | `defaultRegistry.add(new RestClientGenerator())` |\n| `.github/workflows/test-template.yml` (×2) | Add test step in `client-packages` + `no-docker` jobs |\n\n### Verification\n\n1. `pnpm --filter @prisma/generator-rest-client build` → produces `dist/`\n2. `pnpm --filter @prisma/generator-rest-client test` → Vitest passes\n3. `pnpm --filter @prisma/client-generator-registry build` → workspace dep resolves\n4. E2E: add `generator restClient { provider = \"prisma-rest-client\" output = \"...\" }` to a schema and run `pnpm prisma generate`",
+    "execute_duration_ms": 425619,
+    "execute_api_ms": 419876,
+    "execute_tokens_in": 51,
+    "execute_tokens_out": 31019,
+    "execute_cost_usd": 1.9602667499999997
+  },
+  "evaluation": {
+    "overall_score": 0.25,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.5,
+        "weight": 0.4,
+        "weighted_score": 0.2,
+        "passed": false,
+        "details": {
+          "checks_passed": 5,
+          "checks_total": 10,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"prisma\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"generator\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"generatorHandler\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"onGenerate\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"dmmf\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"findMany\"",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "contains \"create\"",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 1,
+          "output": "node:internal/modules/cjs/loader:1228\n  throw err;\n  ^\n\nError: Cannot find module '/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775470173376-fr03tj/node_modules/typescript/bin/tsc'\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)\n    at Function._load (node:internal/modules/cjs/loader:1055:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)\n    at node:internal/main/run_main_module:36:49 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: []\n}\n\nNode.js v22.14.0\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.3333333333333333,
+        "weight": 0.15,
+        "weighted_score": 0.049999999999999996,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "findUnique|findMany",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "model|Model",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "interface|type",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "generatorHandler",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "onGenerate|onManifest",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 335
+  },
+  "session_id": "164e76d0-3efc-4122-b449-66420ba7ed37"
+}

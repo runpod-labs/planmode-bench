@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "add new AI image provider",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T17:42:44.145Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 484638,
+    "duration_api_ms": 628178,
+    "num_turns": 65,
+    "total_cost_usd": 1.8033395999999997,
+    "input_tokens": 49,
+    "output_tokens": 27254,
+    "cache_read_tokens": 1703857,
+    "cache_creation_tokens": 107458,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 258664,
+    "plan_api_ms": 403754,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 12025,
+    "plan_cost_usd": 0.99555735,
+    "plan_content": "## Plan: Add `@ai-sdk/pixel-art` Provider\n\nI've explored the codebase thoroughly (reading `@ai-sdk/fal`, `@ai-sdk/togetherai`, and the `@ai-sdk/provider` interfaces) and produced a detailed plan. Here's the summary:\n\n---\n\n### What will be created: 13 new files in `packages/pixel-art/`\n\n| File | Purpose |\n|---|---|\n| `package.json` | Package metadata, npm scripts, deps — mirrors `@ai-sdk/fal` |\n| `tsconfig.json` + `tsconfig.build.json` | TypeScript composite project references |\n| `tsup.config.ts` | CJS + ESM + `.d.ts` output via tsup |\n| `vitest.node.config.js` + `vitest.edge.config.js` | Node & edge test environments |\n| `src/version.ts` | `VERSION` constant injected at build time |\n| `src/pixel-art-image-settings.ts` | `PixelArtImageModelId` type (`'pixelart/standard'` \\| `'pixelart/high-res'` \\| `'pixelart/mini'` \\| open-ended) |\n| `src/pixel-art-image-options.ts` | Zod schema: `style` (`'pixel'`\\|`'retro'`\\|`'8bit'`) + `pixelDensity` (1–100) |\n| `src/pixel-art-image-model.ts` | `PixelArtImageModel implements ImageModelV3` — POST to `/images/generate`, returns base64 arrays |\n| `src/pixel-art-provider.ts` | `createPixelArt()` factory + `pixelArt` default instance |\n| `src/index.ts` | Public exports |\n| `src/pixel-art-image-model.test.ts` | Vitest unit tests using `@ai-sdk/test-server` mocks |\n\n### One existing file modified\n- **Root `tsconfig.json`**: Insert `{ \"path\": \"packages/pixel-art\" }` alphabetically (between `perplexity` and `provider`)\n\n### Key design decisions\n- **Base64 images** returned directly (like `@ai-sdk/togetherai`), no URL download step\n- **`size` supported** (`\"WxH\"` → `{ width, height }`); `aspectRatio`, `files`, and `mask` emit `unsupported` warnings\n- **Auth**: `Authorization: Bearer <key>` using `PIXELART_API_KEY` env var or `options.apiKey`\n- **`maxImagesPerCall = 4`**\n- All 11 utilities from `@ai-sdk/provider-utils` reused (no new HTTP code)",
+    "execute_duration_ms": 225974,
+    "execute_api_ms": 224424,
+    "execute_tokens_in": 34,
+    "execute_tokens_out": 15229,
+    "execute_cost_usd": 0.8077822499999997
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation is complete and correct. All requirements are met: (1) New provider package 'packages/pixel-art' created with proper package.json; (2) createPixelArt factory function exported; (3) PixelArtProvider interface implementing ProviderV3 with image model creation; (4) PixelArtImageModel implements ImageModelV3 with doGenerate method (correct v3 interface method); (5) Image settings include size parsing, style enum ('pixel', 'retro', '8bit'), and pixelDensity (1-100); (6) Base URL correctly set to 'https://api.pixelart.ai/v1'; (7) Package structure mirrors existing AI SDK providers with proper tsconfig, tsup, vitest configs, and comprehensive tests; (8) No existing provider code modified except root tsconfig.json reference insertion (expected for monorepo). Implementation is production-ready with proper error handling, warning support for unsupported features, and comprehensive test coverage.",
+          "diff_length": 26832,
+          "new_files": "PLAN.md\npackages/pixel-art/package.json\npackages/pixel-art/src/index.ts\npackages/pixel-art/src/pixel-art-image-model.test.ts\npackages/pixel-art/src/pixel-art-image-model.ts\npackages/pixel-art/src/pixel-art-image-options.ts\npackages/pixel-art/src/pixel-art-image-settings.ts\npackages/pixel-art/src/pixel-art-provider.ts\npackages/pixel-art/src/version.ts\npackages/pixel-art/tsconfig.build.json\npackages/pixel-art/tsconfig.json\npackages/pixel-art/tsup.config.ts\npackages/pixel-art/vitest.edge.config.js\npackages/pixel-art/vitest.node.config.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18842
+  },
+  "session_id": "dbe1ba03-1f13-4978-85d2-093a8cd702f2"
+}

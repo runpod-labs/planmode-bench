@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-resume",
+  "run_number": 7,
+  "timestamp": "2026-04-06T11:00:18.408Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 754847,
+    "duration_api_ms": 867609,
+    "num_turns": 66,
+    "total_cost_usd": 2.7011947,
+    "input_tokens": 58,
+    "output_tokens": 31214,
+    "cache_read_tokens": 3941756,
+    "cache_creation_tokens": 88512,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 401395,
+    "plan_api_ms": 514438,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 12271,
+    "plan_cost_usd": 1.2450977499999998,
+    "plan_content": "## Plan Summary\n\nHere's the complete implementation plan for adding `json_path` as a new SGLang output constraint.\n\n---\n\n### Core Strategy\nConvert the JSONPath expression into an equivalent JSON Schema at dispatch time, then route it through the **existing `dispatch_json()` path** already supported by all three grammar backends (xgrammar, outlines, llguidance). This means **zero new backend-specific code** — all backends inherit the new constraint for free.\n\n---\n\n### 8 Files to Touch (+ 1 new file)\n\n| # | File | What changes |\n|---|------|-------------|\n| 1 | **NEW** `python/sglang/srt/constrained/json_path_utils.py` | `validate_json_path()` + `json_path_to_json_schema()` that converts e.g. `$.store.book[*].author` → a JSON Schema requiring that structure |\n| 2 | `python/sglang/srt/constrained/base_grammar_backend.py` | Add `dispatch_json_path()` (converts path → schema, calls `dispatch_json()`) + routing case in `_init_value_dispatch()` |\n| 3 | `python/sglang/srt/constrained/grammar_manager.py` | Detect `json_path` on `sampling_params`, create key `(\"json_path\", path_str)` |\n| 4 | `python/sglang/srt/sampling/sampling_params.py` | Add `json_path` field; add it to the mutual-exclusion check alongside `regex`/`json_schema`/`ebnf` |\n| 5 | `python/sglang/lang/ir.py` | Add `json_path` to `SglSamplingParams` dataclass, `SglGen.__init__`, `clone()`, `to_srt_kwargs()`, and backend warnings |\n| 6 | `python/sglang/lang/api.py` | Add `json_path` param to `gen()` with early syntax validation using `validate_json_path()` |\n| 7 | `python/sglang/lang/interpreter.py` | Add `\"json_path\"` to the field-propagation list in `_resolve_sampling_params()` |\n| 8 | `python/sglang/srt/entrypoints/openai/protocol.py` | Add `json_path` field to `GenerateReqInput` and `ChatCompletionRequest`; include it in `to_sampling_params_dict()` and `has_existing_constraints` |\n\n### JSONPath → JSON Schema Conversion Examples\n- `$` → `{}` (any JSON)\n- `$.name` → `{\"type\":\"object\",\"required\":[\"name\"],\"properties\":{\"name\":{}}}`\n- `$.store.book[*].author` → nested object → array → object with `author` required",
+    "execute_duration_ms": 353452,
+    "execute_api_ms": 353171,
+    "execute_tokens_in": 45,
+    "execute_tokens_out": 18943,
+    "execute_cost_usd": 1.45609695
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 370
+  },
+  "session_id": "a16e81f2-45cf-4a9d-bd1d-4c03d8dfefa3"
+}

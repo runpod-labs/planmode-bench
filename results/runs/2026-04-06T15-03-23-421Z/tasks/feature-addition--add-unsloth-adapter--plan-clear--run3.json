@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T17:17:07.751Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 448345,
+    "duration_api_ms": 445209,
+    "num_turns": 46,
+    "total_cost_usd": 1.0157888000000002,
+    "input_tokens": 44,
+    "output_tokens": 19266,
+    "cache_read_tokens": 821767,
+    "cache_creation_tokens": 60733,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 351489,
+    "plan_api_ms": 349533,
+    "plan_tokens_in": 24,
+    "plan_tokens_out": 13641,
+    "plan_cost_usd": 0.7764935000000002,
+    "plan_content": "Here's the full plan — only **`unsloth/save.py`** needs to change, with 5 precise edits:\n\n---\n\n### Approach\n\nThe ONNX export is modelled exactly like the existing GGML/GGUF/torchao exports: a standalone decorated function that takes `self` + parameters, attached to the model as a bound method by `patch_saving_functions`.\n\nFor each active LoRA layer, a tiny throwaway `nn.Module` wraps the adapter computation `(x @ A^T @ B^T) * scaling` and is handed to `torch.onnx.export`. A `lora_metadata.json` records rank, alpha, target modules, and the per-layer filename map.\n\n---\n\n### The 5 edits to `unsloth/save.py`\n\n| # | Where | What |\n|---|-------|------|\n| 1 | Line ~21 (stdlib imports) | Add `import json` |\n| 2 | Line 29 (kernels import) | Add `get_lora_parameters` — it's exported by `kernels/__init__.py` but not yet imported in `save.py` (only `get_lora_parameters_bias` is) |\n| 3 | Lines 48–54 (`__all__`) | Append `\"export_to_onnx\"` |\n| 4 | Before line 2564 (`not_implemented_save`) | Insert the full ~70-line `export_to_onnx` function |\n| 5 | Line ~2676, before `return model` in `patch_saving_functions` | Add `model.export_to_onnx = types.MethodType(export_to_onnx, model)` — unconditional, so it applies to both vision and non-vision models |\n\n### Key reused utilities\n- **`get_lora_parameters(proj)`** (`kernels/utils.py:190`) — returns `(W, quant_state, A, B, scaling)`; A/B are `None` when the adapter is disabled/merged → naturally skipped\n- **`Peft_Linear`, `Peft_Linear4bit`** — already imported at lines 18–19, used as isinstance guards\n- **`model.peft_config[\"default\"]`** — standard PEFT attribute holding rank (`.r`), alpha (`.lora_alpha`), and target modules (`.target_modules`)",
+    "execute_duration_ms": 96856,
+    "execute_api_ms": 95676,
+    "execute_tokens_in": 20,
+    "execute_tokens_out": 5625,
+    "execute_cost_usd": 0.2392953
+  },
+  "evaluation": {
+    "overall_score": 0.96,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.96,
+        "weight": 1,
+        "weighted_score": 0.96,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation that fully meets all rubric requirements. The export_to_onnx function correctly: (1) saves LoRA adapter A and B matrices via torch.onnx.export, (2) accepts output_dir and opset_version with proper default of 17, (3) collects and saves rank/alpha/target_modules to lora_metadata.json, (4) is properly exposed via types.MethodType binding in patch_saving_functions and added to __all__, (5) uses torch.onnx.export with appropriate parameters (opset_version, dynamic axes), and (6) follows unsloth conventions (os.makedirs pattern, get_lora_parameters utility, pass statements, docstring style). The implementation handles disabled adapters correctly by checking for None A/B matrices. Minor deduction: inline torch.nn import inside function is slightly unconventional (torch already imported at module level), but this is a negligible style point. All core functionality is sound and well-integrated.",
+          "diff_length": 6881,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18751
+  },
+  "session_id": "c947c6ff-7c32-4408-99ed-b64a852762e2"
+}

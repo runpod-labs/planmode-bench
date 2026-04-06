@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-resume",
+  "run_number": 6,
+  "timestamp": "2026-04-06T10:19:50.515Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 476870,
+    "duration_api_ms": 628301,
+    "num_turns": 50,
+    "total_cost_usd": 1.7787738999999996,
+    "input_tokens": 48,
+    "output_tokens": 27109,
+    "cache_read_tokens": 1891150,
+    "cache_creation_tokens": 95461,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 247496,
+    "plan_api_ms": 400097,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 10722,
+    "plan_cost_usd": 0.8326343499999999,
+    "plan_content": "Here's a summary of what the plan covers:\n\n---\n\n## Plan: `@prisma/rest-api-client-generator`\n\n### What's being built\nA new monorepo package that implements the standard Prisma `Generator` interface and, from the DMMF, emits a single `index.ts` containing:\n- TypeScript `interface` for each model\n- Union types for each enum\n- Per-model CRUD arg types (`FindManyArgs`, `FindUniqueArgs`, `CreateArgs`, `UpdateArgs`, `DeleteArgs`)\n- A `RestApiClient` class with namespaced model properties (e.g. `client.user.findMany(...)`) backed by `fetch`\n\n### New package: `packages/rest-api-client-generator/`\n5 source files (`generator.ts`, `generate-client.ts`, `generate-types.ts`, `generate-rest-client.ts`, `type-mapping.ts`, `index.ts`) + standard boilerplate (`package.json`, `tsconfig.json`, `tsconfig.build.json`, `helpers/build.ts`) + Vitest unit tests.\n\n### Existing files modified (4 files)\n| File | Change |\n|------|--------|\n| `packages/client-generator-registry/src/default.ts` | Register `new RestApiClientGenerator()` |\n| `packages/client-generator-registry/package.json` | Add `\"@prisma/rest-api-client-generator\": \"workspace:*\"` |\n| `tsconfig.build.bundle.json` | Add `paths` entry for IDE go-to-definition |\n| `.github/workflows/test-template.yml` | Add test step in `client-packages` job |\n\n### Key design decisions\n- Uses the `Generator` interface (in-process, registered in the registry) — same pattern as `client-generator-js` and `client-generator-ts`\n- Uses `adapterConfig` from `helpers/compile/configs.ts` for bundled CJS+ESM build\n- Code generation via template literals (simpler than `@prisma/ts-builders` for flat output)\n- REST endpoints follow conventional patterns (`GET /users`, `POST /users`, `PATCH /users/:id`, etc.)\n- Uses native JS private fields (`#baseUrl`, `#fetchOptions`) per codebase conventions\n- Zero external dependencies beyond the workspace packages",
+    "execute_duration_ms": 229374,
+    "execute_api_ms": 228204,
+    "execute_tokens_in": 33,
+    "execute_tokens_out": 16387,
+    "execute_cost_usd": 0.9461395499999998
+  },
+  "evaluation": {
+    "overall_score": 0,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.4,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 3,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 1,
+          "output": "/bin/bash: line 0: cd: packages/generator-rest-client: No such file or directory\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/generator-rest-client/src/generator.ts"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/generator-rest-client/src/index.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 3
+  },
+  "session_id": "31a751ad-3467-412b-a880-17ea72b5171c"
+}

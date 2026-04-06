@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-06T16:22:23.489Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1091190,
+    "duration_api_ms": 1249367,
+    "num_turns": 58,
+    "total_cost_usd": 3.6550996499999995,
+    "input_tokens": 54,
+    "output_tokens": 34266,
+    "cache_read_tokens": 3256978,
+    "cache_creation_tokens": 171750,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 702639,
+    "plan_api_ms": 901194,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 10926,
+    "plan_cost_usd": 2.1029269499999996,
+    "plan_content": "Here is the complete implementation plan for the `@prisma/rest-api-client-generator` package.\n\n---\n\n## Summary\n\n### What gets built\nA new package at `packages/rest-api-client-generator/` that reads the Prisma DMMF and emits a typed TypeScript REST API client — one file per model plus a barrel, a top-level `PrismaRestClient`, and a shared `_utils.ts`.\n\n### Files to create (10 new, 1 updated)\n\n| File | Purpose |\n|---|---|\n| `package.json` | Deps: `@prisma/generator`, `@prisma/dmmf`, `@prisma/internals`, `@prisma/debug` |\n| `tsconfig.json` / `tsconfig.build.json` | Standard monorepo pattern |\n| `helpers/build.ts` | `build(adapterConfig)` → CJS+ESM bundle |\n| `src/scalar-map.ts` | `fieldToTsType()` — maps all 9 Prisma scalars + enum/object/unsupported kinds |\n| `src/codegen.ts` | `generateRestClient(document)` → `Map<filename, content>` — pure, no I/O |\n| `src/generator.ts` | `RestApiClientGenerator` implementing the 3-method `Generator` interface |\n| `src/index.ts` | Public entry point |\n| `tests/codegen.test.ts` | 11 vitest unit tests (all edge cases; no I/O) |\n| **`tsconfig.build.bundle.json`** | +1 path entry for IDE support |\n\n### Key design decisions\n- **In-process only** — same pattern as the built-in generators; no `generatorHandler` subprocess wiring needed\n- **Codegen is pure** (`codegen.ts` returns strings, `generator.ts` does the I/O) — makes unit testing trivial\n- Relation fields excluded from all generated types; auto-generated IDs excluded from `CreateInput`; `@updatedAt` excluded from both input types\n- Native JS `#privateField` syntax; no useless comments; kebab-case filenames",
+    "execute_duration_ms": 388551,
+    "execute_api_ms": 348173,
+    "execute_tokens_in": 38,
+    "execute_tokens_out": 23340,
+    "execute_cost_usd": 1.5521727
+  },
+  "evaluation": {
+    "overall_score": 0.78,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.78,
+        "weight": 1,
+        "weighted_score": 0.78,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation successfully creates a Prisma generator package with proper structure, package.json with correct dependencies (@prisma/generator, @prisma/dmmf, @prisma/internals), and functional codegen. Correctly reads DMMF, iterates over models, and generates TypeScript interfaces and all 5 CRUD methods (findMany, findUnique, create, update, delete) with proper types. Properly writes output to generator directory using fs.writeFile. Code is well-typed, follows TypeScript conventions, and includes comprehensive test coverage. However, the rubric specifically requires 'using generatorHandler with onGenerate and onManifest callbacks from the Prisma generator protocol,' but the implementation instead uses a class-based Generator interface approach with generate() and getManifest() methods. While this is functionally equivalent and a valid modern Prisma generator pattern, it doesn't match the stated requirement. The implementation also lacks an explicit entry point that shows how Prisma will actually instantiate and call the generator (missing 'generatorHandler' or a proper default export/instantiation pattern).",
+          "diff_length": 24265,
+          "new_files": "packages/rest-api-client-generator/helpers/build.ts\npackages/rest-api-client-generator/package.json\npackages/rest-api-client-generator/src/codegen.ts\npackages/rest-api-client-generator/src/generator.ts\npackages/rest-api-client-generator/src/index.ts\npackages/rest-api-client-generator/src/scalar-map.ts\npackages/rest-api-client-generator/tests/codegen.test.ts\npackages/rest-api-client-generator/tsconfig.build.json\npackages/rest-api-client-generator/tsconfig.json"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18211
+  },
+  "session_id": "3e3774ca-170e-42c2-94d1-fddb49278b65"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T17:03:09.846Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1771708,
+    "duration_api_ms": 1975175,
+    "num_turns": 74,
+    "total_cost_usd": 4.891460199999999,
+    "input_tokens": 82,
+    "output_tokens": 59388,
+    "cache_read_tokens": 3333805,
+    "cache_creation_tokens": 185723,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1155818,
+    "plan_api_ms": 1361965,
+    "plan_tokens_in": 24,
+    "plan_tokens_out": 21346,
+    "plan_cost_usd": 3.038172099999999,
+    "plan_content": "Here's the complete plan for adding `json_path` to SGLang:\n\n---\n\n## Design Summary\n\n**Core insight**: Convert the JSONPath expression to a JSON Schema on the server side, then reuse the existing `dispatch_json()` infrastructure. No backend-specific code (xgrammar, outlines, llguidance) needs touching.\n\n**Data flow**:\n```\ngen(json_path=\"$.store.book[*].author\")\n  → SamplingParams.json_path\n  → GrammarManager: key = (\"json_path\", \"$.store.book[*].author\")\n  → BaseGrammarBackend.dispatch_json_path()\n      → json_path_to_schema(\"$.store.book[*].author\") → JSON Schema string\n      → self.dispatch_json(schema_str)   ← existing code path\n  → xgrammar / outlines / llguidance (unchanged)\n```\n\n---\n\n## 2 New Files\n\n**`python/sglang/srt/constrained/json_path.py`** — pure stdlib (`re` + `json`), parses JSONPath segments and builds a JSON Schema inside-out (leaf → root):\n- `.key` / `['key']` / `[\"key\"]` → `{\"type\":\"object\",\"properties\":{key: inner},\"required\":[key]}`\n- `[*]` → `{\"type\":\"array\",\"items\": inner}`\n- `[n]` → `{\"type\":\"array\",\"items\": inner,\"minItems\": n+1}`\n- `$` alone → `{}` (any valid JSON)\n- `..` → raises `ValueError` (unsupported)\n\n**`python/sglang/test/kits/json_path_constrained_kit.py`** — test mixin covering root (`$`), simple key (`$.name`), nested with wildcard (`$.store.book[*].author`), and index (`$.items[0].name`).\n\n---\n\n## 10 Touch Points in Existing Files\n\n| File | What changes |\n|---|---|\n| `srt/sampling/sampling_params.py` | `json_path` param + field + mutual-exclusivity guard |\n| `srt/constrained/base_grammar_backend.py` | `dispatch_json_path()` method + route in `_init_value_dispatch` |\n| `srt/constrained/grammar_manager.py` | `json_path` in condition, key tuple, error msg |\n| `srt/managers/tokenizer_manager.py` | `json_path` in `_request_has_grammar()` |\n| `srt/entrypoints/openai/protocol.py` | Field on `CompletionRequest` + `ChatCompletionRequest`, `to_sampling_params()`, `has_existing_constraints` |\n| `srt/entrypoints/openai/serving_completions.py` | Forward `json_path` in sampling params dict |\n| `lang/ir.py` | `SglSamplingParams` field, `SglGen` constructor param, `to_srt_kwargs()` |\n| `lang/api.py` | `gen()` param + basic `$` validation + `SglGen` call |",
+    "execute_duration_ms": 615890,
+    "execute_api_ms": 613210,
+    "execute_tokens_in": 58,
+    "execute_tokens_out": 38042,
+    "execute_cost_usd": 1.8532880999999999
+  },
+  "evaluation": {
+    "overall_score": 0.9,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.9,
+        "weight": 1,
+        "weighted_score": 0.9,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The agent successfully implemented json_path constraint functionality across all required layers. Strengths: (1) Created json_path_to_schema() converter function with comprehensive JSONPath parsing and schema building; (2) Properly integrated into IR layer (SglSamplingParams, SglGen classes); (3) Registered with grammar_manager using standard key tuple pattern alongside existing constraints; (4) Added dispatch_json_path() method following backend architecture; (5) Updated all 9 necessary existing files (sampling_params, protocol, serving, tokenizer_manager, etc.); (6) Implemented mutual exclusivity validation; (7) Added unit tests covering parsing edge cases; (8) Elegant design reuses existing json_schema infrastructure rather than duplicating code. Minor limitations: The rubric asked for 'a new constraint class' but agent provided a converter function instead—while superior design, it's technically a deviation. Integration/end-to-end tests through SGLang server are absent though core logic is well-tested. PLAN.md created but not required by rubric.",
+          "diff_length": 22152,
+          "new_files": "PLAN.md\npython/sglang/srt/constrained/json_path.py\npython/sglang/test/kits/json_path_constrained_kit.py"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 22179
+  },
+  "session_id": "baa119cc-ac61-451a-bcdd-447c5b256193"
+}

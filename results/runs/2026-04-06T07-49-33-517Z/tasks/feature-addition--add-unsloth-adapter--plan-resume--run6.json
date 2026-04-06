@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 6,
+  "timestamp": "2026-04-06T12:03:16.352Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 504952,
+    "duration_api_ms": 587444,
+    "num_turns": 28,
+    "total_cost_usd": 1.3511289500000003,
+    "input_tokens": 32,
+    "output_tokens": 15646,
+    "cache_read_tokens": 824175,
+    "cache_creation_tokens": 89668,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 361611,
+    "plan_api_ms": 444196,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 10888,
+    "plan_cost_usd": 0.9025632500000003,
+    "plan_content": "Here's the complete plan. **Only one file changes: `unsloth/save.py`**, with four surgical edits:\n\n---\n\n### What I found\n\n- All save/export methods live in `unsloth/save.py` and are injected onto model instances at runtime by `patch_saving_functions()` (line 2569) using `types.MethodType`\n- LoRA layers are instances of `Peft_Linear4bit` or `Peft_Linear` (both already imported in `save.py`)\n- `get_lora_parameters(module)` returns `(W, quant_state, A, B, scaling)` — A is `[rank, in_features]`, B is `[out_features, rank]`\n- Adapter metadata (rank, alpha, target_modules) lives at `model.peft_config[adapter_name].r / .lora_alpha / .target_modules`\n- `get_lora_parameters` is already in `unsloth/kernels/utils.py` and re-exported from the kernels package — only the import line in `save.py` needs extending\n- There is **zero** existing ONNX code anywhere in the repo\n\n---\n\n### The four edits\n\n| # | Location | Change |\n|---|----------|--------|\n| 1 | `save.py` line 29 | Add `get_lora_parameters` to the kernels import |\n| 2 | `save.py` `__all__` (line 48) | Append `\"unsloth_save_pretrained_onnx\"` |\n| 3 | `save.py` before line 2569 | Insert the new `unsloth_save_pretrained_onnx` function |\n| 4 | `save.py` lines 2658–2668 | Register `model.save_pretrained_onnx` in `patch_saving_functions` |\n\n### The new function\n- Lazily imports `onnx` with a friendly error if not installed\n- Reads rank, alpha, target_modules from `self.peft_config`\n- Iterates `self.named_modules()`, calls `get_lora_parameters()` on each LoRA layer\n- Builds a minimal ONNX graph per layer (no inputs, two constant outputs: `lora_A_out` and `lora_B_out`) using `onnx.helper` + `onnx.numpy_helper`\n- Saves each layer as `{layer_name}.onnx` and writes `metadata.json`\n- Follows the same patterns (decorator, `gc.collect`, print style) as every other export method",
+    "execute_duration_ms": 143341,
+    "execute_api_ms": 143248,
+    "execute_tokens_in": 14,
+    "execute_tokens_out": 4758,
+    "execute_cost_usd": 0.4485657
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 81
+  },
+  "session_id": "e80ff8fe-2650-4279-8942-9ef2bf16eea9"
+}

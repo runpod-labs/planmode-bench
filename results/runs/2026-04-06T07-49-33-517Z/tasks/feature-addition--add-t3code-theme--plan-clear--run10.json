@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-clear",
+  "run_number": 10,
+  "timestamp": "2026-04-06T12:01:22.855Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1187943,
+    "duration_api_ms": 1331490,
+    "num_turns": 55,
+    "total_cost_usd": 2.8815580499999998,
+    "input_tokens": 57,
+    "output_tokens": 63863,
+    "cache_read_tokens": 2358235,
+    "cache_creation_tokens": 120977,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 584229,
+    "plan_api_ms": 745031,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 30260,
+    "plan_cost_usd": 1.4085580500000001,
+    "plan_content": "Here's a summary of the plan I've written:\n\n## What will be built\n\n**8 files changed** to add a full named-theme system:\n\n### New files\n1. **`packages/shared/src/theme.ts`** — `ThemeId`, `ThemeColors`, `AppTheme` types + three concrete built-in themes:\n   - **T3 Light** — clean white, neutral foreground, blue-purple accent\n   - **T3 Dark** — deep blue-gray background, existing dark palette\n   - **T3 Midnight** — near-black GitHub-style deep blue, cool blue accent\n\n2. **`apps/web/src/components/ThemeProvider.tsx`** — React provider component (wraps the app, ties React lifecycle to the module-level theme store)\n\n3. **`apps/web/src/components/ThemeSelector.tsx`** — Radio-button rows (System + 3 named themes), each named theme shows 3 inline color swatches (background / sidebar / accent)\n\n### Modified files\n4. **`packages/shared/package.json`** — adds `\"./theme\"` subpath export (same pattern as existing `\"./model\"`, `\"./git\"`, etc.)\n\n5. **`apps/web/src/hooks/useTheme.ts`** — Rewritten to apply 7 CSS custom properties per theme (`--background`, `--foreground`, `--primary`, `--ring`, `--theme-sidebar`, `--theme-editor`, `--theme-terminal`, `--theme-status-bar`). Preserves `resolvedTheme: \"light\"|\"dark\"` for `DiffWorkerPoolProvider` backward compat; preserves `.dark` class for `ThreadTerminalDrawer` + all Tailwind `dark:` variants. Migrates old `\"light\"/\"dark\"` stored values automatically.\n\n6. **`apps/web/src/routes/__root.tsx`** — Adds `<ThemeProvider>` as outermost wrapper\n\n7. **`apps/web/src/routes/_chat.settings.tsx`** — Replaces inline THEME_OPTIONS + radio buttons with `<ThemeSelector />`\n\n8. **`apps/web/src/index.css`** — Adds fallback values for the 4 new CSS vars in `:root` and `@variant dark` (prevents flash before JS runs)\n\nNo build config changes, no new npm dependencies.",
+    "execute_duration_ms": 603714,
+    "execute_api_ms": 586459,
+    "execute_tokens_in": 42,
+    "execute_tokens_out": 33603,
+    "execute_cost_usd": 1.4729999999999999
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.35,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/shared/src/themes.ts"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": "o you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\npackages/shared/src/Net.test.ts(33,27): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(1,22): error TS2591: Cannot find name 'node:net'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\npackages/shared/src/Net.ts(42,27): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1445
+  },
+  "session_id": "e426ddb4-80d0-4707-9a93-1208932a2ad0"
+}

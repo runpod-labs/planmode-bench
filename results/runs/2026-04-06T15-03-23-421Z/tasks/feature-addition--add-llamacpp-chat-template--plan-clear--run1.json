@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T15:35:40.666Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 384194,
+    "duration_api_ms": 406376,
+    "num_turns": 32,
+    "total_cost_usd": 0.8631924000000002,
+    "input_tokens": 28,
+    "output_tokens": 21866,
+    "cache_read_tokens": 495247,
+    "cache_creation_tokens": 58400,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 318854,
+    "plan_api_ms": 341157,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 17771,
+    "plan_cost_usd": 0.6786829500000001,
+    "plan_content": "Here is the complete plan:\n\n---\n\n## Plan: Add `mistral-instruct-v3` Chat Template Handler\n\n### Context\n\nThe Mistral Instruct v0.3 format (exemplified by `mistralai-Mistral-Nemo-Instruct-2407.jinja`) wraps user turns with `[INST]/[/INST]`, prepends any system message to the **first** user turn, and appends `</s>` after each assistant turn. Currently templates matching this pattern fall through to the differential autoparser. This adds an explicit, deterministic handler for them — touching only `common/chat.cpp`, adding only new code.\n\n---\n\n### File modified: `common/chat.cpp` only\n\n#### Edit 1 — New handler function (insert after line 940, before `common_chat_params_init_gpt_oss`)\n\n```cpp\nstatic common_chat_params common_chat_params_init_mistral_instruct_v3(\n    const common_chat_template &          tmpl,\n    const autoparser::generation_params & inputs) {\n    common_chat_params data;\n\n    // Mistral Instruct v0.3 prepends the system message to the *first* user\n    // turn rather than keeping it as a separate message.\n    auto        adjusted_messages = json::array();\n    std::string system_content;\n    bool        has_system = false;\n\n    for (const auto & msg : inputs.messages) {\n        if (!has_system && msg.value(\"role\", \"\") == \"system\") {\n            has_system = true;\n            if (msg.contains(\"content\") && msg.at(\"content\").is_string()) {\n                system_content = msg.at(\"content\").get<std::string>();\n            }\n            continue;  // drop standalone system message; will be inlined below\n        }\n        adjusted_messages.push_back(msg);\n    }\n\n    if (has_system && !system_content.empty()) {\n        for (auto & msg : adjusted_messages) {\n            if (msg.value(\"role\", \"\") == \"user\" && msg.contains(\"content\") &&\n                msg.at(\"content\").is_string()) {\n                msg[\"content\"] =\n                    system_content + \"\\n\\n\" + msg.at(\"content\").get<std::string>();\n                break;\n            }\n        }\n    }\n\n    data.prompt = common_chat_template_direct_apply_impl(\n        tmpl, inputs, /* messages_override = */ adjusted_messages);\n    data.format = COMMON_CHAT_FORMAT_PEG_NATIVE;\n\n    auto parser = build_chat_peg_parser([&](common_chat_peg_builder & p) {\n        return p.prefix(inputs.generation_prompt) << p.content(p.rest());\n    });\n    data.parser = parser.save();\n    return data;\n}\n```\n\nThe parser uses `p.prefix(inputs.generation_prompt)` (default empty delimiter, per `chat-peg-parser.h:96`) followed by `p.content(p.rest())` — the same minimal pattern used by the `force_pure_content` path at line 1774. No thinking, no grammar, no preserved tokens (the format has none).\n\n---\n\n#### Edit 2 — Detection check (insert after line 1644, before the GPT-OSS block)\n\n```cpp\n    // Mistral Instruct v0.3 - [INST]/[/INST] user delimiters, system prepended\n    // to first user turn.  Absence of [SYSTEM_PROMPT] distinguishes it from\n    // Ministral 3 / Devstral which wrap the system block separately.\n    if (src.find(\"[INST]\") != std::string::npos &&\n        src.find(\"[SYSTEM_PROMPT]\") == std::string::npos) {\n        LOG_DBG(\"Using specialized template: Mistral Instruct v0.3\\n\");\n        return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n    }\n```\n\n| Template | `[INST]`? | `[SYSTEM_PROMPT]`? | Outcome |\n|---|---|---|---|\n| Mistral-Nemo-Instruct-2407 | ✓ | ✗ | → new handler ✓ |\n| Ministral-3-14B-Reasoning | ✓ | ✓ | caught earlier by existing Ministral-3 check |\n| Devstral-Small-2507 | ✓ | ✓ | caught earlier by existing Ministral-3 check |\n| All other templates | no `[INST]` or has `[SYSTEM_PROMPT]` | — | unaffected |\n\n---\n\n### Verification\n\n1. **Build**: `cmake --build build -t common`\n2. **Tests**: `tests/test-chat-template`, `tests/test-chat-auto-parser`, `tests/test-chat`\n3. **Detection smoke-check**: `LOG_DBG` should print `\"Using specialized template: Mistral Instruct v0.3\"` for the Nemo template, **not** for Ministral-3 or Devstral\n4. **Prompt check**: A conversation with a system message + two user/assistant turns should show the system text inlined into the first `[INST]…[/INST]` block, with `</s>` after each assistant turn",
+    "execute_duration_ms": 65340,
+    "execute_api_ms": 65219,
+    "execute_tokens_in": 13,
+    "execute_tokens_out": 4095,
+    "execute_cost_usd": 0.18450945000000002
+  },
+  "evaluation": {
+    "overall_score": 0.55,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.55,
+        "weight": 1,
+        "weighted_score": 0.55,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation has correct structure, detection logic, handler dispatch, and LOG_DBG call. System message prepending logic is correct. However, there is one critical violation: line 978 uses COMMON_CHAT_FORMAT_PEG_NATIVE instead of the explicitly required COMMON_CHAT_FORMAT_CONTENT_ONLY. The '</s>' appending is delegated to the template (not in handler code), which may be acceptable but the rubric specifies checking this in the handler. No existing handlers or headers were modified as required. The format type error is significant and would likely cause incorrect behavior.",
+          "diff_length": 7470,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16055
+  },
+  "session_id": "149a3e08-f154-4105-aa81-97b000d6593a"
+}

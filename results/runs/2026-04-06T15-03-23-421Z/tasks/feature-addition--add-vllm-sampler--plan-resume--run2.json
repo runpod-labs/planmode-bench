@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T17:34:17.169Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 579881,
+    "duration_api_ms": 697598,
+    "num_turns": 83,
+    "total_cost_usd": 3.384208049999999,
+    "input_tokens": 77,
+    "output_tokens": 32223,
+    "cache_read_tokens": 5672706,
+    "cache_creation_tokens": 174657,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 286720,
+    "plan_api_ms": 404734,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 13124,
+    "plan_cost_usd": 1.19081625,
+    "plan_content": "## Plan: Add Top-A Sampling to vLLM\n\nAfter thoroughly reading all relevant source files, here is the complete implementation plan.\n\n---\n\n### Algorithm\nTop-A sampling keeps only tokens where `probability ≥ top_a × max_probability`, masking others to −∞. This is **structurally identical to `min_p`** — every change directly mirrors the existing `min_p` pattern.\n\n---\n\n### 5 Files to Modify\n\n#### 1. `vllm/sampling_params.py`\n- Add `top_a: float = 0.0` field after `min_p` (line 214)\n- Add docstring entry in the Args block\n- Add validation in `_verify_args()`: `if not 0.0 <= self.top_a <= 1.0: raise ValueError(...)`\n- Reset to `0.0` in the greedy-temperature block (alongside `top_p`, `top_k`, `min_p`)\n- Add `top_a: float = 0.0` to `from_optional()` signature and constructor call\n- Add to `__repr__`\n\n#### 2. `vllm/model_executor/sampling_metadata.py` (V0 path)\n- Add `top_as: torch.Tensor` to the `SamplingTensors` dataclass\n- In `from_sampling_metadata()`: accumulate a `top_as` list, set `do_top_a` flag (guarded by `> _SAMPLING_EPS`), pass it through `from_lists()`, extend return tuple to 5 bools\n- In `from_lists()`: add `top_as` parameter and create/pass the tensor\n\n#### 3. `vllm/model_executor/layers/sampler.py` (V0 path)\n- Add `_apply_top_a()` after `_apply_min_p()` — identical logic, different name\n- Unpack 5th `do_top_a` bool from `from_sampling_metadata()` in `_init_sampling_tensors()`\n- In `forward()`: read `do_top_a`, call `_apply_top_a()` after `min_p`\n\n#### 4. `vllm/v1/sample/logits_processor.py` (V1 path)\n- Add `TopALogitsProcessor` class (exact mirror of `MinPLogitsProcessor`, reading `params.top_a`)\n- Register it in `init_builtin_logitsprocs()` in the `argmax_invariant` list\n- **No changes to `gpu_input_batch.py`** — the logits-processor framework is self-contained\n\n#### 5. `vllm/entrypoints/openai/protocol.py`\n- Add `top_a: Optional[float] = None` to both `ChatCompletionRequest` and `CompletionRequest`\n- Add `\"top_a\": 0.0` to `_DEFAULT_SAMPLING_PARAMS` in both classes\n- Handle in `to_sampling_params()` and pass to `SamplingParams.from_optional()`",
+    "execute_duration_ms": 293161,
+    "execute_api_ms": 292864,
+    "execute_tokens_in": 60,
+    "execute_tokens_out": 19099,
+    "execute_cost_usd": 2.1933917999999992
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation that meets all rubric requirements. The top_a parameter is correctly added to SamplingParams as a float with default 0.0 and validation for [0.0, 1.0] range. The filtering logic is properly implemented in _apply_top_a(): computes max probability, masks tokens below threshold (probs < top_a * max_prob), and relies on subsequent softmax for renormalization. The parameter is correctly threaded through all intermediate data structures: OpenAI protocol → SamplingParams → SamplingTensors → Sampler. Documentation is clear and present in docstrings. Code follows vLLM conventions with proper type hints and patterns. Additional implementation in v1/logits_processor.py shows thorough integration. Minor deduction (0.05) only because runtime behavior with edge cases cannot be verified from diff alone, but all code analysis suggests robust handling of the disabled state (0.0), batched sequences, and both prefill/decode phases.",
+          "diff_length": 17281,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 25308
+  },
+  "session_id": "29ec7006-6b5f-4169-b846-d4ee3e8eb16e"
+}

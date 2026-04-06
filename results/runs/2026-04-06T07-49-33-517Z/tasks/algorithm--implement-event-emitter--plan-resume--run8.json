@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "task_id": "algorithm/implement-event-emitter",
+  "task_name": "implement full-featured event emitter",
+  "mode": "plan-resume",
+  "run_number": 8,
+  "timestamp": "2026-04-06T07:52:16.703Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 157206,
+    "duration_api_ms": 154436,
+    "num_turns": 19,
+    "total_cost_usd": 0.38407940000000007,
+    "input_tokens": 24,
+    "output_tokens": 7621,
+    "cache_read_tokens": 309547,
+    "cache_creation_tokens": 39202,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 121423,
+    "plan_api_ms": 120416,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 5834,
+    "plan_cost_usd": 0.22343060000000003,
+    "plan_content": "Here's the full plan before we proceed:\n\n---\n\n## Implementation Plan: `EventEmitter`\n\n**Only file to touch:** `src/event-emitter.ts`\n\n### Data structure\nA single private `Map<string, ListenerEntry[]>` where each entry carries the original function reference and a `once` flag:\n\n```ts\ntype ListenerEntry = { fn: Listener; once: boolean };\nprivate _listeners = new Map<string, ListenerEntry[]>();\n```\n\n### Method breakdown\n\n| Method | What it does |\n|---|---|\n| `on(event, listener)` | Push `{ fn, once: false }`; return `() => this.off(event, listener)` |\n| `once(event, listener)` | Push `{ fn, once: true }` |\n| `emit(event, ...args)` | **Snapshot** the array first, then iterate — call `off` for `once` entries before invoking them; return `true`/`false` based on pre-snapshot length |\n| `off(event, listener)` | `findIndex(e => e.fn === listener)` → `splice`; silent no-op if event/listener missing |\n| `removeAllListeners(event?)` | No arg → `map.clear()`; with arg → `map.delete(event)` |\n| `listenerCount(event)` | `_listeners.get(event)?.length ?? 0` |\n| `eventNames()` | Filter entries where `length > 0`, return names |\n\n### Why snapshot in `emit`?\nIterating over a copy of the array at emit-start means:\n- A listener removing itself (or another listener) can't corrupt the loop index — no crash.\n- Listeners registered before a removal still all fire in registration order.\n- The backing array is mutated by `off`, so the *next* emit sees the updated list.\n\n### Edge cases all covered\n- `once` + `listenerCount`: `off` runs inside `emit` before the call, so count drops immediately after first fire.\n- `emit` return value for `once`: listener is still in the backing array when `emit` checks `length` → `true`; second emit finds it gone → `false`.\n- `eventNames` after `off` empties an event: `.filter(entries.length > 0)` excludes it.\n- `off` on non-existent event/listener: guard returns early, no throw.\n\n### Verification\n```\nnpm test   # all 27 tests should pass\n```",
+    "execute_duration_ms": 35783,
+    "execute_api_ms": 34020,
+    "execute_tokens_in": 11,
+    "execute_tokens_out": 1787,
+    "execute_cost_usd": 0.1606488
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 1,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775461773535-io01fl\n\n ✓ tests/event-emitter.test.ts (29 tests) 6ms\n\n Test Files  1 passed (1)\n      Tests  29 passed (29)\n   Start at  09:52:15\n   Duration  255ms (transform 37ms, setup 0ms, collect 35ms, tests 6ms, environment 0ms, prepare 58ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/event-emitter.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"on(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"emit(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"once(\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1177
+  },
+  "session_id": "1b8cf5a9-a308-41bb-8f55-3c026abd9113"
+}

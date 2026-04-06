@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-openclaw-channel",
+  "task_name": "add fictional PulseBoard channel",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T16:25:45.302Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 2228641,
+    "duration_api_ms": 2163771,
+    "num_turns": 192,
+    "total_cost_usd": 8.288496349999997,
+    "input_tokens": 171,
+    "output_tokens": 122500,
+    "cache_read_tokens": 15869584,
+    "cache_creation_tokens": 278046,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 940806,
+    "plan_api_ms": 996655,
+    "plan_tokens_in": 32,
+    "plan_tokens_out": 50466,
+    "plan_cost_usd": 2.0607144500000003,
+    "plan_content": "Here is the full implementation plan for the **PulseBoard** channel plugin.\n\n---\n\n## What will be created\n\n**13 new files** only in `extensions/pulseboard/` — zero existing files modified.\n\n```\nextensions/pulseboard/\n├── openclaw.plugin.json        # id=pulseboard, channels=[\"pulseboard\"]\n├── package.json                # @openclaw/pulseboard, openclaw.channel.id=pulseboard\n├── index.ts                    # defineChannelPluginEntry entry point\n├── api.ts                      # Public barrel: export * from \"./src/types.js\"\n├── runtime-api.ts              # Private SDK re-export barrel (no openclaw/plugin-sdk/pulseboard exists)\n├── setup-entry.ts              # defineSetupPluginEntry\n└── src/\n    ├── channel.ts              # createChatChannelPlugin — the main plugin\n    ├── config-schema.ts        # Zod schema for channels.pulseboard.*\n    ├── types.ts                # PulseBoardAccountConfig + account resolution helpers\n    ├── runtime.ts              # createPluginRuntimeStore\n    ├── setup-surface.ts        # ChannelSetupAdapter + ChannelSetupWizard\n    ├── send.ts                 # sendPulseBoardMessage() stub\n    └── channel.test.ts         # Unit tests\n```\n\n## Key design decisions\n\n| Concern | Decision |\n|---|---|\n| **Template** | Nostr for overall structure; IRC for `groups` adapter |\n| **`capabilities`** | `chatTypes: [\"direct\", \"group\"]`, `media: false` |\n| **Chunk limit** | `textChunkLimit: 4000` (per spec) |\n| **Required config** | `serverUrl` + `apiToken` → both needed for `configured: true` |\n| **Groups (boards)** | `#board-name` targets; `resolveRequireMention` defaults to `true` unless `groupPolicy: \"open\"` |\n| **Target normalization** | strips `pulseboard:` prefix, lowercases; `#board-name` = group, bare `username` = direct |\n| **Gateway** | Stub — logs start/stop, no real network (fictional platform) |\n| **`runtime-api.ts`** | Re-exports from generic SDK paths since no `openclaw/plugin-sdk/pulseboard` module exists |\n| **Naming invariants** | All four checks in `bundled-plugin-naming.test.ts` pass: directory, manifest id, package name, and `channel.id` all = `pulseboard` |\n\n## Verification\n\n1. `pnpm test -- extensions/pulseboard/src/channel.test.ts`\n2. `pnpm check`\n3. `pnpm test -- src/plugins/bundled-plugin-naming.test.ts`",
+    "execute_duration_ms": 1287835,
+    "execute_api_ms": 1167116,
+    "execute_tokens_in": 139,
+    "execute_tokens_out": 72034,
+    "execute_cost_usd": 6.227781899999997
+  },
+  "evaluation": {
+    "overall_score": 0.85,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.85,
+        "weight": 1,
+        "weighted_score": 0.85,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is functionally complete with all core components present: package.json with @openclaw/pulseboard scoped name and setupEntry field ✓, openclaw.plugin.json with channels and configSchema ✓, createPluginRuntimeStore with get/set accessors ✓, createChatChannelPlugin with chatTypes ['direct', 'group'], textChunkLimit 4000, outbound sendText, gateway, messaging, and normalizeTarget ✓, defineChannelPluginEntry ✓, defineSetupPluginEntry ✓, and no existing files modified ✓. However, minor deviations: (1) No explicit PulseboardMessage interface in types.ts (rubric requires this); (2) Uses serverUrl field instead of boardUrl as specified in rubric; (3) Uses combined PulseboardAccountConfig instead of separate PulseboardAccount and PulseboardConfig types as specified. Additionally, PLAN.md and node_modules symlinks should not have been included. Overall the implementation is well-structured, follows existing patterns correctly, and is functionally sound, but has naming/structure details that diverge from strict rubric compliance.",
+          "diff_length": 41098,
+          "new_files": "PLAN.md\nextensions/pulseboard/api.ts\nextensions/pulseboard/index.ts\nextensions/pulseboard/openclaw.plugin.json\nextensions/pulseboard/package.json\nextensions/pulseboard/runtime-api.ts\nextensions/pulseboard/setup-entry.ts\nextensions/pulseboard/src/channel.test.ts\nextensions/pulseboard/src/channel.ts\nextensions/pulseboard/src/config-schema.ts\nextensions/pulseboard/src/runtime.ts\nextensions/pulseboard/src/send.ts\nextensions/pulseboard/src/setup-surface.ts\nextensions/pulseboard/src/types.ts\nnode_modules\nui/node_modules"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 22092
+  },
+  "session_id": "a56a9cf7-cc9c-44d5-8737-9d5a4cec8668"
+}

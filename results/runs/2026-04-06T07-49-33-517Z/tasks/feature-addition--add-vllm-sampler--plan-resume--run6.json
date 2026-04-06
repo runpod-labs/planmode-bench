@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "plan-resume",
+  "run_number": 6,
+  "timestamp": "2026-04-06T12:39:00.873Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 683666,
+    "duration_api_ms": 802568,
+    "num_turns": 118,
+    "total_cost_usd": 3.6158169500000006,
+    "input_tokens": 103,
+    "output_tokens": 32829,
+    "cache_read_tokens": 7371343,
+    "cache_creation_tokens": 105314,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 323599,
+    "plan_api_ms": 442915,
+    "plan_tokens_in": 27,
+    "plan_tokens_out": 14437,
+    "plan_cost_usd": 1.16902325,
+    "plan_content": "## Implementation Plan: Add Top-A Sampling to vLLM\n\nHere is the complete plan. Top-A is nearly identical to `min_p` in its filtering math, but is a distinct, named parameter used by several popular frontends.\n\n---\n\n### What changes, and why\n\n**7 files** need to be touched to thread `top_a` through both the V0 and V1 sampling engines:\n\n---\n\n### Step 1 — `vllm/sampling_params.py`\n- Add `top_a: float = 0.0` field after `min_p` (line 214)\n- Add docstring entry for `top_a`\n- Add `top_a` parameter to `from_optional()` and its `SamplingParams(...)` call\n- Reset `self.top_a = 0.0` in the greedy branch of `__post_init__` (alongside the existing `min_p` reset, lines 377–382)\n- Add `0.0 ≤ top_a ≤ 1.0` validation in `_verify_args()` (after the `min_p` check, lines 426–428)\n\n---\n\n### Step 2 — `vllm/model_executor/sampling_metadata.py` (V0 batched tensors)\n- Add `top_as: torch.Tensor` field to `SamplingTensors` (after `min_ps`)\n- In `from_sampling_metadata()`: add `top_as` list, `do_top_a` flag, extract `sampling_params.top_a` per seq_group, append to both the prefill and decode slots; return a **5-tuple** `(..., do_top_a)` instead of 4\n- In `from_lists()`: add `top_as: list[float]` parameter, create the tensor, pass it to `cls(...)`\n\n---\n\n### Step 3 — `vllm/model_executor/layers/sampler.py` (V0 sampler)\n- Unpack the new `do_top_a` from the 5-tuple; store `self._do_top_a`\n- In `forward()`, after the `_apply_min_p` block: `if do_top_a: logits = _apply_top_a(logits, sampling_tensors.top_as)`\n- Add new `_apply_top_a()` function after `_apply_min_p` (line ~441) — same pattern as `_apply_min_p`\n\n---\n\n### Step 4 — `vllm/v1/sample/metadata.py` (V1 metadata dataclass)\n- Add `top_a: Optional[torch.Tensor]` after `top_k` (line 20)\n\n---\n\n### Step 5 — `vllm/v1/worker/gpu_input_batch.py` (V1 batch state — the most involved change)\n- **`__init__`**: add `top_a` GPU tensor, `top_a_cpu_tensor`, `top_a_cpu` numpy view, and `top_a_reqs` set\n- **`add_request()`**: store `sampling_params.top_a`; add req to `top_a_reqs` if `> 0.0`\n- **`remove_request()`**: `self.top_a_reqs.discard(req_id)`\n- **`swap_states()`**: swap `top_a_cpu[i1]` ↔ `top_a_cpu[i2]`\n- **`condense()`**: copy `top_a_cpu[last_req_index]` into the empty slot\n- **`_make_sampling_metadata()`**: `copy_slice` if `not self.no_top_a`; pass `top_a=None if self.no_top_a else self.top_a[:num_reqs]`\n- **`no_top_a` property**: `return len(self.top_a_reqs) == 0`\n\n---\n\n### Step 6 — `vllm/v1/sample/ops/topk_topp_sampler.py` (V1 op)\n- Add `apply_top_a(logits, a)` function after `apply_top_k_only` (~line 233); returns early if `a is None`\n\n---\n\n### Step 7 — `vllm/v1/sample/sampler.py` (V1 sampler)\n- Import `apply_top_a` from the ops module\n- In `sample()`, call `logits = apply_top_a(logits, sampling_metadata.top_a)` **after** `apply_temperature` and **before** `topk_topp_sampler`",
+    "execute_duration_ms": 360067,
+    "execute_api_ms": 359653,
+    "execute_tokens_in": 76,
+    "execute_tokens_out": 18392,
+    "execute_cost_usd": 2.4467937000000006
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "contains \"top_a\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "top_a.*float|float.*top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "0\\.0.*top_a|top_a.*0\\.0",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "python3 -c 'import ast; ast.parse(open(\"vllm/sampling_params.py\").read()); print(\"Syntax OK\")'",
+          "exit_code": 0,
+          "output": "Syntax OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 35
+  },
+  "session_id": "6710b96d-5bf5-4898-a195-81df1591ed18"
+}

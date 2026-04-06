@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-clear",
+  "run_number": 10,
+  "timestamp": "2026-04-06T12:16:03.207Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 839955,
+    "duration_api_ms": 837381,
+    "num_turns": 25,
+    "total_cost_usd": 1.76656155,
+    "input_tokens": 35,
+    "output_tokens": 18431,
+    "cache_read_tokens": 454813,
+    "cache_creation_tokens": 50411,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 719277,
+    "plan_api_ms": 718018,
+    "plan_tokens_in": 14,
+    "plan_tokens_out": 11825,
+    "plan_cost_usd": 1.5061441500000001,
+    "plan_content": "Here is the complete implementation plan. Only **one file** needs to be modified: `unsloth/save.py`.\n\n---\n\n### What gets built\n\n`model.save_pretrained_onnx(save_directory, opset_version=17)` — exposed alongside the existing `save_pretrained_gguf`, `save_pretrained_merged`, and `save_pretrained_torchao` methods.\n\n**Output per call:**\n- One `.onnx` file per LoRA-adapted module (e.g. `base_model.model.model.layers.0.self_attn.q_proj.onnx`), each encoding the delta computation `(x @ A.T) @ B.T * scaling`\n- One `metadata.json` — contains `rank`, `lora_alpha`, `target_modules`, `opset_version`, `adapter_name`, and per-module details\n\n---\n\n### 7 targeted edits to `unsloth/save.py`\n\n| # | Location | Change |\n|---|---|---|\n| 1 | Line ~27 | `import json` (not yet present) |\n| 2 | Line 29 | Add `get_lora_parameters` to the existing `.kernels` import |\n| 3 | Lines 48–54 | Add `\"unsloth_save_pretrained_onnx\"` to `__all__` |\n| 4 | After line ~2561 | New `_LoRAONNXModule(nn.Module)` — registers A/B as float32 buffers; forward = `(x @ A.T) @ B.T * scaling` |\n| 5 | After line ~2561 | New `unsloth_save_pretrained_onnx(self, save_directory, opset_version=17)` function |\n| 6 | Line ~2664 (non-vision branch of `patch_saving_functions`) | `model.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)` |\n| 7 | Line ~2674 (vision branch) | Same binding — LoRA is architecture-agnostic, unlike GGUF |\n\n**Key design choices:**\n- Uses the existing `isinstance(module, (Peft_Linear4bit, Peft_Linear))` pattern (line 162) to find adapter layers\n- Uses `get_lora_parameters` (already in `kernels/__init__.py` line 38) to cleanly extract A/B/scaling from quantised and QAT layers alike\n- A/B cast to float32 for broadest ONNX runtime compatibility\n- `peft_config` access is guarded with `getattr(self, \"peft_config\", {})` since it's not currently referenced anywhere in `save.py`\n- `metadata.json` stores scaling per-module to handle models with per-layer rank/alpha (DoRA, rank-stabilised LoRA)",
+    "execute_duration_ms": 120678,
+    "execute_api_ms": 119363,
+    "execute_tokens_in": 21,
+    "execute_tokens_out": 6606,
+    "execute_cost_usd": 0.26041739999999997
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 90
+  },
+  "session_id": "d055b527-f225-46d0-81f5-b462ad48cf1d"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-shadcn-stepper",
+  "task_name": "add stepper component",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-06T16:58:10.340Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 925850,
+    "duration_api_ms": 1102306,
+    "num_turns": 29,
+    "total_cost_usd": 2.3160156,
+    "input_tokens": 37,
+    "output_tokens": 39791,
+    "cache_read_tokens": 1235767,
+    "cache_creation_tokens": 107031,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 759816,
+    "plan_api_ms": 937513,
+    "plan_tokens_in": 24,
+    "plan_tokens_out": 33299,
+    "plan_cost_usd": 1.8794725500000002,
+    "plan_content": "The plan is written. Here's a summary of everything that will be implemented:\n\n---\n\n## Implementation Plan: Stepper Compound Component\n\n### What gets created (2 new files)\n1. **`apps/v4/registry/new-york-v4/ui/stepper.tsx`** — The full compound component\n2. **`apps/v4/registry/new-york-v4/examples/stepper-demo.tsx`** — A 3-step wizard demo\n\n### What gets modified (2 registry entries only)\n3. **`ui/_registry.ts`** — Insert `\"stepper\"` entry between `\"spinner\"` and `\"switch\"` (alphabetical, line 563)\n4. **`examples/_registry.ts`** — Insert `\"stepper-demo\"` entry between `\"spinner-item\"` and `\"switch-demo\"` (line 2124)\n\n> `registry.ts` needs **no changes** — it auto-imports from both sub-registries.\n\n---\n\n### Component architecture\n\nFollows the **Carousel pattern** (Context + custom hook). Two nested contexts:\n\n- **`StepperContext`** (root): `activeStep`, `setActiveStep`, `orientation`\n- **`StepperItemContext`** (per-item): `step`, `state` (`active` | `completed` | `inactive`)\n\n**7 exported sub-components:**\n\n| Component | Element | Reads from |\n|-----------|---------|------------|\n| `Stepper` | `<div>` + provider | — |\n| `StepperItem` | `<div>` + provider | root context |\n| `StepperTrigger` | `<button>` | both contexts |\n| `StepperTitle` | `<p>` | item context |\n| `StepperDescription` | `<p>` | item context |\n| `StepperSeparator` | `<div>` | root context |\n| `StepperContent` | `<div>` (conditional) | root + optional item context |\n\n**Orientation layout:** Horizontal = `flex-row items-start` with `h-px mt-4` separators (aligns with center of `size-8` circle). Vertical = `flex-col` with `w-px ms-4 min-h-6` separators.\n\n**`StepperContent` flexibility:** Uses bare `React.useContext()` (not the throwing hook) so it works both *inside* `<StepperItem>` (inherits step) and *outside* (requires explicit `step` prop) — demonstrated in the demo.",
+    "execute_duration_ms": 166034,
+    "execute_api_ms": 164793,
+    "execute_tokens_in": 13,
+    "execute_tokens_out": 6492,
+    "execute_cost_usd": 0.43654304999999993
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete implementation meeting all rubric requirements: (1) stepper.tsx has 'use client' and exports all seven required components, (2) each sub-component includes correct data-slot attributes (stepper, stepper-item, stepper-trigger, stepper-title, stepper-description, stepper-separator, stepper-content) and uses cn() utility throughout, (3) implements StepperContext and StepperItemContext with useStepper/useStepperItem hooks for state sharing, (4) supports both horizontal and vertical orientations with conditional styling (flex-row/flex-col, h-px/w-px separators), (5) demo file uses useState for active step management and renders all required components with functional wizard behavior, (6) both registry entries correctly added to _registry.ts files with proper dependencies, (7) no existing component files modified. Implementation is production-ready with proper error handling and controlled/uncontrolled component patterns.",
+          "diff_length": 13214,
+          "new_files": "apps/v4/registry/new-york-v4/examples/stepper-demo.tsx\napps/v4/registry/new-york-v4/ui/stepper.tsx"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 12896
+  },
+  "session_id": "e4b9adf0-421c-41c0-bb8e-7866d7e5d1f0"
+}

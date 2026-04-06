@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T17:14:11.360Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 473836,
+    "duration_api_ms": 610077,
+    "num_turns": 50,
+    "total_cost_usd": 1.99458695,
+    "input_tokens": 45,
+    "output_tokens": 26349,
+    "cache_read_tokens": 1797349,
+    "cache_creation_tokens": 123452,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 318083,
+    "plan_api_ms": 454410,
+    "plan_tokens_in": 22,
+    "plan_tokens_out": 15406,
+    "plan_cost_usd": 1.19582705,
+    "plan_content": "Here is the complete plan — everything fits in **one source file edit + one new test file**.\n\n---\n\n## What the plan does\n\n### Files changed\n| File | Type |\n|---|---|\n| `unsloth/save.py` | 4 targeted edits |\n| `tests/saving/test_export_lora_onnx.py` | New file |\n\n---\n\n### `unsloth/save.py` — 4 edits\n\n1. **`__all__`** (line ~50): add `\"export_lora_to_onnx\"` to the public API list.\n\n2. **`export_lora_to_onnx(model, output_dir, opset_version=17)`** — standalone function inserted just before `patch_saving_functions`:\n   - Validates the model has a `peft_config` (raises `ValueError` otherwise)\n   - Reads `rank`, `lora_alpha`, `target_modules` from `model.peft_config[adapter_name]`\n   - Iterates `model.named_modules()`, skips anything that isn't a LoRA layer or is already merged\n   - For each un-merged LoRA layer: extracts `lora_A[adapter].weight`, `lora_B[adapter].weight`, `scaling[adapter]`; wraps them in a tiny `_LoRADelta` `nn.Module` (`output = (x @ A.T @ B.T) * scale`); calls `torch.onnx.export(...)` with dynamic batch/seq axes → saves `<module_name_with_dots_replaced>.onnx`\n   - Writes `metadata.json` with `rank`, `alpha`, `target_modules`, `opset_version`, and per-module info (onnx filename, rank, scale, in/out features)\n   - Returns the metadata dict\n\n3. **`unsloth_export_lora_to_onnx(self, output_dir, opset_version=17)`** — thin `self`-based wrapper, same pattern as every other export method in the file.\n\n4. **`patch_saving_functions`** — adds `model.export_lora_onnx = types.MethodType(unsloth_export_lora_to_onnx, model)` to **both** the language-model branch and the vision branch.\n\n### `tests/saving/test_export_lora_onnx.py` — 6 tests\nFiles created, metadata correctness (rank/alpha/target_modules), per-module shape sanity, `onnx.checker` validity, ONNX Runtime inference output shape, and the bound instance method. ONNX/ORT tests auto-skip if those packages aren't installed.\n\n---\n\n### No new dependencies\n`torch.onnx` is already available everywhere PyTorch is. `onnx` and `onnxruntime` are only needed to run the optional validation tests.",
+    "execute_duration_ms": 155753,
+    "execute_api_ms": 155667,
+    "execute_tokens_in": 23,
+    "execute_tokens_out": 10943,
+    "execute_cost_usd": 0.7987599
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation fully meets all rubric requirements: (1) export_lora_to_onnx function properly saves LoRA A and B matrices, (2) accepts output_dir and opset_version (default 17), (3) saves comprehensive metadata including rank, alpha, target_modules, and opset_version, (4) exposed via __all__ export and registered as model.export_lora_onnx in patch_saving_functions for both code paths, (5) correctly uses torch.onnx.export with proper dynamic axes and opset handling, (6) follows unsloth patterns with type hints, docstrings, error handling, and @torch.inference_mode decorator. Test coverage is comprehensive with 7 well-designed tests validating file creation, metadata content, shapes, ONNX validity, runtime inference, instance method binding, and opset version handling. Minor: trailing pass statements and minimal documentation about internal PEFT attributes, but these are negligible given the overall quality and completeness.",
+          "diff_length": 15318,
+          "new_files": "tests/saving/test_export_lora_onnx.py"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16082
+  },
+  "session_id": "dcee3804-fd58-451c-b43a-d8015449a569"
+}

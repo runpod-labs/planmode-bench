@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-uv-cache-stats",
+  "task_name": "add 'uv cache stats' subcommand",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T17:40:32.576Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1513035,
+    "duration_api_ms": 1629386,
+    "num_turns": 73,
+    "total_cost_usd": 3.932316299999999,
+    "input_tokens": 71,
+    "output_tokens": 95929,
+    "cache_read_tokens": 4224180,
+    "cache_creation_tokens": 171582,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 491675,
+    "plan_api_ms": 630480,
+    "plan_tokens_in": 23,
+    "plan_tokens_out": 24889,
+    "plan_cost_usd": 1.30744725,
+    "plan_content": "Here's a summary of the plan I've researched and written:\n\n---\n\n## Plan: `uv cache stats`\n\n### What I explored\n- `uv cache size` lives in `crates/uv/src/commands/cache_size.rs` and uses `diskus::DiskUsage` on the whole cache root\n- `CacheBucket` enum (in `crates/uv-cache/src/lib.rs`) defines 11 buckets: `Wheels`, `SourceDistributions`, `FlatIndex`, `Git`, `Interpreter`, `Simple`, `Archive`, `Builds`, `Environments`, `Python`, `Binaries` — mapped to versioned dirs like `wheels-v6`, `sdists-v9`\n- `CacheBucket::iter()` only yields 10 (missing `Python`) — we'll list all 11 explicitly in the new command\n- `human_readable_bytes()` is in `uv_console` and already re-exported in `commands/mod.rs`\n- `PreviewFeature::CacheSize` gates `cache_size`; we'll reuse it for `stats` too\n\n### 7 files to touch (2 new, 5 modified)\n\n| File | Change |\n|---|---|\n| `crates/uv-cli/src/lib.rs` | Add `Stats(StatsArgs)` to `CacheCommand` + `StatsArgs` struct |\n| `crates/uv/src/commands/cache_stats.rs` ✨ | New command: per-bucket `DiskUsage` loop, table output |\n| `crates/uv/src/commands/mod.rs` | Register + re-export `cache_stats` |\n| `crates/uv/src/lib.rs` | Add dispatch arm for `CacheCommand::Stats` |\n| `crates/uv-test/src/lib.rs` | Add `cache_stats()` helper + `with_filtered_cache_stats()` |\n| `crates/uv/tests/it/cache_stats.rs` ✨ | 3 integration tests (empty, raw, human) |\n| `crates/uv/tests/it/main.rs` | Register `mod cache_stats` |",
+    "execute_duration_ms": 1021360,
+    "execute_api_ms": 998906,
+    "execute_tokens_in": 48,
+    "execute_tokens_out": 71040,
+    "execute_cost_usd": 2.624869049999999
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete implementation meeting all rubric requirements: (1) Stats(StatsArgs) variant with human bool flag added to CacheCommand enum; (2) cache_stats() function iterates ALL_BUCKETS with CacheBucket::Python included, computes sizes via DiskUsage::new().count_ignoring_errors(); (3) pub(crate) fn returns ExitStatus::Success; (4) human_readable_bytes() used for --human flag formatting; (5) per-bucket and total lines output via printer.stdout_important(); (6) module properly registered in mod.rs; (7) dispatch wired in lib.rs matching CacheCommand::Stats; (8) follows cache_size command patterns (function signature, preview warning, output formatting); (9) both implementation and test files created; (10) three comprehensive test cases with proper snapshot filtering via with_filtered_cache_stats(), test helper added to uv_test, and feature-gated test module registration. Code quality is high with proper error handling for non-existent cache paths.",
+          "diff_length": 9963,
+          "new_files": "crates/uv/src/commands/cache_stats.rs\ncrates/uv/tests/it/cache_stats.rs"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18238
+  },
+  "session_id": "185f71f4-39c1-490c-ae66-f8aa4454256a"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "add new AI image provider",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T17:46:21.735Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 602338,
+    "duration_api_ms": 709272,
+    "num_turns": 50,
+    "total_cost_usd": 1.8000902,
+    "input_tokens": 212,
+    "output_tokens": 26659,
+    "cache_read_tokens": 1460484,
+    "cache_creation_tokens": 102333,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 239744,
+    "plan_api_ms": 349054,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 11279,
+    "plan_cost_usd": 0.8254386499999999,
+    "plan_content": "Here's a summary of the plan I've built after thoroughly exploring the codebase:\n\n## Plan Summary: `@ai-sdk/pixelart` Provider\n\n**Reference model:** `packages/black-forest-labs` — the cleanest existing image-only provider with no `openai-compatible` dependency.\n\n### 13 new files to create in `packages/pixelart/`\n\n**Package infra (6 files):**\n- `package.json` — `@ai-sdk/pixelart` v0.0.0, deps on `@ai-sdk/provider` + `@ai-sdk/provider-utils`\n- `tsconfig.json`, `tsconfig.build.json`, `tsup.config.ts` — build setup\n- `vitest.node.config.js`, `vitest.edge.config.js` — dual test runners\n\n**Source (5 files):**\n- `src/version.ts` — `__PACKAGE_VERSION__` constant\n- `src/pixelart-image-settings.ts` — `PixelArtImageModelId` ('pixelart-v1', 'pixelart-v1-fast', 'pixelart-v2') + `PixelArtStyle` ('pixel' | 'retro' | '8bit')\n- `src/pixelart-image-model.ts` — `PixelArtImageModel implements ImageModelV3`, POSTs to `{baseURL}/images/generate`, decodes base64 responses; provider options: `style` + `pixelDensity` (via `parseProviderOptions`); warns on unsupported `aspectRatio`\n- `src/pixelart-provider.ts` — `createPixelArt()` factory + `pixelart` singleton; throws `NoSuchModelError` for `languageModel`/`embeddingModel`\n- `src/index.ts` — public exports\n\n**Tests (2 files):**\n- `src/pixelart-image-model.test.ts` — request body, provider options, warnings, metadata, errors\n- `src/pixelart-provider.test.ts` — model creation, headers, baseURL, NoSuchModelError\n\n### 1 existing file to modify\n- **`tsconfig.json`** (root) — add `{ \"path\": \"packages/pixelart\" }` between `perplexity` and `provider` entries",
+    "execute_duration_ms": 362594,
+    "execute_api_ms": 360218,
+    "execute_tokens_in": 199,
+    "execute_tokens_out": 15380,
+    "execute_cost_usd": 0.9746515500000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation fully meets all rubric requirements. The new packages/pixelart provider package is correctly structured with: (1) package.json for @ai-sdk/pixelart; (2) createPixelArt factory function and pixelart singleton properly exported; (3) PixelArtProvider interface with image() and imageModel() methods; (4) PixelArtImageModel class implementing ImageModelV3 with doGenerate() method (correct for AI SDK pattern, not literally 'generateImage'); (5) image settings supporting size parameter and PixelArtStyle enum ('pixel', 'retro', '8bit') plus pixelDensity (1-10) via provider options schema; (6) default base URL correctly set to 'https://api.pixelart.ai/v1'; (7) follows standard AI SDK provider structure with tsconfig, tsup, vitest configs, proper source layout; (8) only new files created plus minimal tsconfig.json path update (necessary and expected). Comprehensive test coverage included for both model and provider. Error handling, metadata, warnings, and type safety all properly implemented.",
+          "diff_length": 30246,
+          "new_files": "PLAN.md\npackages/pixelart/package.json\npackages/pixelart/src/index.ts\npackages/pixelart/src/pixelart-image-model.test.ts\npackages/pixelart/src/pixelart-image-model.ts\npackages/pixelart/src/pixelart-image-settings.ts\npackages/pixelart/src/pixelart-provider.test.ts\npackages/pixelart/src/pixelart-provider.ts\npackages/pixelart/src/version.ts\npackages/pixelart/tsconfig.build.json\npackages/pixelart/tsconfig.json\npackages/pixelart/tsup.config.ts\npackages/pixelart/turbo.json\npackages/pixelart/vitest.edge.config.js\npackages/pixelart/vitest.node.config.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 17058
+  },
+  "session_id": "0dd20137-a4aa-4e87-b519-4ea955d0a26c"
+}

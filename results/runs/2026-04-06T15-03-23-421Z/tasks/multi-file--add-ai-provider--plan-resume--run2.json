@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "add new AI image provider",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T17:42:35.873Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 629070,
+    "duration_api_ms": 848702,
+    "num_turns": 40,
+    "total_cost_usd": 2.06476755,
+    "input_tokens": 36,
+    "output_tokens": 23642,
+    "cache_read_tokens": 1643064,
+    "cache_creation_tokens": 133623,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 446581,
+    "plan_api_ms": 667261,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 10259,
+    "plan_cost_usd": 1.1636706000000003,
+    "plan_content": "Here is a summary of the complete plan:\n\n---\n\n## Plan: `@ai-sdk/pixelart` Provider\n\n### What will be created\n\n**12 new files** under `packages/pixelart/` — zero modifications to any existing provider packages.\n\n**1 line added** to root `tsconfig.json` (alphabetically between `perplexity` and `provider`).\n\n### File breakdown\n\n| File | Purpose |\n|---|---|\n| `src/version.ts` | Build-time version injection (`__PACKAGE_VERSION__`) |\n| `src/pixelart-image-settings.ts` | `PixelArtImageModelId` type: `'pixelart-v1' \\| 'pixelart-v2' \\| (string & {})` |\n| `src/pixelart-error.ts` | Zod error schema + `pixelArtFailedResponseHandler` via `createJsonErrorResponseHandler` |\n| `src/pixelart-image-model.ts` | `PixelArtImageModel` class implementing `ImageModelV3`; options schema with `style` + `pixelDensity` |\n| `src/pixelart-provider.ts` | `createPixelArt()` factory + default `pixelArt` instance |\n| `src/index.ts` | Public exports |\n| `package.json` | `@ai-sdk/pixelart` v0.0.0, depends on `@ai-sdk/provider` + `@ai-sdk/provider-utils` |\n| `tsconfig.json` / `tsconfig.build.json` | TS config referencing `../provider` and `../provider-utils` |\n| `tsup.config.ts` | CJS + ESM dual output |\n| `turbo.json` + vitest configs | Monorepo task & test runner configs |\n\n### Key design decisions\n\n- **Image-only**: `languageModel`, `embeddingModel`, `textEmbeddingModel` all throw `NoSuchModelError`\n- **API endpoint**: `POST https://api.pixelart.ai/v1/images/generate` with JSON body\n- **Provider options** (passed via `providerOptions: { pixelart: { style, pixelDensity } }`):\n  - `style`: `'pixel' | 'retro' | '8bit'`\n  - `pixelDensity`: integer 1–64\n  - Validated with `lazySchema(() => zodSchema(z.object({...})))` + `parseProviderOptions`\n- **Unsupported features** (`aspectRatio`, `files`, `mask`) emit `SharedV3Warning` entries\n- **Auth**: `Authorization: Bearer <key>`, env var `PIXELART_API_KEY`\n- **Reuses** standard utilities: `postJsonToApi`, `combineHeaders`, `resolve`, `loadApiKey`, `withUserAgentSuffix`, `withoutTrailingSlash`, `createJsonResponseHandler`\n- **Modeled after** `packages/prodia` (closest existing minimal image-only provider)",
+    "execute_duration_ms": 182489,
+    "execute_api_ms": 181441,
+    "execute_tokens_in": 23,
+    "execute_tokens_out": 13383,
+    "execute_cost_usd": 0.9010969499999999
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete implementation meeting all rubric requirements. The new PixelArt provider package includes: (1) proper package.json structure matching existing providers, (2) exported createPixelArt factory function and pixelArt instance, (3) PixelArtProvider interface implementing ProviderV3 with image() and imageModel() methods, (4) PixelArtImageModel class implementing ImageModelV3 with doGenerate method for image generation, (5) image settings schema supporting size, style enum with 'pixel'/'retro'/'8bit' options, and pixelDensity validation (1-64 range), (6) correct base URL configured as https://api.pixelart.ai/v1, (7) complete provider structure with TypeScript configs, vitest configs, tsup build config, turbo.json, and proper exports, (8) only new files created under packages/pixelart/ with minimal necessary update to root tsconfig.json for monorepo integration. Error handling, authentication headers, and unsupported model type rejection are all properly implemented.",
+          "diff_length": 15557,
+          "new_files": "packages/pixelart/package.json\npackages/pixelart/src/index.ts\npackages/pixelart/src/pixelart-error.ts\npackages/pixelart/src/pixelart-image-model.ts\npackages/pixelart/src/pixelart-image-settings.ts\npackages/pixelart/src/pixelart-provider.ts\npackages/pixelart/src/version.ts\npackages/pixelart/tsconfig.build.json\npackages/pixelart/tsconfig.json\npackages/pixelart/tsup.config.ts\npackages/pixelart/turbo.json\npackages/pixelart/vitest.edge.config.js\npackages/pixelart/vitest.node.config.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 14456
+  },
+  "session_id": "fa1150fa-0b9d-4711-b523-42d06a7e2818"
+}

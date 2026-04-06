@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 10,
+  "timestamp": "2026-04-06T12:03:46.479Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 457088,
+    "duration_api_ms": 632886,
+    "num_turns": 45,
+    "total_cost_usd": 1.8516264500000006,
+    "input_tokens": 46,
+    "output_tokens": 24142,
+    "cache_read_tokens": 1617592,
+    "cache_creation_tokens": 101905,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 318305,
+    "plan_api_ms": 494207,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 15908,
+    "plan_cost_usd": 1.1478749000000006,
+    "plan_content": "Here's a summary of the plan I've written:\n\n---\n\n## Plan: Add `export_to_onnx` to Unsloth\n\n**Only one file needs to change:** `unsloth/save.py`\n\n### What I found\n\n- All save/export methods live in `unsloth/save.py` and are attached to model instances via `patch_saving_functions()` using `types.MethodType`\n- LoRA A/B weights are accessed via `get_lora_parameters(module)` from `unsloth/kernels/utils.py` — returns `(W, quant_state, A, B, scaling)` where `A` is `(rank, in_features)` and `B` is `(out_features, rank)`\n- LoRA layers are detected with `isinstance(layer, (Bnb_Linear4bit, Peft_Linear4bit, Peft_Linear))`\n- LoRA config (rank, alpha, target_modules) lives at `model.peft_config[\"default\"]`\n\n### 4 changes to `unsloth/save.py`\n\n1. **Import** — add `get_lora_parameters` to the existing kernels import on line 29\n2. **`__all__`** — add `\"export_to_onnx\"` to the export list\n3. **New functions** (inserted before `not_implemented_save` at line 2564):\n   - `export_to_onnx(model, output_dir, opset_version=17)` — standalone function that walks `model.named_modules()`, finds LoRA layers, exports each layer's A and B matrix as separate ONNX files via `torch.onnx.export`, and writes a `lora_metadata.json` with rank, alpha, scaling, target_modules, and per-layer shapes\n   - `unsloth_save_pretrained_onnx(self, output_dir, opset_version=17)` — thin instance-method wrapper calling the above\n4. **`patch_saving_functions`** — add one line to bind `unsloth_save_pretrained_onnx` as `model.save_pretrained_onnx`\n\n### Output structure\n```\noutput_dir/\n  base_model_model_layers_0_q_proj.lora_A.onnx\n  base_model_model_layers_0_q_proj.lora_B.onnx\n  ...\n  lora_metadata.json   ← rank, alpha, scaling, target_modules, per-layer shapes\n```\n\n### User-facing API\n```python\nmodel.save_pretrained_onnx(\"/tmp/lora_onnx\")              # instance method\n# or\nfrom unsloth.save import export_to_onnx\nexport_to_onnx(model, \"/tmp/lora_onnx\", opset_version=14) # standalone\n```",
+    "execute_duration_ms": 138783,
+    "execute_api_ms": 138679,
+    "execute_tokens_in": 26,
+    "execute_tokens_out": 8234,
+    "execute_cost_usd": 0.70375155
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 85
+  },
+  "session_id": "8b82aa61-d377-489d-bb41-700cdb0af80f"
+}

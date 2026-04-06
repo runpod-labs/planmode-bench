@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 9,
+  "timestamp": "2026-04-06T12:02:01.261Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 355258,
+    "duration_api_ms": 446522,
+    "num_turns": 27,
+    "total_cost_usd": 1.3069018500000003,
+    "input_tokens": 28,
+    "output_tokens": 16482,
+    "cache_read_tokens": 749483,
+    "cache_creation_tokens": 83562,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 250507,
+    "plan_api_ms": 341888,
+    "plan_tokens_in": 11,
+    "plan_tokens_out": 9764,
+    "plan_cost_usd": 0.8437294500000003,
+    "plan_content": "## Plan Summary\n\n**Only one file needs to be modified: `unsloth/save.py`**\n\nHere's what I'll add (4 targeted changes):\n\n---\n\n### 1. `__all__` update (line ~54)\nAdd `\"unsloth_export_lora_to_onnx\"` to the existing list.\n\n---\n\n### 2. `_LoRAONNXWrapper` class (insert before line 2564)\nA minimal `nn.Module` that encodes the LoRA computation: `output = (x @ A.T @ B.T) * scaling`. Weights are detached and cast to `float32` for ONNX compatibility.\n\n---\n\n### 3. `unsloth_export_lora_to_onnx(model, save_directory, opset_version=17)` — core function\n- Resolves active adapter name (`model.active_adapter` → fallback `\"default\"`)\n- Reads `rank`, `alpha`, `target_modules` from `model.peft_config[adapter_name]`\n- Iterates all named modules; finds those with `lora_A`/`lora_B` dicts\n- For each LoRA module: wraps in `_LoRAONNXWrapper`, calls `torch.onnx.export()` with `do_constant_folding=False` and a dynamic batch axis → saves `{sanitized_module_name}.onnx`\n- Writes `adapter_metadata.json` with rank, alpha, target_modules, opset, and per-module shape/scaling info\n\n---\n\n### 4. `unsloth_save_pretrained_onnx(self, save_directory, opset_version=17)` — bound method\nThin wrapper that calls the core function, then GC-collects. Registered via `types.MethodType` in `patch_saving_functions()` for both vision and non-vision model branches.\n\n---\n\n### Key design decisions\n- **One ONNX file per LoRA module** — portable, independently loadable\n- **`do_constant_folding=False`** — preserves named A and B initializers in the graph (not pre-multiplied away)\n- **Always float32** — ONNX Runtime compatibility; A/B are fp16/bf16 in training\n- **No new dependencies** — `torch.onnx.export` + stdlib `json` only",
+    "execute_duration_ms": 104751,
+    "execute_api_ms": 104634,
+    "execute_tokens_in": 17,
+    "execute_tokens_out": 6718,
+    "execute_cost_usd": 0.4631724
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 78
+  },
+  "session_id": "00ce4382-127c-4fe1-acc1-00df5497bc71"
+}

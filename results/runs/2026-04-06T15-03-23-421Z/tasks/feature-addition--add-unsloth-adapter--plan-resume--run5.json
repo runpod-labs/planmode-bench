@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T17:15:26.291Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 350991,
+    "duration_api_ms": 505827,
+    "num_turns": 35,
+    "total_cost_usd": 1.4099707000000001,
+    "input_tokens": 34,
+    "output_tokens": 16473,
+    "cache_read_tokens": 871729,
+    "cache_creation_tokens": 94685,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 281377,
+    "plan_api_ms": 436276,
+    "plan_tokens_in": 24,
+    "plan_tokens_out": 12335,
+    "plan_cost_usd": 1.0847027500000002,
+    "plan_content": "The plan has been written to `/Users/timpietrusky/.claude/plans/shiny-sprouting-dream.md`. Here's the complete summary:\n\n---\n\n## Plan: `export_to_onnx` for Unsloth\n\n**Only one file changes: `unsloth/save.py`** — 3 targeted edits.\n\n---\n\n### How it works\n\n`model.save_pretrained_onnx(save_directory, opset_version=17)` is a bound method (like all other unsloth save methods). It:\n\n1. Reads `model.peft_config[\"default\"]` to collect **rank**, **alpha**, and **target_modules**\n2. Walks `self.named_modules()`, skipping anything that isn't `Peft_Linear4bit` or `Peft_Linear`, or that is already merged/disabled\n3. For each LoRA layer, resolves the active adapter name (same `active_adapters → active_adapter → \"default\"` fallback as `kernels/utils.py:get_lora_parameters`)\n4. Wraps `lora_A.weight` and `lora_B.weight` in a tiny `_LoraAdapterModule` whose `forward` is `(x @ A.T) @ B.T * scaling`\n5. Calls `torch.onnx.export(...)` per layer → one `.onnx` file per layer\n6. Writes `adapter_metadata.json` with rank, alpha, target_modules, opset_version, and the `{layer_name → filename}` mapping\n\n---\n\n### Edit 1 — `__all__` (lines 48–54)\nAdd `\"unsloth_save_pretrained_onnx\"` to make it part of the public `from unsloth import *` API.\n\n---\n\n### Edit 2 — New function at line ~2564 (before `not_implemented_save`)\n\n```python\ndef unsloth_save_pretrained_onnx(\n    self,\n    save_directory : Union[str, os.PathLike],\n    opset_version  : int = 17,\n):\n    ...\n```\n\nUses only already-imported names (`torch`, `os`, `Peft_Linear4bit`, `Peft_Linear`). The inner `_LoraAdapterModule` stores A and B as `nn.Parameter` so they appear as named initializer tensors in the ONNX graph.\n\n---\n\n### Edit 3 — `patch_saving_functions()` at line ~2665\n\nOne new line inside the `if not vision: if hasattr(model, \"config\"):` block:\n\n```python\nmodel.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)\n```\n\nVision models are intentionally excluded (they don't use the same PEFT LoRA structure).\n\n---\n\n### Output layout\n```\nmy_onnx_adapters/\n├── adapter_metadata.json\n├── base_model_model_layers_0_self_attn_q_proj.onnx\n├── base_model_model_layers_0_self_attn_k_proj.onnx\n└── ...\n```",
+    "execute_duration_ms": 69614,
+    "execute_api_ms": 69551,
+    "execute_tokens_in": 10,
+    "execute_tokens_out": 4138,
+    "execute_cost_usd": 0.3252679499999999
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation successfully meets all rubric requirements: (1) Creates unsloth_save_pretrained_onnx function that extracts and saves LoRA A and B matrices via a _LoraAdapterModule class; (2) Accepts save_directory and opset_version (default 17) parameters correctly; (3) Saves comprehensive metadata (rank, alpha, target_modules, opset_version, layers mapping) to adapter_metadata.json; (4) Properly exposed via __all__ export and patch_saving_functions method binding (model.save_pretrained_onnx); (5) Uses torch.onnx.export with dynamic_axes for batch size support; (6) Follows existing unsloth patterns (unsloth_save_pretrained_* naming, types.MethodType binding, defensive attribute checks). Minor style notes: excessive pass statements and inline json import match observed file patterns. Robust edge case handling for disabled/merged adapters and missing peft_config. The only negligible gap is assuming Peft_Linear4bit and Peft_Linear are imported elsewhere, which is highly likely given the file structure.",
+          "diff_length": 6727,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 81568
+  },
+  "session_id": "5d2fd34c-98a6-4e67-b862-0d80e0458add"
+}

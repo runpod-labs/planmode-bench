@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "add new AI image provider",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T12:58:12.711Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 744502,
+    "duration_api_ms": 900674,
+    "num_turns": 69,
+    "total_cost_usd": 2.1741022,
+    "input_tokens": 49,
+    "output_tokens": 37913,
+    "cache_read_tokens": 1673448,
+    "cache_creation_tokens": 102261,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 357603,
+    "plan_api_ms": 515448,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 16722,
+    "plan_cost_usd": 1.042951,
+    "plan_content": "Here's a summary of the plan:\n\n## Plan: `@ai-sdk/pixelart` Provider\n\n### What gets created (only new files, nothing existing is modified*):\n\n**Package scaffolding (`packages/pixelart/`):**\n- `package.json` — `@ai-sdk/pixelart` at `0.0.0`, depends on `@ai-sdk/provider` + `@ai-sdk/provider-utils`\n- `tsconfig.json` / `tsconfig.build.json` — project references to `../provider` and `../provider-utils`\n- `tsup.config.ts` — CJS+ESM+dts build\n- `turbo.json` / `vitest.node.config.js` / `vitest.edge.config.js` — standard test/build configs\n\n**Source files (`packages/pixelart/src/`):**\n| File | Purpose |\n|---|---|\n| `version.ts` | `__PACKAGE_VERSION__` injection |\n| `pixelart-image-settings.ts` | `PixelArtImageModelId` union type (`'pixelart-v1' \\| 'pixelart-v2' \\| (string & {})`) |\n| `pixelart-image-options.ts` | Zod schema for `style: 'pixel'\\|'retro'\\|'8bit'` and `pixelDensity: 1-100` |\n| `pixelart-image-model.ts` | Full `ImageModelV3` implementation — POSTs to `baseURL/generate`, downloads images as `Uint8Array` |\n| `pixelart-provider.ts` | `createPixelArt()` factory + `pixelArt` default instance; throws `NoSuchModelError` for language/embedding models |\n| `index.ts` | Public exports |\n| `pixelart-image-model.test.ts` | Request body, response, warnings, metadata tests |\n| `pixelart-provider.test.ts` | Factory instantiation, error-throwing for unsupported models |\n\n**One root file change:**\n- `tsconfig.json` — add `{ \"path\": \"packages/pixelart\" }` (alphabetically between `perplexity` and `provider`)\n\n**Example:**\n- `examples/ai-functions/src/generate-image/pixelart/basic.ts`\n\n### How `style`/`pixelDensity` work:\nPassed via `providerOptions.pixelart.style` and `providerOptions.pixelart.pixelDensity`; mapped to `style` and `pixel_density` in the JSON request body. `size` comes from the standard SDK `options.size` field (e.g. `\"512x512\"`) and is split into `width`/`height`.",
+    "execute_duration_ms": 386899,
+    "execute_api_ms": 385226,
+    "execute_tokens_in": 36,
+    "execute_tokens_out": 21191,
+    "execute_cost_usd": 1.1311512
+  },
+  "evaluation": {
+    "overall_score": 0.575,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.875,
+        "weight": 0.4,
+        "weighted_score": 0.35000000000000003,
+        "passed": false,
+        "details": {
+          "checks_passed": 7,
+          "checks_total": 8,
+          "check_details": [
+            {
+              "path": "packages/pixelart/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/index.ts",
+              "check": "contains \"createPixelArt\"",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-provider.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-provider.ts",
+              "check": "contains \"pixelart\"",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "contains \"generateImage\"",
+              "passed": false
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "contains \"pixelDensity\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/pixelart && npx tsc --noEmit",
+          "exit_code": 1,
+          "output": "node:internal/modules/cjs/loader:1228\n  throw err;\n  ^\n\nError: Cannot find module '/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775479544704-ore891/node_modules/typescript/bin/tsc'\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)\n    at Function._load (node:internal/modules/cjs/loader:1055:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)\n    at node:internal/main/run_main_module:36:49 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: []\n}\n\nNode.js v22.14.0\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "export.*createPixelArt",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "PixelArtProvider",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.15,
+        "weighted_score": 0.075,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "pixel.*8bit|8bit.*pixel|style",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "api\\.pixelart\\.ai",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 212
+  },
+  "session_id": "bf198d24-4a4d-414b-8355-ff52829ee207"
+}

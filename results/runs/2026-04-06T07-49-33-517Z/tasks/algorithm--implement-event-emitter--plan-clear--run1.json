@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "task_id": "algorithm/implement-event-emitter",
+  "task_name": "implement full-featured event emitter",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T07:53:16.818Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 146092,
+    "duration_api_ms": 141486,
+    "num_turns": 15,
+    "total_cost_usd": 0.3122568,
+    "input_tokens": 19,
+    "output_tokens": 7483,
+    "cache_read_tokens": 175386,
+    "cache_creation_tokens": 28765,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 109377,
+    "plan_api_ms": 107423,
+    "plan_tokens_in": 9,
+    "plan_tokens_out": 5380,
+    "plan_cost_usd": 0.2049219,
+    "plan_content": "Here's the implementation plan for `EventEmitter`. Everything goes into a single file: `src/event-emitter.ts`.\n\n---\n\n## Core Design\n\n**One private field:**\n```ts\nprivate listeners: Map<string, Listener[]> = new Map();\n```\nA `Map` of event name → ordered array of listener functions.\n\n---\n\n## Each Method\n\n| Method | What it does |\n|---|---|\n| `on` | Push listener onto array, return `() => this.off(event, listener)` as unsubscribe |\n| `once` | Create a `wrapper` that calls `off(wrapper)` then the real listener; register via `on` |\n| `emit` | If no listeners → `false`; **snapshot** the array (`[...listeners]`), iterate snapshot, return `true` |\n| `off` | `indexOf` + `splice`; delete the map key if array becomes empty |\n| `removeAllListeners` | `delete(event)` if arg given, else `clear()` |\n| `listenerCount` | `listeners.get(event)?.length ?? 0` |\n| `eventNames` | `[...listeners.keys()]` |\n\n---\n\n## The Critical Edge Case: Mid-Emit Mutation\n\n`emit` takes a **snapshot** of the listener array before iterating. This means:\n- A listener that calls `off` on itself or another listener mutates the *real* array, but the snapshot iterator is unaffected → no crash, no skipped listeners\n- `once` wrappers self-remove from the real array during iteration, so `listenerCount` is correct after emit and a second `emit` returns `false`\n\nThe plan file at `/Users/timpietrusky/.claude/plans/zany-purring-flurry.md` has the complete ready-to-paste implementation. Ready to proceed?",
+    "execute_duration_ms": 36715,
+    "execute_api_ms": 34063,
+    "execute_tokens_in": 10,
+    "execute_tokens_out": 2103,
+    "execute_cost_usd": 0.1073349
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 1,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775461847723-2tcp22\n\n ✓ tests/event-emitter.test.ts (29 tests) 6ms\n\n Test Files  1 passed (1)\n      Tests  29 passed (29)\n   Start at  09:53:16\n   Duration  217ms (transform 36ms, setup 0ms, collect 34ms, tests 6ms, environment 0ms, prepare 37ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/event-emitter.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"on(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"emit(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"once(\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1210
+  },
+  "session_id": "cb6573cf-2255-443a-913b-dc8e83b909a4"
+}

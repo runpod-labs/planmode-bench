@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T11:54:47.141Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1086920,
+    "duration_api_ms": 1081360,
+    "num_turns": 34,
+    "total_cost_usd": 1.9306214000000002,
+    "input_tokens": 43,
+    "output_tokens": 56744,
+    "cache_read_tokens": 1276116,
+    "cache_creation_tokens": 87696,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 562825,
+    "plan_api_ms": 561056,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 27654,
+    "plan_cost_usd": 0.8683641,
+    "plan_content": "Here's the complete plan I've developed after thoroughly reading the codebase:\n\n---\n\n## Plan: Custom Theme System for T3 Code\n\n**6 files total — 2 creates, 4 modifies. No new dependencies, no build config changes.**\n\n### Why this design\n\nThe existing `useTheme` uses `.dark` class + CSS variables but only handles light/dark/system. The new system replaces it with **data-driven named themes** where color values live in JS objects (single source of truth for both DOM rendering and swatch previews), applied via `element.style.setProperty` (inline styles = highest CSS specificity, cleanly overrides `:root`/`.dark` CSS).\n\n---\n\n### Files\n\n| File | Action | Description |\n|---|---|---|\n| `packages/shared/src/theme.ts` | **CREATE** | `AppTheme` type, `ThemeColorTokens` interface, `ThemeDefinition` interface, `BUILT_IN_THEMES` record with all 3 themes, `APP_THEMES` array, `DEFAULT_THEME`, `isValidTheme` guard |\n| `packages/shared/package.json` | **MODIFY** | Add `\"./theme\"` subpath export alongside existing `./model`, `./git`, etc. |\n| `apps/web/src/hooks/useTheme.ts` | **MODIFY** | Full rewrite — new storage key `t3code:custom-theme`, migration from old key, `applyTheme` sets 12 CSS vars + `.dark` class, exports `{ theme: AppTheme, setTheme, resolvedTheme: \"light\"\\|\"dark\", themeDefinition }` |\n| `apps/web/src/index.css` | **MODIFY** | Add 8 CSS var fallback declarations (`--t3-sidebar`, `--t3-editor`, `--t3-terminal`, `--t3-status-bar` + their `-foreground` variants) inside existing `:root` block |\n| `apps/web/src/components/ThemeSelector.tsx` | **CREATE** | Row of 3 theme cards, each showing a mini IDE-layout swatch (sidebar strip + editor area + status bar strip) rendered from token colors; selected state uses `ring-primary` |\n| `apps/web/src/routes/_chat.settings.tsx` | **MODIFY** | Remove `THEME_OPTIONS` constant + radio group, add `<ThemeSelector />` import and usage in Appearance section |\n\n---\n\n### Backward compatibility\n- `DiffWorkerPoolProvider.tsx` uses `resolvedTheme: \"light\" | \"dark\"` → **unchanged** (new hook derives it from `colorScheme`)\n- All Tailwind utilities (`bg-background`, `text-foreground`, etc.) → **unchanged** (inline styles override CSS vars, `var(--background)` resolves correctly)\n- `diffRendering.ts` / `resolveDiffThemeName()` → **unchanged** (only cares about `resolvedTheme`)\n\n---\n\n### Theme colors (OkLCH)\n- **T3 Light** — white bg, blue sidebar, near-white editor, dark terminal, blue status bar\n- **T3 Dark** — neutral-950 bg, darker sidebar, slightly lighter editor, darkest terminal\n- **T3 Midnight** — near-black bg/sidebar, vivid blue accent + status bar for contrast",
+    "execute_duration_ms": 524095,
+    "execute_api_ms": 520304,
+    "execute_tokens_in": 26,
+    "execute_tokens_out": 29090,
+    "execute_cost_usd": 1.0622573000000002
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.35,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/shared/src/themes.ts"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 793
+  },
+  "session_id": "98ad7f28-e9ad-408b-8c65-cb4c468b0866"
+}

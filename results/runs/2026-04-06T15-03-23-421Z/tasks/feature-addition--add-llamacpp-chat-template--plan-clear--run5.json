@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T15:45:25.034Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 908449,
+    "duration_api_ms": 914672,
+    "num_turns": 33,
+    "total_cost_usd": 1.45876445,
+    "input_tokens": 29,
+    "output_tokens": 49346,
+    "cache_read_tokens": 647484,
+    "cache_creation_tokens": 72828,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 831110,
+    "plan_api_ms": 837679,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 44540,
+    "plan_cost_usd": 1.2302726000000002,
+    "plan_content": "Here's the complete implementation plan:\n\n---\n\n## Plan: Add `mistral-instruct-v3` Chat Template Handler\n\n### Context\nThe existing `MISTRAL_V7` handler (Ministral 3) uses `[SYSTEM_PROMPT]`/`[/SYSTEM_PROMPT]` tags. The classic **Mistral Instruct v0.3** format has no such tags — system messages are prepended to the first user turn inside `[INST]...[/INST]`, and assistant turns close with `</s>`. Today this format falls through to the `LLAMA_2` fallback; this plan gives it a proper dedicated handler.\n\n### Constraint recap\nOnly new code is added. Existing handler branches and existing header lines are untouched.\n\n---\n\n### 4 Surgical Edits (both files)\n\n#### 1 · `src/llama-chat.h` — new enum value (after line 60)\n```cpp\nLLM_CHAT_TEMPLATE_MISTRAL_INSTRUCT_V3,   // before LLM_CHAT_TEMPLATE_UNKNOWN\n```\n\n#### 2 · `src/llama-chat.cpp` — registration map (after the `mistral-v7-tekken` entry, ~line 38)\n```cpp\n{ \"mistral-instruct-v3\", LLM_CHAT_TEMPLATE_MISTRAL_INSTRUCT_V3 },\n```\n\n#### 3 · `src/llama-chat.cpp` — auto-detection (`llm_chat_detect_template`, inside the `else {` block, before `bool support_system_message`, ~line 121)\n```cpp\n// mistral-instruct-v3: plain [INST]/[/INST] with no [SYSTEM_PROMPT].\n// Absence of [SYSTEM_PROMPT] distinguishes it from the Ministral 3 (MISTRAL_V7) handler above.\nif (!tmpl_contains(\"<<SYS>>\") &&\n    !tmpl_contains(\"bos_token + '[INST]\") &&\n    !tmpl_contains(\"content.strip()\")) {\n    return LLM_CHAT_TEMPLATE_MISTRAL_INSTRUCT_V3;\n}\n```\nThis fires only after `[SYSTEM_PROMPT]` (→ v7) and `[AVAILABLE_TOOLS]`/v1 markers (→ v1/v3/v3-tekken) have already been checked and missed. Llama-2 variants that have `<<SYS>>`, `bos_token + '[INST]'`, or `content.strip()` still fall through to their existing returns.\n\n#### 4 · `src/llama-chat.cpp` — apply handler (new `else if` after the V1/V3/V3_TEKKEN block, ~line 291)\n```cpp\n} else if (tmpl == LLM_CHAT_TEMPLATE_MISTRAL_INSTRUCT_V3) {\n    // No [SYSTEM_PROMPT] tags. System is prepended to the first user turn only.\n    std::string sys;\n    bool first_user = true;\n    for (auto message : chat) {\n        std::string role(message->role);\n        std::string content(message->content);\n        if (role == \"system\") {\n            sys = content;\n        } else if (role == \"user\") {\n            ss << \"[INST] \";\n            if (first_user && !sys.empty()) {\n                ss << sys << \"\\n\\n\";\n                first_user = false;\n            }\n            ss << content << \" [/INST]\";\n        } else {\n            ss << content << \"</s>\";\n        }\n    }\n```\nOutput: `[INST] {sys}\\n\\n{user1} [/INST]{assistant1}</s>[INST] {user2} [/INST]…`  \nNo `add_ass` epilogue — consistent with V1/V3/V3_TEKKEN; the model generates right after `[/INST]`.\n\n### Verification\n- Name lookup: `llm_chat_template_from_str(\"mistral-instruct-v3\")` returns the new enum.\n- Content detection: A Mistral-7B-Instruct-v0.3 Jinja template (has `[INST]`, no `[SYSTEM_PROMPT]`, no `[AVAILABLE_TOOLS]`, no `<<SYS>>`) → `MISTRAL_INSTRUCT_V3`.\n- Regressions: `[SYSTEM_PROMPT]` → still `MISTRAL_V7`; `[AVAILABLE_TOOLS]` → still v3/v3-tekken; `<<SYS>>` templates → still `LLAMA_2_SYS` variants.\n- Build: `cmake --build build` clean.\n- Existing `tests/test-chat-template` suite passes unchanged.",
+    "execute_duration_ms": 77339,
+    "execute_api_ms": 76993,
+    "execute_tokens_in": 14,
+    "execute_tokens_out": 4806,
+    "execute_cost_usd": 0.22849185000000002
+  },
+  "evaluation": {
+    "overall_score": 0.35,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.35,
+        "weight": 1,
+        "weighted_score": 0.35,
+        "passed": false,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation has the core logic correct (user turns wrapped with [INST]/[/INST], system message prepended to first turn, </s> after assistant turns) and auto-detection is registered. However, critical requirements are missing: (1) No static function named `common_chat_params_init_mistral_instruct_v3` exists—the handler is inlined instead of using a dedicated function; (2) No LOG_DBG call identifying the Mistral Instruct v3 template; (3) No use of `COMMON_CHAT_FORMAT_CONTENT_ONLY` constant; (4) The dispatch pattern is inline if-else rather than function-based with (tmpl, params) signature. The detection logic lacks explicit checking for [SYSTEM_PROMPT] absence and instead relies on earlier returns. Additionally, the header file was modified (adding enum value), violating the requirement that no header file changes occur. The implementation would function but does not meet the specified architectural pattern.",
+          "diff_length": 6720,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 12501
+  },
+  "session_id": "68158dd6-437d-4f6a-b044-d2979a8b9790"
+}

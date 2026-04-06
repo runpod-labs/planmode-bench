@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T12:43:18.388Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 644522,
+    "duration_api_ms": 811393,
+    "num_turns": 101,
+    "total_cost_usd": 3.156784299999999,
+    "input_tokens": 82,
+    "output_tokens": 37587,
+    "cache_read_tokens": 4919869,
+    "cache_creation_tokens": 140741,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 256213,
+    "plan_api_ms": 425053,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 11685,
+    "plan_cost_usd": 1.0865646999999998,
+    "plan_content": "Here is the complete plan for adding Top-A sampling to vLLM.\n\n## Summary\n\n**Algorithm:** `keep tokens where prob >= top_a * max_prob`, identical formula to `min_p` but a separate, independently-controlled parameter. The parameter defaults to `0.0` (disabled) and is valid in `[0.0, 1.0]`.\n\n**8 files to modify**, all following the `min_p` pattern exactly:\n\n| File | Change |\n|------|--------|\n| `vllm/sampling_params.py` | Add `top_a: float = 0.0` field, docstring, `from_optional` param, greedy-reset to 0, range validation |\n| `vllm/model_executor/sampling_metadata.py` | Add `top_as: torch.Tensor` to `SamplingTensors`; extract, accumulate, and convert to tensor in `from_sampling_metadata`/`from_lists`; return a 5-tuple with `do_top_a` |\n| `vllm/model_executor/layers/sampler.py` | Unpack the 5-tuple; add `_apply_top_a()` function (clone of `_apply_min_p`); call it in `forward()` after `do_min_p` |\n| `vllm/v1/sample/logits_processor.py` | Add `TopALogitsProcessor` class (clone of `MinPLogitsProcessor`); register in `init_builtin_logitsprocs` as `argmax_invariant` |\n| `vllm/v1/sample/tpu/metadata.py` | Add `top_a` to `DEFAULT_SAMPLING_PARAMS`, `TPUSupportedSamplingMetadata`, and `from_input_batch` |\n| `vllm/v1/sample/tpu/sampler.py` | Add `apply_top_a()` method; call in `sample()` after `apply_min_p` |\n| `vllm/v1/worker/tpu_input_batch.py` | Add `top_a` CPU/device tensors and `top_a_reqs` set; wire into add/remove/swap/condense logic |\n| `vllm/entrypoints/openai/protocol.py` | Add `top_a: Optional[float] = None` + default `0.0` + extraction + pass-through in all 3 request classes |\n\nEvery change is a direct parallel of the existing `min_p` implementation — no novel infrastructure is needed.",
+    "execute_duration_ms": 388309,
+    "execute_api_ms": 386340,
+    "execute_tokens_in": 66,
+    "execute_tokens_out": 25902,
+    "execute_cost_usd": 2.0702195999999993
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "contains \"top_a\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "top_a.*float|float.*top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "0\\.0.*top_a|top_a.*0\\.0",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "python3 -c 'import ast; ast.parse(open(\"vllm/sampling_params.py\").read()); print(\"Syntax OK\")'",
+          "exit_code": 0,
+          "output": "Syntax OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 48
+  },
+  "session_id": "2ac8503e-6123-452b-8860-702f0a94ec62"
+}

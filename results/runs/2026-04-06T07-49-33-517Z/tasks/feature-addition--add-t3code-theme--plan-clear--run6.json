@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-clear",
+  "run_number": 6,
+  "timestamp": "2026-04-06T11:53:33.442Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 836704,
+    "duration_api_ms": 823700,
+    "num_turns": 45,
+    "total_cost_usd": 1.8573238499999998,
+    "input_tokens": 3313,
+    "output_tokens": 41274,
+    "cache_read_tokens": 1421096,
+    "cache_creation_tokens": 103161,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 635349,
+    "plan_api_ms": 632400,
+    "plan_tokens_in": 3283,
+    "plan_tokens_out": 28358,
+    "plan_cost_usd": 1.1692660499999998,
+    "plan_content": "Here's the complete plan for the custom theme system:\n\n---\n\n## What I'll build (8 files: 4 new, 4 modified)\n\n### New files\n\n1. **`packages/shared/src/theme.ts`** — Plain TypeScript `ThemeId` union, `ThemeColorTokens` interface, `BuiltInTheme` interface, and the `BUILT_IN_THEMES` array with concrete colour values for all three themes. Includes `isThemeId()` guard and `getBuiltInTheme()` utility.\n\n2. **`apps/web/src/hooks/useCustomTheme.ts`** — Module-singleton hook (mirrors the existing `useTheme.ts` pattern). Calls `applyCustomTheme()` at import-time for FOUC prevention, toggles both `data-theme` attribute and `.dark` class, cross-tab sync via `storage` event, and `useSyncExternalStore` for React reactivity.\n\n3. **`apps/web/src/components/ThemeProvider.tsx`** — Thin React Context wrapper over `useCustomTheme()`. Exposes `{ themeId, setThemeId, theme, themes }` and a `useThemeContext()` hook.\n\n4. **`apps/web/src/components/ThemeSelector.tsx`** — Three-column grid of swatch cards. Each card shows a mini preview (sidebar strip + editor panel + accent dot), the theme label, and an \"Active\" badge.\n\n### Modified files\n\n5. **`packages/shared/package.json`** — Add `\"./theme\"` subpath export.\n\n6. **`apps/web/src/index.css`** — Add `:root[data-theme=\"t3-light\"]`, `[data-theme=\"t3-dark\"]`, and `[data-theme=\"t3-midnight\"]` rule sets after the existing `:root` block. Each overrides all existing CSS tokens plus adds 5 new semantic tokens (`--theme-sidebar-bg`, `--theme-editor-bg`, `--theme-terminal-bg`, `--theme-status-bar-bg`, `--theme-status-bar-fg`). Uses `:root[data-theme]` specificity (0,2,0) so cascade order beats the existing `@variant dark` block — no `!important` needed.\n\n7. **`apps/web/src/routes/__root.tsx`** — Wrap `RootRouteView` return with `<ThemeProvider>` at the outermost level.\n\n8. **`apps/web/src/routes/_chat.settings.tsx`** — Remove old `THEME_OPTIONS` radio group and `useTheme` import; replace the Appearance section body with `<ThemeSelector />`.",
+    "execute_duration_ms": 201355,
+    "execute_api_ms": 191300,
+    "execute_tokens_in": 30,
+    "execute_tokens_out": 12916,
+    "execute_cost_usd": 0.6880577999999998
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.35,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/shared/src/themes.ts"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 855
+  },
+  "session_id": "572959ff-cd0a-4cce-af9e-fe5bf72efb4a"
+}

@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T12:37:34.546Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 445452,
+    "duration_api_ms": 509995,
+    "num_turns": 61,
+    "total_cost_usd": 1.7262562,
+    "input_tokens": 53,
+    "output_tokens": 25259,
+    "cache_read_tokens": 1898452,
+    "cache_creation_tokens": 107407,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 248413,
+    "plan_api_ms": 314793,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 11846,
+    "plan_cost_usd": 0.8820584499999998,
+    "plan_content": "Here is the complete implementation plan I've developed after thoroughly reading all relevant source files.\n\n---\n\n## What I found\n\nvLLM has **two parallel sampling stacks** that both need to be updated:\n\n- **V0 (legacy)** — tensor-based: `SamplingTensors` is built once per batch, flags like `do_min_p` gate short-circuit paths, and a standalone `_apply_min_p()` function filters logits in `Sampler.forward()`.\n- **V1 (current)** — plugin-based: built-in `LogitsProcessor` subclasses (e.g. `MinPLogitsProcessor`) maintain per-slot CPU/GPU tensors that are incrementally updated as requests arrive/leave, and are applied via `apply()` in `Sampler.sample()`.\n\n`top_a` is structurally identical to `min_p` in both paths — threshold = `top_a * max_probability` — so the implementation is a near-exact mirror of the existing `min_p` code.\n\n---\n\n## 4 files, 4 concerns\n\n### `vllm/sampling_params.py`\n- Add `top_a: float = 0.0` field (after `min_p`, line 214)\n- Add `top_a` parameter + forwarding in `from_optional()` (lines 261 / 304)\n- Reset `self.top_a = 0.0` in the greedy-mode block (after `self.min_p = 0.0`, line 381)\n- Validate `0.0 <= self.top_a <= 1.0` in `_verify_args()` (after the `min_p` check, line 426)\n- Add `f\"top_a={self.top_a}, \"` to `__repr__()` (line 572)\n\n### `vllm/model_executor/sampling_metadata.py` (V0 threading)\n- Add `top_as: torch.Tensor` field to `SamplingTensors` dataclass\n- Accumulate `top_as` list and `do_top_a` flag in `from_sampling_metadata()`, mirroring the `min_ps` / `do_min_p` pattern\n- Thread `top_as` through `from_lists()` as a new parameter with its own pinned CPU tensor → device transfer\n- Expand the return tuple from 4 → 5 elements (add `do_top_a`)\n\n### `vllm/model_executor/layers/sampler.py` (V0 filter)\n- Add `_apply_top_a(logits, top_a)` function after `_apply_min_p` (line 441): softmax → find max prob → threshold = `top_a * max_prob` → mask to `-inf`\n- Update `_init_sampling_tensors()` to unpack the new 5-tuple and store `self._do_top_a`\n- Add `if do_top_a: logits = _apply_top_a(...)` in `forward()` after the `do_min_p` block (line 289)\n\n### `vllm/v1/sample/logits_processor.py` (V1 plugin)\n- Add `TopALogitsProcessor` class after `MinPLogitsProcessor` (~line 307): exact structural mirror with `top_a_count`, CPU/GPU tensors, `update_state()`, and `apply()`; `is_argmax_invariant()` returns `True` because the max-prob token always survives the filter\n- Register it in `init_builtin_logitsprocs()` as a second entry in `argmax_invariant=[min_p_logitproc, top_a_logitproc]`",
+    "execute_duration_ms": 197039,
+    "execute_api_ms": 195202,
+    "execute_tokens_in": 36,
+    "execute_tokens_out": 13413,
+    "execute_cost_usd": 0.8441977500000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "contains \"top_a\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "top_a.*float|float.*top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "0\\.0.*top_a|top_a.*0\\.0",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "python3 -c 'import ast; ast.parse(open(\"vllm/sampling_params.py\").read()); print(\"Syntax OK\")'",
+          "exit_code": 0,
+          "output": "Syntax OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 53
+  },
+  "session_id": "b9a4978f-a9b8-4581-b9d8-0a77d1d94d8a"
+}

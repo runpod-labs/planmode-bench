@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-shadcn-stepper",
+  "task_name": "add stepper component",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T17:00:51.047Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1068716,
+    "duration_api_ms": 1215898,
+    "num_turns": 65,
+    "total_cost_usd": 3.378367349999999,
+    "input_tokens": 45,
+    "output_tokens": 49624,
+    "cache_read_tokens": 2216190,
+    "cache_creation_tokens": 239712,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 911350,
+    "plan_api_ms": 1058612,
+    "plan_tokens_in": 28,
+    "plan_tokens_out": 36356,
+    "plan_cost_usd": 2.384850299999999,
+    "plan_content": "Here's the complete plan for implementing the `Stepper` compound component:\n\n---\n\n## What will be created\n\n**4 new files** (zero existing component files touched):\n\n| File | Notes |\n|---|---|\n| `registry/bases/base/ui/stepper.tsx` | Canonical component — pure React, no external primitive |\n| `registry/bases/radix/ui/stepper.tsx` | Copy of above, one import path swapped |\n| `registry/bases/base/examples/stepper-example.tsx` | Demo: horizontal + vertical variants |\n| `registry/bases/radix/examples/stepper-example.tsx` | Copy of above, three import paths swapped |\n\n**4 registry insertions** (alphabetically between existing `spinner` and `switch` entries) in:\n- `bases/base/ui/_registry.ts`\n- `bases/radix/ui/_registry.ts`\n- `bases/base/examples/_registry.ts`\n- `bases/radix/examples/_registry.ts`\n\n---\n\n## Architecture highlights\n\n**Two-level React context** (mirrors `carousel.tsx` pattern):\n- `StepperContext` → `{ value, onValueChange, orientation }`\n- `StepperItemContext` → `{ value, isActive, disabled }`\n\n**7 sub-components:** `Stepper`, `StepperItem`, `StepperTrigger`, `StepperTitle`, `StepperDescription`, `StepperSeparator`, `StepperContent`\n\n**Controlled + uncontrolled:** supports both `value`+`onValueChange` and `defaultValue` (Stepper manages internal `useState` when uncontrolled)\n\n**Orientation via CSS:**\n- Horizontal separator: `h-px flex-1 bg-border`\n- Vertical separator: `ms-4 w-px self-stretch bg-border`\n\n**`StepperContent`** renders `null` when inactive — clean unmount, no hidden state\n\n**Example** shows clickable step indicators plus Previous/Next/Restart navigation buttons wired via `useStepper()`, all without external `useState` in the example file.",
+    "execute_duration_ms": 157366,
+    "execute_api_ms": 157286,
+    "execute_tokens_in": 17,
+    "execute_tokens_out": 13268,
+    "execute_cost_usd": 0.9935170499999999
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "All rubric requirements fully met: (1) Component files marked with 'use client' exporting all required sub-components (Stepper, StepperItem, StepperTrigger, StepperTitle, StepperDescription, StepperSeparator, StepperContent); (2) Each sub-component correctly implements data-slot attributes (stepper, stepper-item, stepper-trigger, stepper-title, stepper-description, stepper-separator, stepper-content) and uses cn() for class merging; (3) React context properly implemented with StepperContext and StepperItemContext with associated hooks (useStepper, useStepperItem); (4) Full support for horizontal and vertical orientations with proper data-orientation attributes and layout adjustments; (5) Comprehensive demo examples showing both orientations with step navigation using the context's onValueChange handler for state management; (6) Registry entries correctly added for both 'stepper' UI component and 'stepper-example' in all base variants; (7) No existing component files modified, only new files and registry additions. Implementation follows shadcn/ui patterns consistently, including the 'stepper-example' naming convention used throughout the registry.",
+          "diff_length": 27674,
+          "new_files": "apps/v4/registry/bases/base/examples/stepper-example.tsx\napps/v4/registry/bases/base/ui/stepper.tsx\napps/v4/registry/bases/radix/examples/stepper-example.tsx\napps/v4/registry/bases/radix/ui/stepper.tsx"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18361
+  },
+  "session_id": "5d201673-6711-4cbc-b4ce-158b61a8c72c"
+}

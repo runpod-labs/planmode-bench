@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T16:33:11.262Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1539882,
+    "duration_api_ms": 1690478,
+    "num_turns": 73,
+    "total_cost_usd": 3.8851929999999992,
+    "input_tokens": 73,
+    "output_tokens": 50659,
+    "cache_read_tokens": 2453375,
+    "cache_creation_tokens": 136576,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1119982,
+    "plan_api_ms": 1272159,
+    "plan_tokens_in": 22,
+    "plan_tokens_out": 26480,
+    "plan_cost_usd": 2.6449432499999994,
+    "plan_content": "Here's a summary of the plan I've written:\n\n## Plan: `@prisma/generator-rest-client`\n\n### What it does\nA new Prisma generator package that reads the DMMF and emits a typed TypeScript REST API client. For each model it produces:\n- **`<Model>.ts`** — four interfaces: `Model`, `ModelWhereUniqueInput`, `ModelCreateInput`, `ModelUpdateInput`\n- **`<Model>Client.ts`** — a class with five typed `fetch`-based CRUD methods: `findMany`, `findUnique`, `create`, `update`, `delete`\n- **`RestApiClient.ts`** — a top-level class composing all model clients\n- **`index.ts`** — a barrel re-exporting all types and clients\n\n### Key design decisions\n- **Template strings** (not `@prisma/ts-builders`) for code generation — method bodies contain runtime `fetch` logic that ts-builders can't emit\n- **Relations excluded** from base interfaces (only scalar/enum fields)\n- **Auto-fields excluded** from `CreateInput`/`UpdateInput` (fields with `@default(autoincrement())`, `@updatedAt`, etc.)\n- **URL paths** derived from `DMMF.Mappings.modelOperations[n].plural` (Prisma already computes the correct English plural)\n- **`bin` entry** in `package.json` with shebang in the CJS bundle so Prisma can invoke this as a subprocess\n\n### Files to create (13)\nAll source files in `packages/generator-rest-client/src/`, config files (`package.json`, `tsconfig.json`, `tsconfig.build.json`, `helpers/build.ts`), and Vitest tests.\n\n### Files to modify (2)\n- `tsconfig.build.bundle.json` — add path alias\n- `.github/workflows/test-template.yml` — add step to `others` job",
+    "execute_duration_ms": 419900,
+    "execute_api_ms": 418319,
+    "execute_tokens_in": 51,
+    "execute_tokens_out": 24179,
+    "execute_cost_usd": 1.24024975
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation fully satisfies all rubric requirements: (1) Complete package structure with proper package.json referencing @prisma/generator and @prisma/dmmf; (2) Entry point (bin.ts) correctly uses generatorHandler with both onManifest and onGenerate callbacks; (3) Generator (generator.ts) properly reads DMMF and iterates over models; (4) For each model, generates four typed interfaces (Model, WhereUniqueInput, CreateInput, UpdateInput) and a client class with all five CRUD methods (findMany, findUnique, create, update, delete) using fetch with proper typing and HTTP semantics; (5) Output is correctly written to the resolved output directory with separate files for each model, RestApiClient, and index barrel; (6) Code follows TypeScript conventions with proper type safety, includes private fields, comprehensive error handling, kebab-case URL conversion, and integrates correctly with Prisma generator patterns. Additional strengths: 255-line comprehensive test suite, proper field filtering (excluding relations and auto-managed fields like @updatedAt), correct nullability/optionality handling, build configuration with shebang for subprocess invocation, and monorepo integration.",
+          "diff_length": 28582,
+          "new_files": "PLAN.md\npackages/generator-rest-client/helpers/build.ts\npackages/generator-rest-client/package.json\npackages/generator-rest-client/src/bin.ts\npackages/generator-rest-client/src/field-type-mapper.ts\npackages/generator-rest-client/src/generate-index.ts\npackages/generator-rest-client/src/generate-model-client.ts\npackages/generator-rest-client/src/generate-model.ts\npackages/generator-rest-client/src/generate-rest-api-client.ts\npackages/generator-rest-client/src/generator.test.ts\npackages/generator-rest-client/src/generator.ts\npackages/generator-rest-client/src/index.ts\npackages/generator-rest-client/tsconfig.build.json\npackages/generator-rest-client/tsconfig.json"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16630
+  },
+  "session_id": "2a473e23-056b-497a-92fd-7e5f3d28af94"
+}

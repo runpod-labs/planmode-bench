@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-ollama-rename",
+  "task_name": "add model rename API endpoint and CLI command",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T15:47:21.428Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 337627,
+    "duration_api_ms": 462630,
+    "num_turns": 49,
+    "total_cost_usd": 1.4087124500000001,
+    "input_tokens": 41,
+    "output_tokens": 18623,
+    "cache_read_tokens": 1401332,
+    "cache_creation_tokens": 86565,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 220964,
+    "plan_api_ms": 346069,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 10411,
+    "plan_cost_usd": 0.73469915,
+    "plan_content": "## Plan: Add Ollama Model Rename Feature\n\nHere's the complete implementation plan across **4 files** — no new files, no test files:\n\n---\n\n### Step 1 — `api/types.go` — Add `RenameRequest` struct\nInsert after `CopyRequest` (line 765), before `PullRequest`. Mirrors `CopyRequest` field names for consistency:\n```go\n// RenameRequest is the request passed to [Client.Rename].\ntype RenameRequest struct {\n    Source      string `json:\"source\"`\n    Destination string `json:\"destination\"`\n}\n```\n\n---\n\n### Step 2 — `api/client.go` — Add `Rename()` client method\nInsert after `Copy()` (line 387), before `Delete()`. Identical pattern — POST verb, no response body:\n```go\nfunc (c *Client) Rename(ctx context.Context, req *RenameRequest) error {\n    if err := c.do(ctx, http.MethodPost, \"/api/rename\", req, nil); err != nil {\n        return err\n    }\n    return nil\n}\n```\n\n---\n\n### Step 3 — `server/routes.go` — Handler + route registration\n\n**Handler** inserted after `CopyHandler` (line 1483). Logic sequence:\n1. Bind/validate JSON body → **400** on bad input\n2. `model.ParseName(r.Source)` + `getExistingName(src)` — validate & normalise source\n3. `manifest.ParseNamedManifest(src)` — **404** if `os.IsNotExist`\n4. `model.ParseName(r.Destination)` + `getExistingName(dst)` — validate & normalise destination\n5. `manifest.ParseNamedManifest(dst)` succeeds → **409 Conflict** (destination exists)\n6. `CopyModel(src, dst)` — **500** on error (reuses `server/images.go:397`)\n7. `m.Remove()` + `m.RemoveLayers()` — **500** on error (deletes source, `m` saved from step 3)\n\n**Route** added after line 1698:\n```go\nr.POST(\"/api/rename\", s.RenameHandler)\n```\n\n---\n\n### Step 4 — `cmd/cmd.go` — CLI handler + command + registration\n\n**Handler** after `CopyHandler` (line 1350):\n```go\nfunc RenameHandler(cmd *cobra.Command, args []string) error {\n    client, err := api.ClientFromEnvironment()\n    if err != nil { return err }\n    req := api.RenameRequest{Source: args[0], Destination: args[1]}\n    if err := client.Rename(cmd.Context(), &req); err != nil { return err }\n    fmt.Printf(\"renamed '%s' to '%s'\\n\", args[0], args[1])\n    return nil\n}\n```\n\n**Command definition** after `copyCmd` (line 2263):\n```go\nrenameCmd := &cobra.Command{\n    Use:     \"rename SOURCE DESTINATION\",\n    Short:   \"Rename a model\",\n    Args:    cobra.ExactArgs(2),\n    PreRunE: checkServerHeartbeat,\n    RunE:    RenameHandler,\n}\n```\n\n**Two registration sites** — add `renameCmd` after `copyCmd` in both the env-docs loop (~line 2298) and `rootCmd.AddCommand(...)` (~line 2345).\n\n---\n\n### Key design notes\n- **No new helper function needed** — `CopyModel()` (images.go:397) and `manifest.ParseNamedManifest()` are reused directly\n- **404 before 409** — source is verified to exist before checking destination conflict\n- **`m` captured early** — the source manifest object from step 3 is reused for deletion in step 7, avoiding a redundant second parse",
+    "execute_duration_ms": 116663,
+    "execute_api_ms": 116561,
+    "execute_tokens_in": 28,
+    "execute_tokens_out": 8212,
+    "execute_cost_usd": 0.6740133000000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "All rubric requirements fully satisfied: (1) RenameRequest struct properly defined with json-tagged source/destination fields; (2) Client.Rename method correctly POSTs to /api/rename; (3) RenameHandler properly copies model via CopyModel() then deletes via m.Remove() and m.RemoveLayers(), returns 404 for missing source (StatusNotFound) and 409 for existing destination (StatusConflict); (4) Route registration correctly wired as r.POST(\"/api/rename\", s.RenameHandler); (5) CLI command uses cobra with ExactArgs(2); (6) CLI RenameHandler properly instantiates client and calls Rename method; (7) Only additions made to existing files, no test files modified. Implementation is complete and correct.",
+          "diff_length": 5217,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 15490
+  },
+  "session_id": "412c71a2-d08a-4302-b927-1b9e261931dd"
+}

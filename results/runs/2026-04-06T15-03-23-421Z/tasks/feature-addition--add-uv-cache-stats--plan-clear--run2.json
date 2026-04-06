@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-uv-cache-stats",
+  "task_name": "add 'uv cache stats' subcommand",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T17:29:55.065Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 778382,
+    "duration_api_ms": 828637,
+    "num_turns": 70,
+    "total_cost_usd": 2.2272804500000003,
+    "input_tokens": 63,
+    "output_tokens": 43915,
+    "cache_read_tokens": 2491777,
+    "cache_creation_tokens": 122758,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 238306,
+    "plan_api_ms": 318787,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 9954,
+    "plan_cost_usd": 0.8071613000000001,
+    "plan_content": "Here's the full plan for adding `uv cache stats`.\n\n---\n\n## Summary\n\n**9 files** touched (2 new), following existing patterns from `uv cache size` throughout.\n\n### New files\n- **`crates/uv/src/commands/cache_stats.rs`** — core logic\n- **`crates/uv/tests/it/cache_stats.rs`** — integration tests\n\n### Modified files\n\n| File | Change |\n|---|---|\n| `crates/uv-preview/src/lib.rs` | Add `CacheStats = 1 << 28` feature flag |\n| `crates/uv-cli/src/lib.rs` | Add `Stats(StatsArgs)` to `CacheCommand`; add `StatsArgs` struct |\n| `crates/uv-cache/src/lib.rs` | Add `CacheBucket::label()` + `CacheBucket::iter_all()` (includes `Python`) |\n| `crates/uv/src/commands/mod.rs` | Register `mod cache_stats`; re-export |\n| `crates/uv/src/lib.rs` | Dispatch `CacheCommand::Stats` arm |\n| `crates/uv-test/src/lib.rs` | Add `cache_stats()` builder + `with_filtered_cache_stats()` filter |\n| `crates/uv/tests/it/main.rs` | Register `mod cache_stats` |\n\n### Output format\n```\nwheels        384.2 KiB\nsdists        12.1 KiB\nflat-index    0B\ngit           0B\ninterpreter   1.2 KiB\nsimple        48.3 KiB\narchive       0B\nbuilds        0B\nenvironments  0B\npython        0B\nbinaries      0B\nTotal         445.8 KiB\n```\n\n### Key decisions\n- **`Python` bucket**: included via new `iter_all()` — existing `iter()` stays unchanged to avoid affecting prune/clean\n- **Preview-gated** behind `PreviewFeature::CacheStats` (same pattern as `cache size`)\n- **Size calc**: per-bucket `DiskUsage::new(vec![cache.bucket(b)]).count_ignoring_errors()`, skipping missing dirs (→ 0)\n- **Column alignment**: padded to `\"environments\".len()` (12 chars)",
+    "execute_duration_ms": 540076,
+    "execute_api_ms": 509850,
+    "execute_tokens_in": 45,
+    "execute_tokens_out": 33961,
+    "execute_cost_usd": 1.4201191500000003
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation fully satisfies all rubric requirements: (1) New `Stats(StatsArgs)` variant with `human: bool` flag added to CacheCommand enum; (2) Core command in cache_stats.rs iterates over CacheBucket::iter_all() and computes sizes with DiskUsage; (3) Function is pub(crate) and returns Result<ExitStatus>; (4) --human/-H flag properly implemented with human_readable_bytes conversion; (5) Output includes per-bucket rows with proper label padding and total line; (6) Module registration in mod.rs with correct imports; (7) Dispatch wiring in lib.rs matches Stats variant correctly; (8) Follows identical patterns to cache_size including preview feature gating, printer usage, and error handling. Additional strengths: adds CacheBucket::label() and iter_all() helpers, includes PreviewFeature::CacheStats flag, comprehensive integration tests with both raw and human-readable output tests, and test infrastructure updates. All 9 modified/new files are correctly implemented.",
+          "diff_length": 14644,
+          "new_files": "PLAN.md\ncrates/uv/src/commands/cache_stats.rs\ncrates/uv/tests/it/cache_stats.rs"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 12564
+  },
+  "session_id": "fd986b6e-8c38-4f34-88cb-7b28218e528c"
+}

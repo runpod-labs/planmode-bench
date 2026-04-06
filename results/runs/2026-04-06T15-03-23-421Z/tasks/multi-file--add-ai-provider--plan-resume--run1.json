@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "add new AI image provider",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T17:38:01.630Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 420669,
+    "duration_api_ms": 551000,
+    "num_turns": 48,
+    "total_cost_usd": 1.6491283,
+    "input_tokens": 36,
+    "output_tokens": 24181,
+    "cache_read_tokens": 1432241,
+    "cache_creation_tokens": 111964,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 254169,
+    "plan_api_ms": 384641,
+    "plan_tokens_in": 14,
+    "plan_tokens_out": 10978,
+    "plan_cost_usd": 0.8829134500000001,
+    "plan_content": "Here's the implementation plan for the `@ai-sdk/pixelart` provider. It mirrors `@ai-sdk/luma` (the cleanest image-only reference) with these key design choices:\n\n---\n\n**13 new files** in `packages/pixelart/`, plus **1 modification** to the root `tsconfig.json`.\n\n### API design (`https://api.pixelart.ai/v1`)\n- Endpoint: `POST /images/generate`\n- Returns inline `b64_json` per image — no polling or secondary download needed\n- `maxImagesPerCall = 4`\n\n### Provider-specific settings (via `providerOptions.pixelart`)\n| Setting | Type | Maps to API field |\n|---|---|---|\n| `style` | `\"pixel\" \\| \"retro\" \\| \"8bit\"` | `style` |\n| `pixelDensity` | `number` | `pixel_density` |\n\n### Standard param handling\n- `size` → forwarded as-is ✅\n- `seed` → `SharedV3Warning` (unsupported) ⚠️  \n- `aspectRatio` → `SharedV3Warning` (unsupported) ⚠️\n\n### Exports\n- `createPixelArt(options?)` — factory function\n- `pixelArt` — default instance\n- Full TypeScript types: `PixelArtProvider`, `PixelArtProviderSettings`, `PixelArtImageModelId`, `PixelArtStyle`, `PixelArtImageSettings`, `PixelArtImageModelOptions`\n- Calling `.languageModel()` / `.embeddingModel()` throws `NoSuchModelError`\n\n### Verification steps\n1. `cd packages/pixelart && pnpm test:node`\n2. `cd packages/pixelart && pnpm build`\n3. `pnpm type-check:full` from workspace root",
+    "execute_duration_ms": 166500,
+    "execute_api_ms": 166359,
+    "execute_tokens_in": 22,
+    "execute_tokens_out": 13203,
+    "execute_cost_usd": 0.76621485
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete and correct implementation. The agent successfully created a new PixelArt provider package at packages/pixelart/ with: (1) proper package.json with correct metadata and dependencies, (2) exported createPixelArt factory function and default instance, (3) PixelArtProvider interface implementing ProviderV3 with image() and imageModel() methods, (4) PixelArtImageModel class implementing ImageModelV3 with full doGenerate() implementation, (5) image settings supporting size, style enum ('pixel', 'retro', '8bit'), and pixelDensity, (6) base URL correctly set to 'https://api.pixelart.ai/v1', (7) proper provider package structure matching SDK patterns (tsconfig.json, tsup.config.ts, vitest configs, version.ts, comprehensive tests), (8) only new files created - tsconfig.json modification is necessary monorepo integration, not modification of existing provider packages. Implementation includes proper error handling, warning system for unsupported features, base64 image decoding, authentication, and comprehensive test coverage.",
+          "diff_length": 28510,
+          "new_files": "packages/pixelart/package.json\npackages/pixelart/src/index.ts\npackages/pixelart/src/pixelart-image-model.test.ts\npackages/pixelart/src/pixelart-image-model.ts\npackages/pixelart/src/pixelart-image-settings.ts\npackages/pixelart/src/pixelart-provider.test.ts\npackages/pixelart/src/pixelart-provider.ts\npackages/pixelart/src/version.ts\npackages/pixelart/tsconfig.build.json\npackages/pixelart/tsconfig.json\npackages/pixelart/tsup.config.ts\npackages/pixelart/vitest.edge.config.js\npackages/pixelart/vitest.node.config.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18524
+  },
+  "session_id": "58dc9e71-ab8f-4750-af3f-23b56e70c62b"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-transformersjs-pipeline",
+  "task_name": "add image-text-to-text pipeline",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-06T17:57:56.686Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 734914,
+    "duration_api_ms": 911481,
+    "num_turns": 32,
+    "total_cost_usd": 2.0506002500000005,
+    "input_tokens": 41,
+    "output_tokens": 30376,
+    "cache_read_tokens": 1705314,
+    "cache_creation_tokens": 108349,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 600068,
+    "plan_api_ms": 776748,
+    "plan_tokens_in": 14,
+    "plan_tokens_out": 22757,
+    "plan_cost_usd": 1.2294054500000007,
+    "plan_content": "Here's the complete implementation plan:\n\n---\n\n## Plan: `image-text-to-text` Pipeline\n\n### What already exists (zero changes required)\n- **`AutoModelForImageTextToText`** — `src/models.js` line 8736, already maps LLaVA, SmolVLM, PaliGemma, Qwen2-VL, Idefics3, Florence2, and more\n- **`TextImagePipelineConstructorArgs`** typedef — the correct constructor type for image+text pipelines\n- **`prepareImages()`** helper — handles URL/Blob/RawImage/Canvas inputs\n- **Auto-export** — `src/transformers.js` uses `export * from './pipelines.js'`, so no extra wiring needed\n\n---\n\n### 6 changes across 2 files\n\n**File 1: `src/pipelines.js`** (4 edits)\n\n| # | Location | What |\n|---|----------|------|\n| 1 | Line ~33 (import block) | Add `AutoModelForImageTextToText` to the `import { … } from './models.js'` block, after `AutoModelForVision2Seq` |\n| 2 | After `ImageToTextPipeline` (~line 2005) | Insert JSDoc typedef block: `ImageTextToTextSingle`, `ImageTextToTextOutput`, `ImageTextToTextPipelineCallback`, `ImageTextToTextPipelineType` |\n| 3 | Same location | Insert `export class ImageTextToTextPipeline extends Pipeline` |\n| 4 | After `\"image-to-text\"` in `SUPPORTED_TASKS` (~line 3255) | Add `\"image-text-to-text\"` entry with `tokenizer: AutoTokenizer`, `pipeline: ImageTextToTextPipeline`, `model: AutoModelForImageTextToText`, `processor: AutoProcessor`, `type: \"multimodal\"`, default model `HuggingFaceTB/SmolVLM-256M-Instruct` |\n| 5 | `pipeline()` JSDoc list (~line 3427) | Add `\"image-text-to-text\"`: will return a `ImageTextToTextPipeline`. |\n\n**File 2: `tests/pipelines/test_pipelines_image_text_to_text.js`** (new file, auto-discovered by test runner)\n\n---\n\n### `_call(images, text, generate_kwargs)` logic\n1. `isBatched = Array.isArray(images)`\n2. `prepareImages(images)` → `RawImage[]`\n3. Normalize `text` to an array matching image count\n4. **`this.processor(text, preparedImages)`** → combined `input_ids`, `attention_mask`, `pixel_values` (VLM processors handle both modalities together)\n5. **`this.model.generate({ ...inputs, ...generate_kwargs })`** → token IDs\n6. **`this.tokenizer.batch_decode(output, { skip_special_tokens: true })`** → strings\n7. Return: single → `[{ generated_text }]` · batched → `[[{…}], [{…}]]` (mirrors `ImageToTextPipeline` format)",
+    "execute_duration_ms": 134846,
+    "execute_api_ms": 134733,
+    "execute_tokens_in": 27,
+    "execute_tokens_out": 7619,
+    "execute_cost_usd": 0.8211947999999998
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation meeting all rubric requirements: (1) ImageTextToTextPipeline class with async _call method properly defined and extends Pipeline; (2) accepts both image and text prompt parameters with batching support; (3) correctly imports and uses AutoModelForImageTextToText; (4) calls model.generate() with processed inputs and kwargs; (5) handles processor output and returns generated_text field; (6) properly registered in SUPPORTED_TASKS as 'image-text-to-text' with type 'multimodal'; (7) comprehensive JSDoc with @typedef definitions and usage example; (8) follows existing pipeline patterns (prepareImages, processor, tokenizer.batch_decode); (9) no modifications to existing pipeline classes. Test file is thorough with single and batch test cases. Minor deduction (0.05) for return format inconsistency between single inputs [{}] and batched inputs [[{}]] - while intentional per code comments and test expectations, this asymmetry could be surprising to users compared to other pipelines.",
+          "diff_length": 7231,
+          "new_files": "tests/pipelines/test_pipelines_image_text_to_text.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19662
+  },
+  "session_id": "1cafb931-e2d3-4d44-960a-3c5407450805"
+}

@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T11:03:42.297Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 537581,
+    "duration_api_ms": 1042750,
+    "num_turns": 45,
+    "total_cost_usd": 3.0486600999999998,
+    "input_tokens": 36,
+    "output_tokens": 22339,
+    "cache_read_tokens": 1731120,
+    "cache_creation_tokens": 78851,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 533227,
+    "plan_api_ms": 723145,
+    "plan_tokens_in": 33,
+    "plan_tokens_out": 22243,
+    "plan_cost_usd": 1.9883982999999998,
+    "plan_content": "Here is the complete implementation plan for the `json_path` constraint:\n\n---\n\n## Summary\n\n**Strategy:** Convert JSONPath expressions to minimal JSON Schemas at the grammar backend layer, then delegate to the existing `dispatch_json()` pipeline. No new grammar backends required — all three (xgrammar, outlines, llguidance) inherit the behavior automatically.\n\n**9 files to change:**\n\n| # | File | Type | Change |\n|---|------|------|--------|\n| 1 | `python/sglang/lang/api.py` | Modify | Add `json_path` param to `gen()` with basic `$` validation |\n| 2 | `python/sglang/lang/ir.py` | Modify | Add `json_path` to `SglSamplingParams`, `SglGen`, `to_srt_kwargs()`, backend warning methods |\n| 3 | `python/sglang/srt/sampling/sampling_params.py` | Modify | Add `json_path` field + mutual exclusivity check |\n| 4 | `python/sglang/srt/constrained/json_path_utils.py` | **NEW** | Pure-Python JSONPath → JSON Schema converter with regex-based tokenizer |\n| 5 | `python/sglang/srt/constrained/base_grammar_backend.py` | Modify | Add `dispatch_json_path()` (converts path → schema → calls `dispatch_json`); route in `_init_value_dispatch()` |\n| 6 | `python/sglang/srt/constrained/grammar_manager.py` | Modify | Route `json_path` sampling param to `(\"json_path\", ...)` grammar key |\n| 7 | `python/sglang/srt/managers/tokenizer_manager.py` | Modify | Update `_request_has_grammar()` to detect `json_path` |\n| 8 | `python/sglang/test/kits/json_path_constrained_kit.py` | **NEW** | Test mixin with simple + nested path tests |\n| 9 | `test/registered/constrained_decoding/test_constrained_decoding.py` | Modify | Register mixin in xgrammar + llguidance test classes |\n\n**Key design decisions:**\n- Constraint is enforced *during generation* (token-by-token), not post-hoc\n- `$.store.book[*].author` → schema requiring `store.book[]` array with `author` in each item\n- Recursive descent (`..`) / wildcard-key (`.*`) fall back gracefully to `{}` (any valid JSON)\n- `json_path` is mutually exclusive with `json_schema`, `regex`, `ebnf`",
+    "execute_duration_ms": 4354,
+    "execute_api_ms": 319605,
+    "execute_tokens_in": 3,
+    "execute_tokens_out": 96,
+    "execute_cost_usd": 1.0602618
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 350
+  },
+  "session_id": "b1d6e441-ca56-4adf-a107-9179dc2682a5"
+}

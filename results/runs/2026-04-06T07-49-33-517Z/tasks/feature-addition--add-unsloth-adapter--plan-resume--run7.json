@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 7,
+  "timestamp": "2026-04-06T12:04:09.841Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 512883,
+    "duration_api_ms": 672012,
+    "num_turns": 32,
+    "total_cost_usd": 1.8857043500000001,
+    "input_tokens": 36,
+    "output_tokens": 27885,
+    "cache_read_tokens": 1449502,
+    "cache_creation_tokens": 113917,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 400093,
+    "plan_api_ms": 559323,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 20597,
+    "plan_cost_usd": 1.1668892000000002,
+    "plan_content": "Here's the complete implementation plan. Only **`unsloth/save.py`** needs to change, with four targeted additions:\n\n---\n\n### Summary of changes\n\n**1. `__all__` update** (line 48–54)\nAdd `\"unsloth_save_pretrained_onnx\"` so it's accessible via `from unsloth import *`.\n\n---\n\n**2. `_LoRAOnnxModule` helper class** (inserted just before `patch_saving_functions`, ~line 2564)\n\nA minimal `nn.Module` holding `lora_A` and `lora_B` as `register_buffer` entries (→ ONNX initializers), with forward:\n```\noutput = (x @ lora_A.T @ lora_B.T) * scaling\n```\n\n---\n\n**3. `unsloth_save_pretrained_onnx` function** (inserted after the class)\n```python\ndef unsloth_save_pretrained_onnx(self, save_directory, opset_version=17):\n```\n- Validates `model.peft_config` is present (raises `ValueError` if not)\n- Reads `rank`, `lora_alpha`, `target_modules` from `peft_config[adapter_name]`\n- Iterates `model.named_modules()`, skipping non-LoRA and already-merged layers\n- For each LoRA layer: wraps A/B (detached, float32) in `_LoRAOnnxModule` → calls `torch.onnx.export` with dynamic batch axis → saves `{layer_name}.onnx`\n- Writes `metadata.json` with all metadata + list of exported files\n- Prints summary + calls `gc.collect()`\n\n---\n\n**4. Register in `patch_saving_functions`** (one line added in each of the two branches — text and vision):\n```python\nmodel.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)\n```\n\n---\n\n### Output layout\n```\nmy_lora_onnx/\n├── metadata.json         ← rank, alpha, target_modules, scaling, opset, file list\n├── base_model_..._q_proj.onnx\n├── base_model_..._k_proj.onnx\n└── ... (one .onnx per LoRA-adapted module)\n```\n\n### Usage\n```python\nmodel.save_pretrained_onnx(\"./lora_export\")                  # opset 17 default\nmodel.save_pretrained_onnx(\"./lora_export\", opset_version=14)\n```",
+    "execute_duration_ms": 112790,
+    "execute_api_ms": 112689,
+    "execute_tokens_in": 23,
+    "execute_tokens_out": 7288,
+    "execute_cost_usd": 0.7188151499999998
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 86
+  },
+  "session_id": "5e2dc428-0c3d-4a3b-9634-e6507190b5f5"
+}

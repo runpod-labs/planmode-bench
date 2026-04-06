@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T17:16:04.440Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 439013,
+    "duration_api_ms": 522641,
+    "num_turns": 28,
+    "total_cost_usd": 0.9849563000000001,
+    "input_tokens": 29,
+    "output_tokens": 15543,
+    "cache_read_tokens": 443131,
+    "cache_creation_tokens": 50408,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 269450,
+    "plan_api_ms": 354347,
+    "plan_tokens_in": 11,
+    "plan_tokens_out": 9362,
+    "plan_cost_usd": 0.7263768500000002,
+    "plan_content": "## Plan Summary\n\n**One file to modify: `unsloth/save.py`** — three targeted changes:\n\n---\n\n### Change 1 — `__all__` (line ~48–54)\nAdd `\"export_to_onnx\"` to the existing exports list.\n\n---\n\n### Change 2 — New `export_to_onnx` function (inserted just before `patch_saving_functions`, ~line 2569)\n\n```python\ndef export_to_onnx(self, save_directory, opset_version=17):\n```\n\n**What it does:**\n1. **Validates** `self.peft_config[\"default\"]` exists; raises `RuntimeError` with helpful message otherwise\n2. **Extracts metadata** — `rank` (`config.r`), `alpha` (`config.lora_alpha`), `target_modules`\n3. **Iterates** `self.named_modules()`, skipping layers without `lora_A`/`lora_B` or that are merged/disabled (exact same guard pattern used in `kernels/utils.py`)\n4. **Gets active adapter name** via `module.active_adapters[0]` (with `\"default\"` fallback, same as `get_lora_parameters`)\n5. **Collects A/B matrices** as `float32` numpy arrays (maximum ONNX runtime compatibility)\n6. **Builds a valid ONNX graph** using `onnx.helper.make_graph`:\n   - Each tensor → one `Initializer` (stores data) + one `Identity` node + one named `Output`\n   - No inputs (pure weight-constant graph)\n   - Tensor names: `\"<module_path>.lora_A\"` / `\"<module_path>.lora_B\"`\n7. **Validates** with `onnx.checker.check_model()` before writing\n8. **Writes** `lora_adapters.onnx` and `adapter_config.json` (with rank, alpha, target_modules, opset_version, per-layer shapes) to `save_directory`\n9. `onnx` is imported lazily inside the function with a `pip install onnx` hint on `ImportError`\n\n---\n\n### Change 3 — `patch_saving_functions()` (lines ~2657–2676)\nAdd `model.export_to_onnx = types.MethodType(export_to_onnx, model)` in **both** the text-model `if not vision:` branch and the vision-model `else:` branch, alongside the existing method attachments.\n\n---\n\n### Output files produced\n| File | Contents |\n|------|----------|\n| `lora_adapters.onnx` | All A/B matrices as named ONNX constants, outputs named `<module_path>.lora_A_out` |\n| `adapter_config.json` | `rank`, `alpha`, `target_modules`, `opset_version`, per-layer shapes |",
+    "execute_duration_ms": 169563,
+    "execute_api_ms": 168294,
+    "execute_tokens_in": 18,
+    "execute_tokens_out": 6181,
+    "execute_cost_usd": 0.25857945
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is comprehensive and meets all rubric requirements: (1) Creates export_to_onnx function with proper signature accepting save_directory and opset_version=17; (2) Correctly extracts and saves LoRA A/B matrices as float32 numpy arrays; (3) Saves metadata (rank, alpha, target_modules) to adapter_config.json alongside the ONNX file; (4) Exposes function via __all__ export and attaches to model via types.MethodType in both text and vision branches; (5) Uses onnx.helper libraries (make_graph, make_node, make_tensor_value_info, numpy_helper.from_array) with proper model validation via onnx.checker.check_model; (6) Follows unsloth patterns including error handling, docstrings, method attachment, and guard checks for merged/disabled adapters. The implementation uses ONNX helper utilities rather than torch.onnx.export, but this is explicitly allowed by the rubric. Minor: includes `pass` statements which follow existing file patterns but are stylistically unnecessary. Overall a complete, well-documented, production-ready implementation.",
+          "diff_length": 9840,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19263
+  },
+  "session_id": "dee5e434-02e4-4f5d-8349-f436228e93db"
+}

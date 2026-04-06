@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-resume",
+  "run_number": 3,
+  "timestamp": "2026-04-06T11:45:14.264Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 941937,
+    "duration_api_ms": 924172,
+    "num_turns": 63,
+    "total_cost_usd": 2.8668701499999996,
+    "input_tokens": 65,
+    "output_tokens": 47933,
+    "cache_read_tokens": 4086253,
+    "cache_creation_tokens": 154876,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 627782,
+    "plan_api_ms": 621838,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 29697,
+    "plan_cost_usd": 1.0947934,
+    "plan_content": "Here's a summary of the plan — 6 files, no new dependencies, no build config changes:\n\n---\n\n## What the Plan Does\n\n**Core idea**: Layer a named-theme palette system on top of the existing `.dark` class mechanism. The existing `useTheme` hook's public API stays intact (backward compat for `DiffWorkerPoolProvider` and the settings page), and new `appThemeId` / `setAppTheme` are added alongside it.\n\n---\n\n## The 6 Files\n\n### New files\n1. **`packages/shared/src/theme.ts`** — Pure TS types (`AppThemeId`, `AppThemeColors`, `AppTheme`) + a typed `APP_THEMES_BY_ID: Record<AppThemeId, AppTheme>` with all three palettes. No imports, no dependencies. Uses a `Record` (not an array) to satisfy `noUncheckedIndexedAccess`.\n\n2. **`apps/web/src/components/ThemeSelector.tsx`** — 3-column grid of theme cards. Each card shows a split color swatch (background + sidebar strip + accent strip) and the theme name, with an \"On\" badge for the active selection. Imports directly from `@t3tools/shared/theme`.\n\n### Edited files\n3. **`packages/shared/package.json`** — Add `\"./theme\"` to the subpath exports map (same pattern as `\"./model\"`, `\"./git\"`, etc.).\n\n4. **`apps/web/src/hooks/useTheme.ts`** — Extend with `getStoredAppTheme`, `applyAppTheme` (sets `data-theme` attribute + syncs `.dark` class), an extended `ThemeSnapshot`, new `setAppTheme` function, and `resolvedTheme` now derived from `APP_THEMES_BY_ID[appThemeId].isDark` instead of the old `snapshot.theme`.\n\n5. **`apps/web/src/index.css`** — Add four new default CSS vars (`--sidebar-bg`, `--editor-bg`, `--terminal-bg`, `--status-bar-bg`) to `:root`, then three `[data-theme=\"...\"]` attribute-selector blocks that override `--background`, `--foreground`, `--primary`, `--ring`, and the four new vars. Attribute selectors have higher specificity than `:root:is(.dark, ...)` so they win cleanly without `!important`.\n\n6. **`apps/web/src/routes/_chat.settings.tsx`** — Remove the old `THEME_OPTIONS` radio group and replace with `<ThemeSelector />`.",
+    "execute_duration_ms": 314155,
+    "execute_api_ms": 302334,
+    "execute_tokens_in": 50,
+    "execute_tokens_out": 18236,
+    "execute_cost_usd": 1.7720767499999996
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.35,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/shared/src/themes.ts"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": "o you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\npackages/shared/src/Net.test.ts(33,27): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(1,22): error TS2591: Cannot find name 'node:net'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\npackages/shared/src/Net.ts(42,27): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1566
+  },
+  "session_id": "122e929e-3bdf-4cb3-b35c-41ea6a20dac3"
+}

@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T12:05:00.823Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1709862,
+    "duration_api_ms": 1847998,
+    "num_turns": 52,
+    "total_cost_usd": 3.9532190000000007,
+    "input_tokens": 54,
+    "output_tokens": 83295,
+    "cache_read_tokens": 2076503,
+    "cache_creation_tokens": 196049,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1183962,
+    "plan_api_ms": 1327956,
+    "plan_tokens_in": 22,
+    "plan_tokens_out": 50725,
+    "plan_cost_usd": 2.7160927000000004,
+    "plan_content": "Here's the complete implementation plan I've designed after thoroughly reading the codebase:\n\n---\n\n## What I found\n\nThe codebase already has a solid theme foundation:\n- `useTheme.ts` — module-level `useSyncExternalStore` store, stores `\"light\" | \"dark\" | \"system\"` in `localStorage[\"t3code:theme\"]`, applies `.dark` class to `<html>`\n- `index.css` — Tailwind v4 with OKLch CSS custom properties, `@custom-variant dark` via `.dark` class\n- `_chat.settings.tsx` — already has an Appearance section with inline radio buttons for light/dark/system\n- `DiffWorkerPoolProvider.tsx` — consumes `resolvedTheme: \"light\" | \"dark\"`, must stay backward-compatible\n- `packages/shared` — direct `.ts` source exports, no build step; adding a new subpath just needs a `package.json` entry + new file\n\n---\n\n## The Plan (8 steps)\n\n### New files:\n1. **`packages/shared/src/theme.ts`** — `ThemeId`, `ThemeColorTokens`, `ThemeDefinition`, `BUILT_IN_THEMES` (3 themes with OKLch color tokens), helpers (`getBuiltInTheme`, `isThemeId`, `isThemeSelection`, `migrateLegacyThemeValue`)\n2. **`apps/web/src/components/ThemeProvider.tsx`** — thin wrapper that calls `useTheme()` as a mount boundary\n3. **`apps/web/src/components/ThemeSelector.tsx`** — 4-option radio group (System + 3 named themes) with 40×14px swatch strips per theme (background / sidebar / accent segments)\n\n### Modified files:\n4. **`packages/shared/package.json`** — add `\"./theme\": { \"types\": ..., \"import\": ... }` export\n5. **`apps/web/src/hooks/useTheme.ts`** — full rewrite: `ThemeSelection = ThemeId | \"system\"`, new `applyTheme()` toggles both `.dark` and `.t3-midnight` classes, `getStored()` auto-migrates old `\"light\"` → `\"t3-light\"` / `\"dark\"` → `\"t3-dark\"`, `resolvedTheme: \"light\" | \"dark\"` **preserved** unchanged\n6. **`apps/web/src/index.css`** — add `--sidebar-bg`/`--editor-bg`/`--terminal-bg`/`--status-bar-bg` to `:root` and `@variant dark`; add `.t3-midnight` class with deep blue-black overrides\n7. **`apps/web/src/routes/_chat.settings.tsx`** — remove inline `THEME_OPTIONS`, replace with `<ThemeSelector />`\n8. **`apps/web/src/routes/__root.tsx`** — wrap `RootRouteView` in `<ThemeProvider>`\n\n### Key design decisions:\n- **CSS class strategy**: `t3-light` = no class, `t3-dark` = `.dark`, `t3-midnight` = `.dark .t3-midnight` — Tailwind dark utilities continue working everywhere\n- **Zero breaking changes**: `resolvedTheme: \"light\" | \"dark\"` is preserved; `DiffWorkerPoolProvider` needs no changes\n- **Transparent migration**: old localStorage values auto-upgrade on first load, before React renders (no flash)\n- **Token values** in the shared type are display-only (swatch previews); the CSS is the authoritative renderer",
+    "execute_duration_ms": 525900,
+    "execute_api_ms": 520042,
+    "execute_tokens_in": 32,
+    "execute_tokens_out": 32570,
+    "execute_cost_usd": 1.2371263000000001
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.35,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/shared/src/themes.ts"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 708
+  },
+  "session_id": "168ed5b3-86e2-4b3b-99db-da1050cd7f23"
+}

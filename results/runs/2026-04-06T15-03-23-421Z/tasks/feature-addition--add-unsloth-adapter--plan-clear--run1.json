@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T17:18:49.377Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 608110,
+    "duration_api_ms": 696446,
+    "num_turns": 38,
+    "total_cost_usd": 1.71086525,
+    "input_tokens": 38,
+    "output_tokens": 21791,
+    "cache_read_tokens": 688888,
+    "cache_creation_tokens": 67618,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 493531,
+    "plan_api_ms": 583052,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 15354,
+    "plan_cost_usd": 1.4534456,
+    "plan_content": "Here's the complete plan — **only `unsloth/save.py` needs to be changed**, with 4 discrete edits:\n\n---\n\n### Edit 1 — Line 29: Add `get_lora_parameters` to the import\nIt's already in the kernels package, just not yet pulled into `save.py`.\n\n### Edit 2 — Lines 48–54: Add `\"export_lora_to_onnx\"` to `__all__`\n\n### Edit 3 — After line 2561: Insert two new functions\n\n**`export_lora_to_onnx(model, save_directory, opset_version=17)`** (standalone, `@torch.inference_mode`):\n- Validates `model.peft_config` and extracts `rank`, `lora_alpha`, `target_modules`\n- Walks `model.named_modules()`, finds all `Peft_Linear` / `Peft_Linear4bit` / `Bnb_Linear4bit` instances\n- Calls `get_lora_parameters(module)` → skips layers where `A is None` (merged/disabled)\n- For each active layer: wraps A/B in an inner `LoRADeltaModule` computing `(x @ A.T @ B.T) * scaling`, exports via `torch.onnx.export` with `opset_version` and dynamic batch axis\n- A/B are cast to `float32` on CPU for max ONNX runtime compatibility\n- Writes `metadata.json` with `rank`, `lora_alpha`, `target_modules`, `exported_layers`, `opset_version`\n- Lazy `import onnx` (matches the `save_pretrained_torchao` pattern)\n\n**`unsloth_save_pretrained_onnx(self, save_directory, opset_version=17)`** — thin `self`-based wrapper that delegates to above.\n\n**Output layout:**\n```\nsave_directory/\n├── base_model.model.layers.0.self_attn.q_proj.onnx\n├── base_model.model.layers.0.self_attn.v_proj.onnx\n│   ...\n└── metadata.json\n```\n\n### Edit 4 — `patch_saving_functions()`: add one line to the `if not vision:` block\n```python\nmodel.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)\n```\n(Omitted from the vision branch — vision models use different layer structures.)",
+    "execute_duration_ms": 114579,
+    "execute_api_ms": 113394,
+    "execute_tokens_in": 20,
+    "execute_tokens_out": 6437,
+    "execute_cost_usd": 0.25741965
+  },
+  "evaluation": {
+    "overall_score": 0.92,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.92,
+        "weight": 1,
+        "weighted_score": 0.92,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation fully addresses all rubric requirements: (1) export_lora_to_onnx function correctly saves LoRA A and B matrices via get_lora_parameters and torch.onnx.export, (2) accepts save_directory and opset_version (defaulting to 17), (3) saves metadata.json with rank, lora_alpha, target_modules plus exported_layers and opset_version, (4) exposed via __all__, instance method wrapper unsloth_save_pretrained_onnx, and registered in patch_saving_functions() following existing patterns, (5) uses torch.onnx.export with proper opset_version and dynamic_axes configuration, (6) follows unsloth conventions with @torch.inference_mode decorator, lazy imports, os.makedirs, status printing, and integration pattern. Minor deduction for: unverified assumption that get_lora_parameters is actually exported from .kernels (though PLAN.md suggests it was researched), and type checks for Peft_Linear/Peft_Linear4bit/Bnb_Linear4bit classes not explicitly visible in diff (should be available earlier in file). Edge cases handled well: skips merged/disabled adapters, converts to float32/CPU for compatibility, uses dynamic batch/sequence axes.",
+          "diff_length": 7981,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 20416
+  },
+  "session_id": "14f52da0-d84d-49f2-8384-bdf0bd4cfabe"
+}

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-clear",
+  "run_number": 6,
+  "timestamp": "2026-04-06T12:09:48.513Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 521152,
+    "duration_api_ms": 619696,
+    "num_turns": 40,
+    "total_cost_usd": 1.4181799500000003,
+    "input_tokens": 38,
+    "output_tokens": 27042,
+    "cache_read_tokens": 720352,
+    "cache_creation_tokens": 62830,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 426219,
+    "plan_api_ms": 525867,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 20690,
+    "plan_cost_usd": 1.1778859500000003,
+    "plan_content": "Here's the complete plan. All changes are **isolated to a single file: `unsloth/save.py`**.\n\n---\n\n## What I found\n\n- **No ONNX code exists** anywhere in the codebase — this is a clean addition\n- All save/export methods live in `unsloth/save.py` and are attached to model instances via `patch_saving_functions()` using `types.MethodType`\n- LoRA A/B matrices are accessed via `module.lora_A[adapter].weight` and `module.lora_B[adapter].weight`; config metadata (rank, alpha, target_modules) via `model.peft_config[\"default\"]`\n- The existing pattern: standalone function → thin bound-method wrapper → attached in `patch_saving_functions`\n\n---\n\n## Three precise edits to `unsloth/save.py`\n\n| # | Location | What |\n|---|---|---|\n| 1 | `__all__` (line 48) | Add `\"export_to_onnx\"` so it's importable from `unsloth` |\n| 2 | Before `patch_saving_functions` (~line 2569) | Add `export_to_onnx()` (standalone, `@torch.inference_mode`) and `unsloth_save_pretrained_onnx()` (bound-method wrapper) |\n| 3 | Inside `patch_saving_functions` (lines 2661 & 2675) | Attach `model.save_pretrained_onnx` for both non-vision and vision branches |\n\n---\n\n## What `export_to_onnx` does\n\n1. Validates the model has `peft_config` (is a PEFT model)\n2. Reads `rank`, `alpha`, `target_modules` from `model.peft_config`\n3. Iterates `model.named_modules()`, skipping layers without `lora_A`/`lora_B` or with merged/disabled adapters\n4. For each LoRA layer, wraps A + B into a tiny `nn.Module` computing `(x @ A.T @ B.T) * scaling`\n5. Exports each to a `.onnx` file via `torch.onnx.export` with the given `opset_version` (default 17) and validates with `onnx.checker.check_model`\n6. Writes `lora_metadata.json` with rank, alpha, target_modules, opset_version, and per-layer file list\n7. `onnx` is imported lazily inside the function (soft dependency — not required at unsloth import time)",
+    "execute_duration_ms": 94933,
+    "execute_api_ms": 93829,
+    "execute_tokens_in": 18,
+    "execute_tokens_out": 6352,
+    "execute_cost_usd": 0.240294
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 83
+  },
+  "session_id": "3739d28e-e1f4-453a-a551-312b3524740f"
+}

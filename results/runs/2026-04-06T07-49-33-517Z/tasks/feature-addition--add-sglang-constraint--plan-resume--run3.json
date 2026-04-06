@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-resume",
+  "run_number": 3,
+  "timestamp": "2026-04-06T11:02:16.146Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 899744,
+    "duration_api_ms": 1058467,
+    "num_turns": 89,
+    "total_cost_usd": 4.03791305,
+    "input_tokens": 76,
+    "output_tokens": 37019,
+    "cache_read_tokens": 5258047,
+    "cache_creation_tokens": 174358,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 602891,
+    "plan_api_ms": 761810,
+    "plan_tokens_in": 25,
+    "plan_tokens_out": 17530,
+    "plan_cost_usd": 2.0350118,
+    "plan_content": "Here is the complete implementation plan for the `json_path` output constraint.\n\n## Summary\n\n**Strategy**: Convert JSONPath expressions to JSON schemas and delegate to the existing `dispatch_json()` machinery. All three grammar backends (xgrammar, outlines, llguidance) inherit the new behavior automatically — **no backend files need to change**.\n\n## 9 files to modify (in dependency order):\n\n| # | File | What changes |\n|---|------|-------------|\n| 1 | `srt/constrained/utils.py` | Add `json_path_to_schema()` + `_tokenize_json_path()` + `_build_schema_from_steps()` |\n| 2 | `srt/sampling/sampling_params.py` | Add `json_path` param + field + extend exclusivity check |\n| 3 | `srt/constrained/base_grammar_backend.py` | Import util; add `dispatch_json_path()`; add `\"json_path\"` branch to `_init_value_dispatch()` |\n| 4 | `srt/constrained/grammar_manager.py` | Add `json_path` to OR check, key routing, error message |\n| 5 | `lang/ir.py` | Add `json_path` to `SglSamplingParams`, `clone()` (⚠️ positional!), `to_srt_kwargs()`, `SglGen.__init__()` |\n| 6 | `lang/api.py` | Add `json_path` param + `$`-prefix validation to `gen()` |\n| 7 | `srt/entrypoints/openai/protocol.py` | Add `json_path` to `CompletionRequest` + `ChatCompletionRequest`; include in `to_sampling_params()` + `has_existing_constraints` |\n| 8 | `srt/entrypoints/openai/serving_completions.py` | Add `\"json_path\": request.json_path` to sampling dict |\n| 9 | `srt/managers/tokenizer_manager.py` | Add `json_path` to `_request_has_grammar()` |\n\n## Key design decisions:\n- **`$.store.book[*].author`** tokenizes to 4 steps, then `_build_schema_from_steps` wraps them bottom-up (in `reversed()` order) into a nested JSON schema\n- **`[n]` array index** maps to `{\"type\":\"array\",\"items\":...}` — same as `[*]` — because portable JSON Schema can't target a specific index without backend-specific extensions\n- **Leaf schema `{}`** means any value is accepted at the path endpoint",
+    "execute_duration_ms": 296853,
+    "execute_api_ms": 296657,
+    "execute_tokens_in": 51,
+    "execute_tokens_out": 19489,
+    "execute_cost_usd": 2.00290125
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 348
+  },
+  "session_id": "93a994a3-9565-4132-a2f6-5ba60ec90129"
+}

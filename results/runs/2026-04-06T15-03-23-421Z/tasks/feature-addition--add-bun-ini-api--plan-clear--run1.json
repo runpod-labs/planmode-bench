@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-bun-ini-api",
+  "task_name": "add Bun.INI namespace API",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T15:32:40.713Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1563804,
+    "duration_api_ms": 1679099,
+    "num_turns": 123,
+    "total_cost_usd": 4.84426925,
+    "input_tokens": 98,
+    "output_tokens": 91994,
+    "cache_read_tokens": 6652577,
+    "cache_creation_tokens": 216464,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 516999,
+    "plan_api_ms": 635018,
+    "plan_tokens_in": 26,
+    "plan_tokens_out": 26225,
+    "plan_cost_usd": 1.5710896499999998,
+    "plan_content": "Here's a summary of my research and plan:\n\n## What I Found\n\nThe `Bun.TOML`, `Bun.JSONC`, `Bun.JSON5`, and `Bun.YAML` namespaces all follow a consistent 5-layer wiring pattern. The internal npm `.npmrc` INI parser already exists at `src/ini.zig`, but **per your requirement, a new self-contained parser will be written** that doesn't depend on it (no env var expansion, simpler generic INI parsing).\n\n## Plan: 9 files across 3 categories\n\n### New files (3)\n1. **`src/interchange/ini.zig`** — Self-contained INI parser → produces `ast.Expr`. Handles: `[section]` and `[foo.bar]` dot-nested sections, `key=value` pairs, `;`/`#` comments, typed values (`true`/`false`/`null`/numbers/strings)\n2. **`src/bun.js/api/INIObject.zig`** — JS binding with `create()`, `parse()`, `stringify()`. Parse uses `js_printer.printJSON` → `toJSByParseJSON` (same as TOML). Stringify walks the JS value to produce INI text (sections for object values, `key=val` for scalars)\n3. **`test/js/bun/ini/ini-namespace.test.ts`** — Tests for `Bun.INI.parse` and `Bun.INI.stringify`\n\n### Modified files (6)\n4. **`src/interchange.zig`** — Add `pub const ini = @import(\"./interchange/ini.zig\");`\n5. **`src/bun.js/api.zig`** — Add `pub const INIObject = @import(\"./api/INIObject.zig\");`\n6. **`src/bun.js/api/BunObject.zig`** — Add lazy prop declaration (`INI`), export in `exportAll()`, and getter function `getINIObject()`\n7. **`src/bun.js/bindings/BunObject+exports.h`** — Add `macro(INI)` to the `FOR_EACH_GETTER` macro (auto-generates the C++ extern declaration + wrapper)\n8. **`src/bun.js/bindings/BunObject.cpp`** — Add `INI` entry to the `bunObjectTable` (the JSC hash-table comment block that gets compiled into a lookup table)\n9. **`packages/bun-types/bun.d.ts`** — Add `namespace INI` with JSDoc for `parse` and `stringify`",
+    "execute_duration_ms": 1046805,
+    "execute_api_ms": 1044081,
+    "execute_tokens_in": 72,
+    "execute_tokens_out": 65769,
+    "execute_cost_usd": 3.2731796000000006
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation fully satisfies all rubric requirements: (1) INIObject.zig contains create, parse, and stringify public functions with correct signatures; (2) parse handles sections (simple and dot-nested), key=value pairs, and both ; and # comments; (3) BunObject.zig has proper lazy property callback wiring with getINIObject getter; (4) BunObject+exports.h includes INI macro entry; (5) BunObject.cpp includes INI in the hash table with correct callback naming; (6) TypeScript definitions include INI namespace with complete JSDoc and examples; (7) Self-contained INI parser in interchange/ini.zig does not depend on npm parser and implements proper value coercion; (8) Code follows Zig conventions with jsc.JSFunction.create, ZigString.static, and @import(\"bun\"). Additional strengths: comprehensive test suite covering parse/stringify round-trips, proper error handling, correct integration through interchange.zig and api.zig, and well-documented code. No material gaps or violations detected.",
+          "diff_length": 39623,
+          "new_files": "PLAN.md\nsrc/bun.js/api/INIObject.zig\nsrc/interchange/ini.zig\ntest/js/bun/ini/ini-namespace.test.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19096
+  },
+  "session_id": "4d63c982-2761-4a61-8f68-08bf72ebc754"
+}

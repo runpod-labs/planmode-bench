@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T17:25:05.142Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1557042,
+    "duration_api_ms": 1550888,
+    "num_turns": 43,
+    "total_cost_usd": 3.2631266499999994,
+    "input_tokens": 50,
+    "output_tokens": 78959,
+    "cache_read_tokens": 1633738,
+    "cache_creation_tokens": 177050,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 899386,
+    "plan_api_ms": 896369,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 32833,
+    "plan_cost_usd": 1.8538613499999994,
+    "plan_content": "Here is the complete implementation plan.\n\n---\n\n## Summary\n\n**7 files total** — 3 new, 4 modified. No new dependencies, no build config changes.\n\n### New files\n\n1. **`packages/contracts/src/theme.ts`** — Effect Schema types: `ThemeColorPalette` (14 fields, 7 areas × 2 roles), `AppTheme`, `AppThemeId` (`\"system\" | \"t3-dark\" | \"t3-light\" | \"t3-midnight\"`), `BUILT_IN_THEME_IDS`\n\n2. **`apps/web/src/themes.ts`** — Concrete oklch color data for all 3 themes, `buildThemeCssVars()` that maps palette → full CSS token set, `BUILT_IN_THEMES` / `THEME_LOOKUP` exports\n\n3. **`apps/web/src/components/ThemeSelector.tsx`** — 4-option grid (System + 3 themes) with miniature swatch previews showing sidebar/editor/status-bar zones using concrete color values; selected state uses `ring-primary`\n\n### Modified files\n\n4. **`packages/contracts/src/index.ts`** — Append `export * from \"./theme\"` (1 line)\n\n5. **`apps/web/src/hooks/useTheme.ts`** — Full replacement: expanded `AppThemeId` type, backward-compat migration (`\"dark\"` → `\"t3-dark\"`, `\"light\"` → `\"t3-light\"`), `applyTheme()` injects all CSS vars via `style.setProperty()` (highest specificity, overrides `@variant dark`), still toggles `.dark` for Tailwind `dark:` utilities, adds `resolvedPalette` to return shape\n\n6. **`apps/web/src/index.css`** — 3 small additions: 4 new Tailwind token mappings in `@theme inline`, plus `--sidebar`/`--editor`/`--terminal`/`--status-bar` fallback defaults in both `:root` and `@variant dark`\n\n7. **`apps/web/src/routes/_chat.settings.tsx`** — Remove `THEME_OPTIONS`, import `ThemeSelector`, replace the radio-button appearance section with `<ThemeSelector value={theme} onChange={setTheme} />`\n\n### Key design decisions\n- **`style.setProperty()` over `[data-theme]` CSS selectors** — inline styles win over all CSS class-based declarations, giving t3-midnight complete visual independence from the existing `@variant dark` block\n- **Concrete oklch color values** — palette stores real colors (not `var()` references) so preview swatches render correctly without any CSS resolution\n- **`.dark` class preserved** — still toggled per-theme so all existing Tailwind `dark:` utilities continue to work",
+    "execute_duration_ms": 657656,
+    "execute_api_ms": 654519,
+    "execute_tokens_in": 33,
+    "execute_tokens_out": 46126,
+    "execute_cost_usd": 1.4092653000000002
+  },
+  "evaluation": {
+    "overall_score": 0.75,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.75,
+        "weight": 1,
+        "weighted_score": 0.75,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation successfully adds theme types, 3 built-in themes (t3-dark, t3-light, t3-midnight), a useTheme hook with local storage persistence and CSS custom properties injection, and a ThemeSelector component with preview swatches. However, it has two significant gaps: (1) Missing exported `getTheme` and `listThemes` utility functions in the shared package that are explicitly required by the rubric—only THEME_LOOKUP and BUILT_IN_THEMES are exported instead, (2) Missing a ThemeProvider component—only a useTheme hook is provided. The diff shows no build config or new dependencies, which is correct. While the core functionality is solid, the missing utility functions and ThemeProvider component represent incomplete compliance with the stated requirements.",
+          "diff_length": 24394,
+          "new_files": "PLAN.md\napps/web/src/components/ThemeSelector.tsx\napps/web/src/themes.ts\npackages/contracts/src/theme.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 12565
+  },
+  "session_id": "affb8312-556d-4d3a-b426-abdb9664e08d"
+}

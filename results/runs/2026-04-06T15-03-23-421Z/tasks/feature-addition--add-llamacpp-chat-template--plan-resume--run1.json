@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T15:39:17.114Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 768281,
+    "duration_api_ms": 799864,
+    "num_turns": 18,
+    "total_cost_usd": 1.5844461000000003,
+    "input_tokens": 24,
+    "output_tokens": 32760,
+    "cache_read_tokens": 590279,
+    "cache_creation_tokens": 115148,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 716803,
+    "plan_api_ms": 748506,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 29786,
+    "plan_cost_usd": 1.2140739000000003,
+    "plan_content": "Here is the complete implementation plan:\n\n---\n\n## Plan: `mistral-instruct-v3` Specialized Handler\n\n**Only one file changes:** `common/chat.cpp`\n\n### Step 1 — Add the handler function (~line 1517, after `gigachat_v3` ends)\n\n`static common_chat_params common_chat_params_init_mistral_instruct_v3(...)` following the standard handler pattern:\n\n- Renders the prompt with `common_chat_template_direct_apply_impl(tmpl, inputs)`\n- `format = COMMON_CHAT_FORMAT_PEG_NATIVE`, `supports_thinking = false`\n- `preserved_tokens = { \"[INST]\", \"[/INST]\", \"[TOOL_CALLS]\" }`\n- For **content-only** responses: `p.literal(generation_prompt) + p.content(p.rest())`\n- For **tool calls**: uses the existing `p.standard_json_tools()` helper (declared in `chat-peg-parser.h` lines 108–119) with:\n  - `section_start = \"[TOOL_CALLS]\"`, `array_wrapped = true`, `call_id_key = \"id\"`\n  - This precisely models the Nemo/v0.3 format: `[TOOL_CALLS][{\"name\":\"…\",\"arguments\":{…},\"id\":\"…\"}]`\n- Grammar trigger on word `[TOOL_CALLS]`; lazy when `tool_choice == AUTO`\n\n### Step 2 — Register detection (~line 1690, before `return std::nullopt`)\n\n```cpp\n// Mistral Instruct v0.3 / Nemo — [INST]/[/INST] without [SYSTEM_PROMPT]\nif (src.find(\"[INST]\") != std::string::npos &&\n    src.find(\"[/INST]\") != std::string::npos &&\n    src.find(\"[SYSTEM_PROMPT]\") == std::string::npos) {\n    LOG_DBG(\"Using specialized template: Mistral Instruct v0.3\\n\");\n    return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n}\n```\n\n### Why detection is safe\n\nThe Ministral 3 check (runs first, requires `[SYSTEM_PROMPT]`) catches all three other Mistral-family templates in the repo (`Ministral-3`, `Mistral-Small-3.2`, `Devstral`). Only `mistralai-Mistral-Nemo-Instruct-2407` — which has `[INST]`/`[/INST]` but no `[SYSTEM_PROMPT]` — falls through to the new check. No non-Mistral template in the repo uses `[INST]`/`[/INST]`.",
+    "execute_duration_ms": 51478,
+    "execute_api_ms": 51358,
+    "execute_tokens_in": 8,
+    "execute_tokens_out": 2974,
+    "execute_cost_usd": 0.3703722
+  },
+  "evaluation": {
+    "overall_score": 0.42,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.42,
+        "weight": 1,
+        "weighted_score": 0.42,
+        "passed": false,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation successfully creates the new handler function, implements template auto-detection with proper [SYSTEM_PROMPT] exclusion check, includes the LOG_DBG call, dispatches correctly from the template detection function, and makes no modifications to existing handlers. However, it has significant gaps: (1) Uses COMMON_CHAT_FORMAT_PEG_NATIVE instead of the required COMMON_CHAT_FORMAT_CONTENT_ONLY, (2) No explicit logic for wrapping user turns with [INST]/[/INST] markers, (3) No system message prepending to first user turn, (4) No </s> appending after assistant turns. These missing message handling features are critical to the template's functionality.",
+          "diff_length": 3873,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 17052
+  },
+  "session_id": "18a25ab3-4a04-4989-bd62-a9fe722b7cdc"
+}

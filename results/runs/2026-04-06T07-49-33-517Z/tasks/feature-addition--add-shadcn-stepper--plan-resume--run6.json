@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-shadcn-stepper",
+  "task_name": "add stepper component",
+  "mode": "plan-resume",
+  "run_number": 6,
+  "timestamp": "2026-04-06T11:21:11.615Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 865797,
+    "duration_api_ms": 1087399,
+    "num_turns": 46,
+    "total_cost_usd": 2.69976855,
+    "input_tokens": 39,
+    "output_tokens": 52418,
+    "cache_read_tokens": 1794545,
+    "cache_creation_tokens": 152257,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 708111,
+    "plan_api_ms": 929836,
+    "plan_tokens_in": 19,
+    "plan_tokens_out": 42857,
+    "plan_cost_usd": 1.8618007499999998,
+    "plan_content": "Here's the complete implementation plan for the **Stepper** compound component:\n\n---\n\n### What will be created (2 new files)\n\n**`apps/v4/registry/bases/radix/ui/stepper.tsx`** — 9 sub-components:\n- `Stepper` — root container, context provider, controlled/uncontrolled state, `orientation` prop\n- `StepperList` — nav bar (flex-row for horizontal, flex-col for vertical)\n- `StepperItem` — wraps one step, provides per-item context (`step`, `isActive`, `isCompleted`)\n- `StepperTrigger` — `<button>` that calls `onValueChange(step)` on click\n- `StepperIndicator` — circle showing step number or ✓ icon when completed\n- `StepperTitle` — `<span>` for step label text\n- `StepperDescription` — `<span>` for sub-label text\n- `StepperSeparator` — connector line (`h-px flex-1` horizontal; `w-px ms-4` vertical)\n- `StepperPanel` — content panel, conditionally rendered when its step is active\n\n**`apps/v4/registry/bases/radix/examples/stepper-example.tsx`** — 4 demos: Basic, With Descriptions, Vertical, and Controlled (Prev/Next buttons).\n\n### What will be modified (2 registry entries appended)\n\n- **`ui/_registry.ts`** — add `stepper` entry after `spinner` (alphabetical order)\n- **`examples/_registry.ts`** — add `stepper-example` entry after `spinner-example`\n\n> `registry.ts` needs **no changes** — it already spreads `...ui` and `...examples` automatically.\n\n---\n\n### Key design decisions\n\n| Decision | Rationale |\n|---|---|\n| Mirrors `tabs.tsx` orientation pattern exactly | `data-orientation` on root + `group/stepper` named group + `group-data-vertical/stepper:` on children |\n| Two React contexts | `StepperContext` (value/onChange/orientation) and `StepperItemContext` (step/isActive/isCompleted) — mirrors `toggle-group.tsx` |\n| `data-[state=active/completed/pending]` | On trigger, indicator, and item for styling hooks |\n| `IconPlaceholder` in `StepperIndicator` | Multi-icon-library support (same as `accordion.tsx`, `breadcrumb.tsx`) |\n| `\"use client\"` on both files | Component is interactive; example uses `useState` for controlled demo |\n| No new npm dependencies | Pure React + existing `cn()`, `IconPlaceholder`, `cva` utilities |",
+    "execute_duration_ms": 157686,
+    "execute_api_ms": 157563,
+    "execute_tokens_in": 20,
+    "execute_tokens_out": 9561,
+    "execute_cost_usd": 0.8379677999999999
+  },
+  "evaluation": {
+    "overall_score": 0.25,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "apps/v4/registry/new-york-v4/ui/stepper.tsx",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: apps/v4/registry/new-york-v4/ui/stepper.tsx"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "apps/v4/registry/new-york-v4/examples/stepper-demo.tsx",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.1,
+        "weighted_score": 0.05,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "\"stepper\"",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "registry:ui",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.1,
+        "weighted_score": 0.05,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "\"stepper-demo\"",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "registry:example",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "command": "cd apps/v4 && npx tsc --noEmit --strict --jsx react-jsx --moduleResolution bundler --module ESNext --target ES2022 --esModuleInterop --skipLibCheck --paths '{\"@/*\": [\"./\"]}' registry/new-york-v4/ui/stepper.tsx 2>&1 | tail -20",
+          "exit_code": 0,
+          "output": "node:internal/modules/cjs/loader:1228\n  throw err;\n  ^\n\nError: Cannot find module '/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775473602839-0fe2sw/node_modules/typescript/bin/tsc'\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)\n    at Function._load (node:internal/modules/cjs/loader:1055:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)\n    at node:internal/main/run_main_module:36:49 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: []\n}\n\nNode.js v22.14.0\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 342
+  },
+  "session_id": "f613f79d-4247-4761-9311-969068da1734"
+}

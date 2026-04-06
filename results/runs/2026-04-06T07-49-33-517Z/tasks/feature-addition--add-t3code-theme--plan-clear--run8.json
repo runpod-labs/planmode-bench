@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-clear",
+  "run_number": 8,
+  "timestamp": "2026-04-06T12:09:37.544Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1726083,
+    "duration_api_ms": 1734360,
+    "num_turns": 62,
+    "total_cost_usd": 3.7347370499999992,
+    "input_tokens": 60,
+    "output_tokens": 77595,
+    "cache_read_tokens": 2103929,
+    "cache_creation_tokens": 190895,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1139464,
+    "plan_api_ms": 1152734,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 47644,
+    "plan_cost_usd": 2.3818965999999993,
+    "plan_content": "Here's the complete implementation plan for the custom theme system:\n\n---\n\n## Plan Summary\n\n### What we're doing\n\nReplacing the existing `\"light\" | \"dark\" | \"system\"` toggle with a proper named-theme system. The `resolvedTheme: \"light\" | \"dark\"` surface is intentionally preserved — the 4 existing Shiki/diff consumers (`ChatMarkdown`, `ChatView`, `DiffPanel`, `DiffWorkerPoolProvider`) require **zero changes**.\n\n---\n\n### Files to Create (3)\n\n| File | Purpose |\n|------|---------|\n| `packages/shared/src/theme.ts` | `ThemeColors` interface, `Theme`/`ThemeId` types, 3 built-in themes with concrete color values, `themeColorsToCssVars()` / `resolveTheme()` helpers |\n| `apps/web/src/components/ThemeProvider.tsx` | React Context provider — manages state, applies CSS vars, handles cross-tab sync |\n| `apps/web/src/components/ThemeSelector.tsx` | 3-column grid of theme cards with mini swatch previews using inline styles |\n\n### Files to Modify (5)\n\n| File | Change |\n|------|--------|\n| `packages/shared/package.json` | Add `\"./theme\"` subpath export |\n| `apps/web/src/hooks/useTheme.ts` | Full replacement — exports `ThemeContext`, `useTheme()`, `applyThemeToDOM()`, `getStoredThemeId()`, `subscribeToStorageChanges()`, plus module-level flash prevention |\n| `apps/web/src/index.css` | Add 13 new domain-specific vars to `@theme inline` + fallback values to `:root` |\n| `apps/web/src/routes/__root.tsx` | Wrap main return with `<ThemeProvider>` |\n| `apps/web/src/routes/_chat.settings.tsx` | Replace radio picker with `<ThemeSelector />` |\n\n---\n\n### Key Design Decisions\n\n- **`resolvedTheme` preserved**: `theme.isDark ? \"dark\" : \"light\"` — all Shiki consumers unchanged\n- **Flash prevention**: `applyThemeToDOM(resolveTheme(getStoredThemeId()))` runs at module load (before React), same approach as the existing hook\n- **New localStorage key**: `\"t3code:theme-id\"` (avoids old `\"t3code:theme\"` collision)\n- **Default theme**: `\"t3-dark\"` \n- **No Effect Schema**: themes aren't wire types, so plain TypeScript interfaces in `packages/shared` (not `packages/contracts`)\n- **Swatch previews**: use `style={{ background: theme.colors.xxx }}` inline — independent of the active theme's CSS vars\n- **`.dark` class preserved**: toggled via `theme.isDark`, so all Tailwind `dark:` variants keep working\n- **`@variant dark` block untouched**: left as CSS-only no-JS fallback (JS inline styles have higher specificity)\n- **No new dependencies, no build config changes**",
+    "execute_duration_ms": 586619,
+    "execute_api_ms": 581626,
+    "execute_tokens_in": 40,
+    "execute_tokens_out": 29951,
+    "execute_cost_usd": 1.35284045
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.35,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/shared/src/themes.ts"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 730
+  },
+  "session_id": "7977f84c-161d-4564-855b-522865e3a488"
+}

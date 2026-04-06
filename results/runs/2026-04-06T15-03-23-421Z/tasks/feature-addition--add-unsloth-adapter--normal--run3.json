@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "normal",
+  "run_number": 3,
+  "timestamp": "2026-04-06T17:08:24.382Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 295821,
+    "duration_api_ms": 293364,
+    "num_turns": 21,
+    "total_cost_usd": 0.70561485,
+    "input_tokens": 19,
+    "output_tokens": 15028,
+    "cache_read_tokens": 438974,
+    "cache_creation_tokens": 41770,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 0.9,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.9,
+        "weight": 1,
+        "weighted_score": 0.9,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation successfully meets all core requirements: (1) Creates export_lora_to_onnx function that extracts LoRA A and B matrices and traces them with torch.onnx.export, (2) Accepts output_dir and opset_version parameters with correct default of 17, (3) Saves comprehensive metadata.json with rank, alpha, target_modules, opset_version, exported_modules, and base_model, (4) Properly exposes function via __all__ export and registers save_pretrained_onnx method on model class using patch_saving_functions, (5) Uses torch.onnx.export with proper configuration including opset_version, input/output names, and dynamic axes, (6) Follows unsloth conventions (unsloth_ prefix, pass statements, docstring style, method patching pattern). The implementation is robust with good error handling for missing adapters and proper fallback logic for extracting rank/alpha. Minor considerations: assumes standard PEFT module structure and reconstructs alpha assuming use_rslora=False, but these are reasonable constraints for unsloth context. Code is production-ready with clear documentation.",
+          "diff_length": 10222,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16128
+  },
+  "session_id": "b669c59a-d600-4670-af30-4adda76746d0"
+}

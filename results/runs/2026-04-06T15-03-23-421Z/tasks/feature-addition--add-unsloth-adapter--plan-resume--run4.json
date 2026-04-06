@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-06T17:16:25.367Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 483408,
+    "duration_api_ms": 667382,
+    "num_turns": 25,
+    "total_cost_usd": 1.4677825500000004,
+    "input_tokens": 22,
+    "output_tokens": 20793,
+    "cache_read_tokens": 570939,
+    "cache_creation_tokens": 86845,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 338014,
+    "plan_api_ms": 522070,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 15816,
+    "plan_cost_usd": 1.0806733500000003,
+    "plan_content": "## Plan Summary\n\nHere's the complete implementation plan for `export_to_onnx`. **Only one file is modified: `unsloth/save.py`.**\n\n---\n\n### What the codebase exploration found\n\n- **All export methods** live in `save.py` and are attached to model instances at load time by `patch_saving_functions()` via `types.MethodType` — this is the exact pattern to follow.\n- **LoRA A/B weights** are accessed as `module.lora_A[adapter_name].weight` and `module.lora_B[adapter_name].weight` on any module with LoRA applied; confirmed by `kernels/utils.py:get_lora_parameters` (line 190).\n- **LoRA config** (rank, alpha, target_modules) is at `model.peft_config[\"default\"]`.\n- **Zero existing ONNX code** in the repo — entirely new.\n- `torch.onnx.export` is built into PyTorch; no new dependencies needed.\n\n---\n\n### 4 precise changes to `save.py`\n\n| # | What | Where |\n|---|------|-------|\n| 1 | Add `\"export_to_onnx\"` to `__all__` | Lines 48–54 |\n| 2 | Add standalone `export_to_onnx(model, save_directory, opset_version=17)` | After line 2262 (after the GGML function) |\n| 3 | Add thin wrapper `unsloth_save_pretrained_onnx(self, ...)` that calls step 2 | Immediately after step 2 |\n| 4 | Register `model.export_to_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)` | Inside `patch_saving_functions`, the `if not vision:` block (line ~2667) |\n\n### Key design decisions\n\n- **One ONNX file per A matrix, one per B matrix** — named `{module_name_underscored}.lora_A.onnx` / `.lora_B.onnx`. This keeps each file small and independently loadable.\n- **Thin `_LoRAMatrix` wrapper module** traces a simple `x @ W.T` graph through `torch.onnx.export` with a dynamic batch axis — avoids any tracing issues with the full model.\n- **Weights moved to CPU float32** before export for maximum ONNX runtime compatibility.\n- **`lora_onnx_metadata.json`** records rank, alpha, target_modules, opset_version, and the full list of exported module names.\n- **Vision models excluded** (consistent with how GGML is handled — vision block doesn't get the new method).",
+    "execute_duration_ms": 145394,
+    "execute_api_ms": 145312,
+    "execute_tokens_in": 9,
+    "execute_tokens_out": 4977,
+    "execute_cost_usd": 0.3871092
+  },
+  "evaluation": {
+    "overall_score": 0.9,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.9,
+        "weight": 1,
+        "weighted_score": 0.9,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation meeting all rubric requirements. The export_to_onnx function correctly exports LoRA A and B matrices using torch.onnx.export, accepts the required parameters (save_directory and opset_version=17), saves comprehensive metadata (rank, alpha, target_modules, opset_version, exported_modules), and is properly exposed both in __all__ and as a model method via types.MethodType binding. Code follows unsloth patterns including proper docstrings, error handling, user feedback prints, and edge case handling (multiple adapters, empty LoRA modules, set-to-list conversion for JSON serialization). The implementation creates a helper _LoRAMatrix class for ONNX serialization and uses dynamic axes for batch processing. Minor deductions only for: (1) unnecessary 'pass' statements after class/function definitions (though this appears consistent with codebase style), and (2) torch.onnx.export calls could have more explicit error handling, though current implementation handles the main failure modes adequately.",
+          "diff_length": 7961,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 15159
+  },
+  "session_id": "b552c4f4-fb72-4076-b7b7-497ddf3583af"
+}

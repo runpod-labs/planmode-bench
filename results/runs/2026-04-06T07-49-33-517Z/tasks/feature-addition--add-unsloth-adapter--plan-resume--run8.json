@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 8,
+  "timestamp": "2026-04-06T12:05:23.832Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 576765,
+    "duration_api_ms": 683957,
+    "num_turns": 26,
+    "total_cost_usd": 1.5236884500000005,
+    "input_tokens": 39,
+    "output_tokens": 23165,
+    "cache_read_tokens": 853145,
+    "cache_creation_tokens": 87367,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 487580,
+    "plan_api_ms": 594870,
+    "plan_tokens_in": 24,
+    "plan_tokens_out": 18056,
+    "plan_cost_usd": 1.0784510500000004,
+    "plan_content": "Here's a summary of the plan I've written:\n\n---\n\n## Plan: Add `export_to_onnx` to Unsloth\n\n**Only one file needs to change: `unsloth/save.py`**\n\nThe entire save/export surface in unsloth lives there — every method is a standalone function that gets monkey-patched onto the model by `patch_saving_functions()`.\n\n### Three edits to `save.py`\n\n**1. `__all__` (line ~51)** — add `\"unsloth_export_to_onnx\"` to the list.\n\n**2. New function `unsloth_export_to_onnx`** — inserted just before `not_implemented_save` (~line 2564). It:\n- Lazily imports `onnx` with a friendly error if not installed\n- Reads `rank`, `lora_alpha`, `target_modules` from `model.peft_config[active_adapter]` (same pattern as the rest of the codebase)\n- Iterates `model.named_modules()`, collecting every `module.lora_A[adapter].weight` and `module.lora_B[adapter].weight` that hasn't been merged\n- Builds an **ONNX model with no operator nodes** — just named initializer tensors (this is the correct ONNX container pattern for raw weight storage)\n- Embeds rank, alpha, target\\_modules, adapter name, and opset version as `metadata_props` on the ONNX model proto\n- Writes `lora_adapters.onnx` + `adapter_metadata.json` to the output directory\n- Accepts `opset_version: int = 17`\n\n**3. `patch_saving_functions` (line ~2663)** — one new line in the non-vision branch:\n```python\nmodel.export_to_onnx = types.MethodType(unsloth_export_to_onnx, model)\n```\n\nThe tensor naming convention follows the full module path:\n```\nbase_model.model.model.layers.0.self_attn.q_proj.lora_A.weight\nbase_model.model.model.layers.0.self_attn.q_proj.lora_B.weight\n…\n```",
+    "execute_duration_ms": 89185,
+    "execute_api_ms": 89087,
+    "execute_tokens_in": 15,
+    "execute_tokens_out": 5109,
+    "execute_cost_usd": 0.44523740000000006
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 79
+  },
+  "session_id": "bd7a12e4-b686-4502-a868-3c0464b689a4"
+}

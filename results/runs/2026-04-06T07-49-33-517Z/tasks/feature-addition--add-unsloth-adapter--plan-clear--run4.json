@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T12:07:11.728Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 496771,
+    "duration_api_ms": 659819,
+    "num_turns": 25,
+    "total_cost_usd": 1.2897939,
+    "input_tokens": 24,
+    "output_tokens": 21134,
+    "cache_read_tokens": 396017,
+    "cache_creation_tokens": 53098,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 413843,
+    "plan_api_ms": 577933,
+    "plan_tokens_in": 9,
+    "plan_tokens_out": 15485,
+    "plan_cost_usd": 1.07705325,
+    "plan_content": "Here is the complete implementation plan:\n\n---\n\n## Plan: `export_lora_to_onnx` in Unsloth\n\n### What I found\n\nThe codebase has **one file that needs modification**: `unsloth/save.py` (~2,679 lines). It already handles all export formats (GGUF, GGML, TorchAO, merged 16-bit). There is **no existing ONNX code** anywhere. The monkey-patching pattern (via `patch_saving_functions` at line 2569) is how all save methods get attached to model instances.\n\n---\n\n### Four changes to `unsloth/save.py`\n\n**1. Add `import json`** (line ~26, stdlib imports block)\n`json` is not currently imported; needed for writing the metadata file.\n\n**2. Add `\"export_lora_to_onnx\"` to `__all__`** (lines 48–54)\nThis makes it part of the public API via `from .save import *` in `__init__.py`.\n\n**3. Add `export_lora_to_onnx` standalone function + `unsloth_save_pretrained_onnx` wrapper** (after line 2566, just before `patch_saving_functions`)\n\nThe standalone function:\n- Signature: `export_lora_to_onnx(model, save_directory, opset_version=17)` decorated with `@torch.inference_mode`\n- Creates the output directory with `os.makedirs(save_directory, exist_ok=True)`\n- Reads `model.peft_config[\"default\"]` to get `rank` (`.r`), `alpha` (`.lora_alpha`), `target_modules`\n- Iterates `model.named_modules()` — for each module with `lora_A` / `lora_B` containing the `\"default\"` key:\n  - Extracts `A = module.lora_A[\"default\"].weight.detach().float().cpu()`\n  - Extracts `B = module.lora_B[\"default\"].weight.detach().float().cpu()`\n  - Reads `scaling = float(module.scaling[\"default\"])`\n  - Defines a local `_LoraOnnxLayer(nn.Module)` whose `forward` computes `(x @ A.t() @ B.t()) * scaling`, with A and B as `nn.Parameter`s\n  - Exports via `torch.onnx.export(layer_instance, dummy_input, onnx_path, opset_version=opset_version, input_names=[\"input\"], output_names=[\"lora_output\"], dynamic_axes={...})`\n  - Filename: `name.replace(\".\", \"_\") + \".onnx\"` (e.g. `base_model_model_model_layers_0_self_attn_q_proj.onnx`)\n- Writes `lora_onnx_metadata.json` containing `rank`, `alpha`, `target_modules`, `opset_version`, `adapter_name`, and a `modules` dict with per-layer file/shape/scaling info\n- Prints a summary and returns `save_directory`\n\nThe thin instance-method wrapper:\n```python\ndef unsloth_save_pretrained_onnx(self, save_directory, opset_version=17):\n    return export_lora_to_onnx(self, save_directory, opset_version=opset_version)\n```\n\n**4. Register in `patch_saving_functions`** (lines ~2661–2675)\nAdd `model.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)` in **both** the non-vision and vision branches.\n\n---\n\n### Reused patterns\n- LoRA weight access pattern from `kernels/utils.py:214–219`: `module.lora_A[adapter].weight`, `module.lora_B[adapter].weight`, `module.scaling[adapter]`\n- `PeftModelForCausalLM` imported inline (same as line 390)\n- `os.makedirs`, `types.MethodType`, `torch.inference_mode` — all already in use",
+    "execute_duration_ms": 82928,
+    "execute_api_ms": 81886,
+    "execute_tokens_in": 15,
+    "execute_tokens_out": 5649,
+    "execute_cost_usd": 0.21274065
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 81
+  },
+  "session_id": "973f07f5-e46c-44a8-b7ec-ca0d4c7a6a56"
+}

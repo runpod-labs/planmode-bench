@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-ollama-rename",
+  "task_name": "add model rename API endpoint and CLI command",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T15:49:54.925Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 476635,
+    "duration_api_ms": 473051,
+    "num_turns": 55,
+    "total_cost_usd": 1.1785060500000004,
+    "input_tokens": 46,
+    "output_tokens": 21012,
+    "cache_read_tokens": 920039,
+    "cache_creation_tokens": 62530,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 359160,
+    "plan_api_ms": 356823,
+    "plan_tokens_in": 22,
+    "plan_tokens_out": 11813,
+    "plan_cost_usd": 0.7880580000000004,
+    "plan_content": "## Plan: Add `ollama rename` Feature\n\n**8 targeted edits across 4 files — no new imports needed anywhere.**\n\n---\n\n### Files to modify\n\n| File | What changes |\n|------|-------------|\n| `api/types.go` | Add `RenameRequest` struct (after line 765, mirroring `CopyRequest`) |\n| `api/client.go` | Add `Rename()` method (after line 395, mirroring `Copy()`) |\n| `server/routes.go` | Add `RenameHandler` func (after line 1483) + register route (after line 1698) |\n| `cmd/cmd.go` | Add `RenameHandler` CLI func (after line 1350) + `renameCmd` + wire into env-docs loop + `rootCmd.AddCommand` |\n\n---\n\n### Server handler logic (the core of the feature)\n\n```\nParse & validate source/dest names        →  400 on invalid input\nmanifest.ParseNamedManifest(src)          →  404 if os.IsNotExist(err)\nmanifest.ParseNamedManifest(dst)          →  409 if err == nil (already exists)\nCopyModel(src, dst)                       →  500 on error\nsrcManifest.Remove()                      →  remove source manifest file\nsrcManifest.RemoveLayers()                →  remove now-unreferenced blobs only\n                                             (safe: re-scans all manifests first,\n                                              so shared blobs with dst are kept)\n```\n\n**Key insight:** `getExistingName()` does not error when a model is absent — it only normalises casing. Explicit `manifest.ParseNamedManifest` calls are therefore required for both the 404 (source missing) and 409 (destination exists) checks. `RemoveLayers()` is safe because it reads all remaining manifests before deleting anything, so the shared layer blobs now owned by `dst` are never touched.",
+    "execute_duration_ms": 117475,
+    "execute_api_ms": 116228,
+    "execute_tokens_in": 24,
+    "execute_tokens_out": 9199,
+    "execute_cost_usd": 0.39044805
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "All rubric requirements fully met: RenameRequest struct with correct json tags (source/destination), Client.Rename method POSTs to /api/rename, RenameHandler validates inputs, returns 404 for missing source (via os.IsNotExist check), returns 409 for existing destination (via err==nil check), copies model via CopyModel, removes source via Remove() and RemoveLayers(), route registered as r.POST(/api/rename, s.RenameHandler), CLI command uses cobra with ExactArgs(2), CLI RenameHandler calls client.Rename(), and no existing code modified—only clean additions across 4 files plus PLAN.md documentation.",
+          "diff_length": 7220,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 14222
+  },
+  "session_id": "5d5258b0-db60-480d-b351-aee234a9258a"
+}

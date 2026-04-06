@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T17:19:48.019Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 563693,
+    "duration_api_ms": 645321,
+    "num_turns": 41,
+    "total_cost_usd": 1.52030085,
+    "input_tokens": 41,
+    "output_tokens": 19199,
+    "cache_read_tokens": 707177,
+    "cache_creation_tokens": 64080,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 473999,
+    "plan_api_ms": 557055,
+    "plan_tokens_in": 21,
+    "plan_tokens_out": 13732,
+    "plan_cost_usd": 1.2942194999999999,
+    "plan_content": "Here is the complete implementation plan.\n\n---\n\n## Summary\n\n**Only `unsloth/save.py` needs modification** — 4 targeted changes:\n\n### Change 1 — Import `get_lora_parameters` (line 29)\n```python\n# Old\nfrom .kernels import fast_dequantize, QUANT_STATE, get_lora_parameters_bias\n# New\nfrom .kernels import fast_dequantize, QUANT_STATE, get_lora_parameters, get_lora_parameters_bias\n```\n\n### Change 2 — Add to `__all__` (lines 48–54)\nAdd `\"unsloth_save_pretrained_onnx\"` as a 6th entry.\n\n### Change 3 — New class + function (inserted before `patch_saving_functions`, ~line 2568)\n- **`_LoRAOnnxWrapper(torch.nn.Module)`** — a private wrapper with `forward(x) → (x @ A.T @ B.T) * scale`. Stores A and B as float32 contiguous buffers.\n- **`unsloth_save_pretrained_onnx(self, save_directory, opset_version=17)`** — iterates all model modules, filters for `Peft_Linear` / `Peft_Linear4bit` instances, uses the existing `get_lora_parameters()` utility to safely extract A/B/scale (handles merged/disabled adapters), calls `torch.onnx.export` for each layer, and writes `metadata.json` with rank, alpha, target_modules, opset_version, and the list of exported module names.\n\n### Change 4 — Bind method on the model (inside `patch_saving_functions`)\n```python\nmodel.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)\n```\nAdded alongside `save_pretrained_gguf`, `save_pretrained_ggml`, etc. in the `if not vision:` block.\n\n**Key design decisions:** one ONNX file per LoRA layer (named by module path), float32 cast for ONNX compatibility, dynamic batch/sequence axes, `get_lora_parameters()` reused for safe extraction (handles merged/disabled/QAT cases), `json` imported locally (matching existing file style).",
+    "execute_duration_ms": 89694,
+    "execute_api_ms": 88266,
+    "execute_tokens_in": 20,
+    "execute_tokens_out": 5467,
+    "execute_cost_usd": 0.22608135000000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation fully meets all rubric requirements. It includes: (1) a complete export_to_onnx function with A/B matrix extraction via get_lora_parameters, (2) correct function signature with save_directory and opset_version=17 default, (3) metadata saved with rank, alpha, target_modules, opset_version, and exported_files, (4) proper exposure via __all__ export and model.save_pretrained_onnx binding in patch_saving_functions, (5) correct use of torch.onnx.export with appropriate parameters (opset_version, dynamic_axes, constant folding), and (6) excellent adherence to unsloth patterns (types.MethodType binding, utility function reuse, proper error handling, consistent naming). The _LoRAOnnxWrapper class is well-designed for ONNX compatibility (float32 conversion, contiguous tensors), handles edge cases like merged/disabled adapters, and generates appropriate metadata and per-layer ONNX files.",
+          "diff_length": 7267,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19914
+  },
+  "session_id": "26a1ab24-a264-48a8-9378-b64728e7b246"
+}

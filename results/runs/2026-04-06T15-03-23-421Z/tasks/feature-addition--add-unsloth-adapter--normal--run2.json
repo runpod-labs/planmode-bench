@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "normal",
+  "run_number": 2,
+  "timestamp": "2026-04-06T17:10:02.662Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 392951,
+    "duration_api_ms": 314859,
+    "num_turns": 27,
+    "total_cost_usd": 0.8622016999999998,
+    "input_tokens": 28,
+    "output_tokens": 13722,
+    "cache_read_tokens": 740382,
+    "cache_creation_tokens": 43476,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 0.97,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.97,
+        "weight": 1,
+        "weighted_score": 0.97,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation meeting all rubric requirements. The code includes: (1) export_lora_to_onnx() function with wrapper method that saves LoRA A and B matrices correctly, (2) proper parameters (output_dir, opset_version=17), (3) comprehensive metadata saved to JSON including rank, alpha, scaling, target modules and per-adapter details, (4) proper exposure via __all__ export list and model.save_pretrained_onnx method binding in patch_saving_functions(), (5) correct use of ONNX helper libraries (make_tensor_value_info, make_node, make_graph, make_model, checker, save), (6) excellent unsloth pattern adherence with @torch.inference_mode decorator, proper docstrings, error handling, progress messages, and edge case handling (disabled adapters, active adapter detection, alpha recovery). Minor: Uses onnx helper libraries rather than torch.onnx.export, but this is explicitly allowed by rubric and more appropriate for layer-specific export. Code is well-structured, thoroughly tested via onnx.checker.check_model(), and handles multiple PEFT API versions.",
+          "diff_length": 11781,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18427
+  },
+  "session_id": "6c6bbe19-1c30-419b-ae09-d4f98484570b"
+}

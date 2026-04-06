@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-shadcn-stepper",
+  "task_name": "add stepper component",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T17:08:04.458Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1388232,
+    "duration_api_ms": 1570140,
+    "num_turns": 89,
+    "total_cost_usd": 4.584829950000001,
+    "input_tokens": 73,
+    "output_tokens": 60959,
+    "cache_read_tokens": 3602902,
+    "cache_creation_tokens": 227660,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 941656,
+    "plan_api_ms": 1125460,
+    "plan_tokens_in": 26,
+    "plan_tokens_out": 31811,
+    "plan_cost_usd": 2.907031900000001,
+    "plan_content": "Here's a summary of the complete plan I've created:\n\n---\n\n## Stepper Component Plan\n\n### What's being built\nA `Stepper` compound component for multi-step wizards, built from **plain HTML + React Context** (no Radix/Base UI primitive for Stepper exists). It follows the same approach as `breadcrumb.tsx`.\n\n### 8 Sub-components\n`Stepper` · `StepperList` · `StepperItem` · `StepperTrigger` · `StepperTitle` · `StepperDescription` · `StepperSeparator` · `StepperContent`\n\n### React Context design\n- **`StepperContext`** (root): `{ activeStep, setActiveStep, orientation }`\n- **`StepperItemContext`** (per-step): `{ step, isActive, isCompleted }`\n- Supports both **controlled** (`activeStep` + `onStepChange`) and **uncontrolled** (`defaultStep`) usage\n\n### 12 changes across 3 registry variants\n\n**6 new files to create:**\n| File | Notes |\n|---|---|\n| `bases/base/ui/stepper.tsx` | Reference implementation |\n| `bases/radix/ui/stepper.tsx` | Identical; different `cn` import path |\n| `new-york-v4/ui/stepper.tsx` | Simplified styles, `@/lib/utils` |\n| `bases/base/examples/stepper-example.tsx` | 5 sub-examples via `ExampleWrapper` |\n| `bases/radix/examples/stepper-example.tsx` | Identical; different import paths |\n| `new-york-v4/examples/stepper-demo.tsx` | Single focused demo (`-demo` suffix) |\n\n**6 existing `_registry.ts` files to add entries to** (alphabetically between `spinner` and `switch` in each):\n- `bases/base/ui/_registry.ts`, `bases/radix/ui/_registry.ts`, `new-york-v4/ui/_registry.ts`\n- `bases/base/examples/_registry.ts`, `bases/radix/examples/_registry.ts`, `new-york-v4/examples/_registry.ts`",
+    "execute_duration_ms": 446576,
+    "execute_api_ms": 444680,
+    "execute_tokens_in": 47,
+    "execute_tokens_out": 29148,
+    "execute_cost_usd": 1.6777980500000005
+  },
+  "evaluation": {
+    "overall_score": 0.2,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.2,
+        "weight": 1,
+        "weighted_score": 0.2,
+        "passed": false,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Critical failure: The stepper.tsx component files (bases/base, bases/radix, new-york-v4) are missing the required \"use client\" directive at the top of the file. Since these components use React.createContext, React.useContext, and React.useState hooks, they must be marked as client components in Next.js 13+ app router. All other requirements are correctly implemented: data-slot attributes, cn() utility usage, React contexts for state sharing, horizontal/vertical orientation support, demo examples with useState, registry entries, and no modification to existing component files. However, the missing \"use client\" directive is an explicit requirement that would cause runtime errors.",
+          "diff_length": 36178,
+          "new_files": "PLAN.md\napps/v4/registry/bases/base/examples/stepper-example.tsx\napps/v4/registry/bases/base/ui/stepper.tsx\napps/v4/registry/bases/radix/examples/stepper-example.tsx\napps/v4/registry/bases/radix/ui/stepper.tsx\napps/v4/registry/new-york-v4/examples/stepper-demo.tsx\napps/v4/registry/new-york-v4/ui/stepper.tsx"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19949
+  },
+  "session_id": "9c3a61b2-249d-43ab-9b58-fd53187621eb"
+}

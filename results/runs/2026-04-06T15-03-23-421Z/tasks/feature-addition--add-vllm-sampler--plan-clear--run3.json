@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T17:42:01.695Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 863178,
+    "duration_api_ms": 796316,
+    "num_turns": 94,
+    "total_cost_usd": 3.1491375999999995,
+    "input_tokens": 14385,
+    "output_tokens": 36310,
+    "cache_read_tokens": 5118454,
+    "cache_creation_tokens": 131776,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 409924,
+    "plan_api_ms": 404328,
+    "plan_tokens_in": 21,
+    "plan_tokens_out": 11616,
+    "plan_cost_usd": 0.8991413499999998,
+    "plan_content": "Here's the complete implementation plan for adding Top-A sampling to vLLM.\n\n---\n\n## Key Insight\n\nTop-A is **algorithmically identical to `min_p`** — both keep tokens where `prob ≥ threshold × max_prob` — so every change is a near-mechanical copy of the `min_p` pattern, just with `top_a` as the name.\n\n---\n\n## 9 Files to Modify\n\n### 1. `vllm/sampling_params.py`\n- Add `top_a: float = 0.0` field (after `min_p`)\n- Add docstring, validation (`[0, 1]`), greedy reset (`self.top_a = 0.0`), `from_optional()` entry, and `__repr__()` entry\n\n### 2. `vllm/model_executor/sampling_metadata.py` *(V0 path)*\n- Add `top_as: torch.Tensor` to `SamplingTensors`\n- Thread `top_a` through `from_sampling_metadata()` (extract, accumulate list, add `do_top_a` flag) and `from_lists()` (create tensor)\n- Change return from 4-tuple → **5-tuple** `(sampling_tensors, do_penalties, do_top_p_top_k, do_min_p, do_top_a)`\n\n### 3. `vllm/model_executor/layers/sampler.py` *(V0 path)*\n- Unpack the new 5-tuple; store `self._do_top_a`\n- Add `_apply_top_a()` function (mirrors `_apply_min_p` exactly)\n- Call it conditionally in `forward()` after `_apply_min_p`\n\n### 4. `vllm/v1/sample/logits_processor.py` *(V1 GPU path)*\n- Add `TopALogitsProcessor` class (mirrors `MinPLogitsProcessor`)\n- Register in `init_builtin_logitsprocs()` as `argmax_invariant`\n\n### 5. `vllm/v1/spec_decode/utils.py`\n- Add `or sampling_params.top_a > _SAMPLING_EPS` to `is_spec_decode_unsupported()`\n\n### 6. `vllm/v1/worker/tpu_input_batch.py` *(V1 TPU path)*\n- Add `top_a` tensors + `top_a_reqs` tracking, mirroring the `min_p` pattern across `__init__`, `add_request`, `remove_request`, `swap_states`, `condense`, `prepare_input`, `get_sampling_metadata`\n\n### 7. `vllm/v1/sample/tpu/metadata.py` *(V1 TPU path)*\n- Add `top_a: Optional[torch.Tensor]` to `TPUSupportedSamplingMetadata`\n\n### 8. `vllm/v1/sample/tpu/sampler.py` *(V1 TPU path)*\n- Add `apply_top_a()` method; call after `apply_min_p` in the forward pass\n\n### 9. `vllm/entrypoints/openai/protocol.py`\n- Add `top_a: Optional[float] = None` to both `ChatCompletionRequest` and `CompletionRequest`\n- Add `\"top_a\": 0.0` to both `_DEFAULT_SAMPLING_PARAMS` dicts\n- Add the walrus-operator resolution block in both `to_sampling_params()` methods\n\n---\n\n**Note:** The V1 GPU path (`gpu_input_batch.py`) does **not** need changes — `min_p` is handled entirely through the logits-processor plugin system there, and `top_a` will follow the same pattern.",
+    "execute_duration_ms": 453254,
+    "execute_api_ms": 391988,
+    "execute_tokens_in": 14364,
+    "execute_tokens_out": 24694,
+    "execute_cost_usd": 2.2499962499999997
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation. All rubric requirements fully met: (1) top_a parameter correctly added to SamplingParams with float type, default 0.0, validation for [0.0, 1.0] range, docstring, and integration into __init__, validation, greedy reset, __repr__, and from_optional; (2) filtering logic correctly implemented across all samplers (V0 GPU, V1 GPU via logits processor, V1 TPU) - computes max probability, masks tokens below threshold, applies -inf masking (implicit renormalization via softmax); (3) parameter properly threaded through SamplingTensors, metadata structures, device tensors, and batch tracking; (4) adequate documentation present; (5) code is syntactically valid Python following vLLM conventions and mirrors the min_p pattern appropriately. Very minor note: uses in-place unsqueeze_ operation which modifies input tensor, but this is consistent with existing min_p implementation and safe in context. PLAN.md is documentation artifact, not source code. All 9 files modified correctly with no missing pieces.",
+          "diff_length": 28682,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 34699
+  },
+  "session_id": "396902a5-c75a-4c65-9a6d-f263155a34ff"
+}

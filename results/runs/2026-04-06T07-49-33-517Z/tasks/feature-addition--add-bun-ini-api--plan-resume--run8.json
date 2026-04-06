@@ -1,0 +1,256 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-bun-ini-api",
+  "task_name": "add Bun.INI namespace API",
+  "mode": "plan-resume",
+  "run_number": 8,
+  "timestamp": "2026-04-06T08:19:44.535Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1405442,
+    "duration_api_ms": 1547864,
+    "num_turns": 103,
+    "total_cost_usd": 5.2665013,
+    "input_tokens": 94,
+    "output_tokens": 87115,
+    "cache_read_tokens": 7960230,
+    "cache_creation_tokens": 212526,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 475237,
+    "plan_api_ms": 620199,
+    "plan_tokens_in": 23,
+    "plan_tokens_out": 22961,
+    "plan_cost_usd": 1.6352959000000005,
+    "plan_content": "Here's a summary of the plan I've written:\n\n## Plan: Add `Bun.INI` Namespace\n\nThe implementation follows the exact same 5-layer architecture used by `Bun.TOML`, `Bun.YAML`, `Bun.JSON5`, and `Bun.JSONC`.\n\n### 9 Files to Create/Modify\n\n**2 new files:**\n1. **`src/interchange/ini.zig`** — Self-contained INI parser (returns `ast.Expr`) and `Stringifier` struct. Handles sections (`[name]`), `key=value` pairs, `;`/`#` comment lines, type inference (numbers/booleans), quoted strings, and dot-notation section names (`[outer.inner]`). Does NOT import `src/ini.zig`.\n2. **`src/bun.js/api/INIObject.zig`** — JS API layer with `create()`, `parse()`, and `stringify()`, modeled on `JSON5Object.zig`.\n\n**7 existing files modified** (minimal, surgical edits each):\n3. `src/interchange.zig` — add `pub const ini = @import(...)` (1 line)\n4. `src/bun.js/api.zig` — add `pub const INIObject = @import(...)` (1 line)\n5. `src/bun.js/api/BunObject.zig` — 4 locations: struct constant, `exportAll()` export, getter function, bottom import\n6. `src/bun.js/bindings/BunObject+exports.h` — add `macro(INI)` to `FOR_EACH_GETTER`\n7. `src/bun.js/bindings/BunObject.cpp` — add `INI` row to the `@begin bunObjectTable`\n8. `packages/bun-types/bun.d.ts` — add `namespace INI` with JSDoc + `parse` and `stringify` signatures\n\n**1 new test file:**\n9. `test/js/bun/ini/ini-api.test.ts` — tests for `Bun.INI.parse` and `Bun.INI.stringify` (distinct from the existing `ini.test.ts` which tests the internal npm INI parser)",
+    "execute_duration_ms": 930205,
+    "execute_api_ms": 927665,
+    "execute_tokens_in": 71,
+    "execute_tokens_out": 64154,
+    "execute_cost_usd": 3.631205399999999
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "checks_passed": 7,
+          "checks_total": 7,
+          "check_details": [
+            {
+              "path": "src/bun.js/api/INIObject.zig",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/bun.js/api/INIObject.zig",
+              "check": "contains \"create\"",
+              "passed": true
+            },
+            {
+              "path": "src/bun.js/api/INIObject.zig",
+              "check": "contains \"parse\"",
+              "passed": true
+            },
+            {
+              "path": "src/bun.js/api/INIObject.zig",
+              "check": "contains \"stringify\"",
+              "passed": true
+            },
+            {
+              "path": "src/bun.js/api/INIObject.zig",
+              "check": "contains \"jsc.JSGlobalObject\"",
+              "passed": true
+            },
+            {
+              "path": "src/bun.js/api/INIObject.zig",
+              "check": "contains \"jsc.JSValue\"",
+              "passed": true
+            },
+            {
+              "path": "src/bun.js/api/INIObject.zig",
+              "check": "contains \"bun.JSError\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 7,
+          "patterns_total": 7,
+          "pattern_results": [
+            {
+              "pattern": "pub fn create\\(globalThis: \\*jsc\\.JSGlobalObject\\) jsc\\.JSValue",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "pub fn parse\\(",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "pub fn stringify\\(",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "ZigString\\.static\\(\"parse\"\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "ZigString\\.static\\(\"stringify\"\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "jsc\\.JSFunction\\.create",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "@import\\(\"bun\"\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "INI.*toJSLazyPropertyCallback|toJSLazyPropertyCallback.*INI",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "getINIObject",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "INIObject",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "macro\\(INI\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "INI.*BunObject_lazyPropCb_wrap_INI|BunObject_lazyPropCb_wrap_INI.*INI",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "namespace INI",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "parse.*input.*string",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "stringify.*input",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "command": "grep -c 'pub fn' src/bun.js/api/INIObject.zig | xargs test 1 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 11
+  },
+  "session_id": "89d1f873-1b5e-4cb1-b84e-19c40537edad"
+}

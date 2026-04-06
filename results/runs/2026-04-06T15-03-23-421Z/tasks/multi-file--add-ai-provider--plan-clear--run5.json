@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "add new AI image provider",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T17:47:29.535Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 661520,
+    "duration_api_ms": 809377,
+    "num_turns": 63,
+    "total_cost_usd": 2.0920205000000003,
+    "input_tokens": 54,
+    "output_tokens": 28573,
+    "cache_read_tokens": 1516498,
+    "cache_creation_tokens": 105310,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 387434,
+    "plan_api_ms": 535864,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 11687,
+    "plan_cost_usd": 1.2880384000000005,
+    "plan_content": "Here's a summary of the plan I've prepared:\n\n## Plan: `@ai-sdk/pixel-art` Provider\n\n### Structure (mirrors `@ai-sdk/luma`)\n**13 new files** in `packages/pixel-art/` + **1 edit** to root `tsconfig.json`.\n\n### Key source files\n| File | Purpose |\n|------|---------|\n| `src/pixel-art-provider.ts` | `createPixelArt()` factory + `pixelArt` singleton |\n| `src/pixel-art-image-model.ts` | `PixelArtImageModel implements ImageModelV3` |\n| `src/pixel-art-image-settings.ts` | `PixelArtImageModelId` type + `PixelArtImageSettings` interface |\n| `src/index.ts` | Public exports |\n| `src/version.ts` | Build-time version injection |\n| `src/pixel-art-image-model.test.ts` | 13 test cases |\n\n### Design highlights\n- **Synchronous API** — single POST to `/images/generate` returns image URLs directly (no polling unlike Luma)\n- **`maxImagesPerCall = 4`** — `n` forwarded to API; all returned URLs downloaded in parallel via `Promise.all`\n- **Supported standard params**: `prompt`, `n`, `size`, `seed`\n- **Unsupported params** (`aspectRatio`, `files`, `mask`) emit `SharedV3Warning` instead of throwing\n- **Provider options** (via `providerOptions['pixel-art']`): `style: 'pixel'|'retro'|'8bit'` → `style`; `pixelDensity: number` → `pixel_density`\n- **Auth**: `Authorization: Bearer <key>` loaded from `PIXELART_API_KEY` env var\n- `languageModel()` / `embeddingModel()` throw `NoSuchModelError`\n\n### The one existing file touched\n`tsconfig.json` — add `{ \"path\": \"packages/pixel-art\" }` alphabetically between `perplexity` and `provider`.",
+    "execute_duration_ms": 274086,
+    "execute_api_ms": 273513,
+    "execute_tokens_in": 38,
+    "execute_tokens_out": 16886,
+    "execute_cost_usd": 0.8039820999999998
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The agent successfully created a complete and production-ready PixelArt provider for the Vercel AI SDK. All requirements are met: (1) new `packages/pixel-art/` with proper package.json structure, (2) exported `createPixelArt()` factory function, (3) `PixelArtProvider` interface implementing `ProviderV3`, (4) `PixelArtImageModel` implementing `ImageModelV3` with correct `doGenerate()` method, (5) settings supporting size, style enum with exact values ('pixel', 'retro', '8bit'), and pixelDensity, (6) base URL set to 'https://api.pixelart.ai/v1', (7) proper package structure matching existing providers with tsconfig, vitest configs, turbo.json, tsup config, and comprehensive tests (13 test cases), (8) no existing packages modified except minimal necessary tsconfig.json integration. The implementation correctly handles unsupported features via warnings rather than errors, properly downloads multiple images in parallel, includes proper auth via PIXELART_API_KEY, and throws NoSuchModelError for non-image model requests. Code quality is excellent with proper error handling, schema validation, and follow of SDK patterns.",
+          "diff_length": 29736,
+          "new_files": "PLAN.md\npackages/pixel-art/package.json\npackages/pixel-art/src/index.ts\npackages/pixel-art/src/pixel-art-image-model.test.ts\npackages/pixel-art/src/pixel-art-image-model.ts\npackages/pixel-art/src/pixel-art-image-settings.ts\npackages/pixel-art/src/pixel-art-provider.ts\npackages/pixel-art/src/version.ts\npackages/pixel-art/tsconfig.build.json\npackages/pixel-art/tsconfig.json\npackages/pixel-art/tsup.config.ts\npackages/pixel-art/turbo.json\npackages/pixel-art/vitest.edge.config.js\npackages/pixel-art/vitest.node.config.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19607
+  },
+  "session_id": "7d2c8182-a75f-4a7c-8b7e-5dbce90b6a70"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-uv-cache-stats",
+  "task_name": "add 'uv cache stats' subcommand",
+  "mode": "plan-resume",
+  "run_number": 3,
+  "timestamp": "2026-04-06T17:28:21.128Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 770767,
+    "duration_api_ms": 799201,
+    "num_turns": 81,
+    "total_cost_usd": 2.8524208999999994,
+    "input_tokens": 74,
+    "output_tokens": 43118,
+    "cache_read_tokens": 4539769,
+    "cache_creation_tokens": 144185,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 440806,
+    "plan_api_ms": 497911,
+    "plan_tokens_in": 21,
+    "plan_tokens_out": 23560,
+    "plan_cost_usd": 1.0114068500000002,
+    "plan_content": "Here's a summary of the plan I've written.\n\n---\n\n## Plan: `uv cache stats` subcommand\n\nThe implementation touches **10 files** (2 new, 8 modified) and follows the same patterns already used by `uv cache size`.\n\n### What gets added\n\n**1. `CacheBucket::name()` — `crates/uv-cache/src/lib.rs`**  \nA new public method after `to_str()` returning human-friendly display labels (`\"Wheels\"`, `\"Source distributions\"`, `\"Simple index\"`, etc.).\n\n**2. `CacheStats` preview feature — `crates/uv-preview/src/lib.rs`**  \n`CacheStats = 1 << 28`, string `\"cache-stats\"`, wired into `as_str()`, `FromStr`, and the unit test snapshot.\n\n**3. `CacheCommand::Stats(StatsArgs)` — `crates/uv-cli/src/lib.rs`**  \nNew variant appended to `CacheCommand` with a `StatsArgs { human: bool }` struct identical in shape to `SizeArgs`.\n\n**4. `cache_stats.rs` (new) — `crates/uv/src/commands/`**  \nThe core implementation: iterates all 11 buckets (including `Python`, which `CacheBucket::iter()` intentionally skips), measures each with `diskus::DiskUsage`, prints an aligned table, a dash-separator, and a `Total` row. Reuses `human_readable_bytes()` for `--human` mode.\n\n**5. Dispatch — `crates/uv/src/lib.rs` + `commands/mod.rs`**  \nOne new `mod`/`use` line and one new match arm.\n\n**6. Test helpers — `crates/uv-test/src/lib.rs`**  \n`cache_stats()` command builder and `with_filtered_cache_stats()` filter (masks sizes and separator dashes in snapshots).\n\n**7. Integration tests — `crates/uv/tests/it/cache_stats.rs` (new)**  \n`cache_stats_empty_raw` and `cache_stats_with_packages_human`, mirroring `cache_size.rs`.\n\n**8. Snapshot updates — `crates/uv/tests/it/show_settings.rs`**  \nTwo inline snapshot locations that list all `PreviewFeature` variants both need `CacheStats,` appended.",
+    "execute_duration_ms": 329961,
+    "execute_api_ms": 301290,
+    "execute_tokens_in": 53,
+    "execute_tokens_out": 19558,
+    "execute_cost_usd": 1.8410140499999994
+  },
+  "evaluation": {
+    "overall_score": 0.9,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.9,
+        "weight": 1,
+        "weighted_score": 0.9,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is well-executed and meets nearly all requirements. CLI variant (Stats(StatsArgs)) correctly defined with human flag, command implementation properly structured using pub(crate) and returning ExitStatus::Success, dispatch wiring correctly integrated, module registration complete, tests included with proper filtering. Code follows cache_size patterns and integrates preview feature system correctly. Primary issue: rubric specifies iterating with CacheBucket::iter(), but implementation uses a manually-defined array of buckets. This deviation is intentionally documented (to include Python which iter() excludes) and reasonable, but represents a specific requirement deviation. All other technical requirements fully satisfied.",
+          "diff_length": 13646,
+          "new_files": "crates/uv/src/commands/cache_stats.rs\ncrates/uv/tests/it/cache_stats.rs"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18955
+  },
+  "session_id": "e4d147ac-9656-4364-b6db-3edb8606dfde"
+}

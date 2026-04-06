@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-ollama-rename",
+  "task_name": "add model rename API endpoint and CLI command",
+  "mode": "normal",
+  "run_number": 4,
+  "timestamp": "2026-04-06T15:44:18.854Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 226834,
+    "duration_api_ms": 222602,
+    "num_turns": 35,
+    "total_cost_usd": 0.6162319,
+    "input_tokens": 27,
+    "output_tokens": 8838,
+    "cache_read_tokens": 566159,
+    "cache_creation_tokens": 26049,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete and correct implementation. All rubric requirements are met: (1) RenameRequest struct in api/types.go with Source and Destination fields properly json-tagged as 'source' and 'destination'; (2) Client.Rename method in api/client.go that POSTs to /api/rename; (3) RenameHandler on Server in routes.go that validates models, returns 404 when source is missing, returns 409 when destination exists, and delegates to RenameModel; (4) RenameModel in server/images.go that copies then deletes atomically; (5) Route registration r.POST(\"/api/rename\", s.RenameHandler) properly wired; (6) CLI command 'ollama rename SOURCE DESTINATION' using cobra with ExactArgs(2), PreRunE heartbeat check, and RunE handler; (7) CLI RenameHandler correctly creates client, constructs request from args, calls client.Rename, and prints success message; (8) No existing test files modified, all existing code preserved. Implementation follows established patterns from Copy/Delete operations and is production-ready.",
+          "diff_length": 6102,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 73396
+  },
+  "session_id": "759e6d25-a17e-442b-bcb4-578eafc255ed"
+}

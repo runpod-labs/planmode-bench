@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-diffusers-scheduler",
+  "task_name": "add cosine annealing noise scheduler",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T15:37:16.123Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 759250,
+    "duration_api_ms": 844915,
+    "num_turns": 66,
+    "total_cost_usd": 2.19137225,
+    "input_tokens": 58,
+    "output_tokens": 33929,
+    "cache_read_tokens": 2305917,
+    "cache_creation_tokens": 144829,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 410655,
+    "plan_api_ms": 527381,
+    "plan_tokens_in": 23,
+    "plan_tokens_out": 11810,
+    "plan_cost_usd": 1.1733582500000002,
+    "plan_content": "Here is my complete implementation plan. The plan file has been written to `/Users/timpietrusky/.claude/plans/virtual-seeking-jellyfish.md`.\n\n---\n\n## Summary: CosineAnnealingScheduler Implementation Plan\n\n**4 files to touch:**\n\n### 1. CREATE `src/diffusers/schedulers/scheduling_cosine_annealing.py`\nModeled closely on `scheduling_ddpm.py`. The key parts:\n\n- **Beta schedule** in `__init__` (decorated with `@register_to_config`):\n  ```python\n  t = torch.arange(num_train_timesteps, dtype=torch.float64)\n  self.betas = (beta_start + 0.5*(beta_end - beta_start)*(1 + torch.cos(math.pi * t / T))).float()\n  ```\n  Then standard `alphas`, `alphas_cumprod` derivation identical to DDPM.\n- **`set_timesteps`**: Full copy of DDPM's — supports `linspace`/`leading`/`trailing` spacing and custom timestep lists.\n- **`step`**: DDPM posterior update (Ho et al. 2020 Eq.7), supporting `epsilon`/`sample`/`v_prediction`, optional clipping/thresholding, `fixed_small` stochastic variance for `t > 0`.\n- **`add_noise`**: Identical to DDPM — standard `sqrt(ᾱ)·x₀ + sqrt(1−ᾱ)·ε`.\n- **Output dataclass**: `CosineAnnealingSchedulerOutput(prev_sample, pred_original_sample)`.\n\n### 2. MODIFY `src/diffusers/schedulers/__init__.py`\n- Add `_import_structure[\"scheduling_cosine_annealing\"] = [\"CosineAnnealingScheduler\"]` in the `is_torch_available()` else-block (between lines 44–45).\n- Add the `from .scheduling_cosine_annealing import CosineAnnealingScheduler` in the `TYPE_CHECKING` block.\n\n### 3. MODIFY `src/diffusers/__init__.py`\n- Add `\"CosineAnnealingScheduler\"` to `_import_structure[\"schedulers\"].extend([...])` (alphabetically, between `\"CMStochasticIterativeScheduler\"` and `\"CogVideoXDDIMScheduler\"`).\n- Add `CosineAnnealingScheduler` to the `TYPE_CHECKING` `from .schedulers import (...)` block.\n\n### 4. CREATE `tests/schedulers/test_scheduler_cosine_annealing.py`\nInherits from `SchedulerCommonTest` (auto-runs 10+ standard tests). Custom tests include:\n- `test_timesteps`, `test_betas`, `test_clip_sample`, `test_prediction_type`, `test_thresholding`\n- `test_beta_schedule_values` — directly verifies the formula at boundary points\n- `test_full_loop_no_noise` and `test_full_loop_with_noise` — deterministic end-to-end loops with hardcoded expected values (computed on first run, per diffusers convention)\n\n### Verification\n```bash\npython -c \"from diffusers import CosineAnnealingScheduler; print('OK')\"\npython -m pytest tests/schedulers/test_scheduler_cosine_annealing.py -v\npython -m pytest tests/schedulers/ -v  # regression check\n```",
+    "execute_duration_ms": 348595,
+    "execute_api_ms": 317534,
+    "execute_tokens_in": 35,
+    "execute_tokens_out": 22119,
+    "execute_cost_usd": 1.018014
+  },
+  "evaluation": {
+    "overall_score": 0.7625,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 0.875,
+        "weight": 0.3,
+        "weighted_score": 0.2625,
+        "passed": false,
+        "details": {
+          "command": "source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775489062736-b48t6r/.venv/bin/activate && python3 -m pytest tests/test_cosine_scheduler.py -v",
+          "tests_passed": 7,
+          "tests_failed": 1,
+          "tests_total": 8,
+          "error": "Command failed: source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775489062736-b48t6r/.venv/bin/activate && python3 -m pytest tests/test_cosine_scheduler.py -v\n",
+          "output": ".4213, -0.2177,  ...,  0.2047, -0.2835, -0.0403],\\n          [-0.3031,  1.3698, -0.2652,  ..., -1.3810, -1.6397,  1.5629],\\n          [ 0.0917, -0.7963, -0.8754,  ..., -2.5321,  2.1813, -0.9832]],\\n\\n         [[ 0.6335, -0.3382, -0.5332,  ...,  0.0712, -0.3671, -0.9619],\\n          [ 1.3231,  0.6103,  0.6934,  ..., -0.4319, -0.4192,  1.2096],\\n          [ 1.3552, -0.5605,  0.6640,  ...,  0.1453, -1.9070,  1.0562],\\n          ...,\\n          [-0.1481,  0.5809, -0.1543,  ...,  0.5051, -0.6645,  0.4153],\\n          [ 1.0478,  0.2725,  0.9393,  ..., -1.6649,  1.3574, -1.1037],\\n          [ 0.7109,  1.0324,  0.0344,  ..., -0.7842, -0.9674,  0.0450]]]]), pred_original_sample=tensor([[[[ 1., -1.,  1.,  ..., -1.,  1., -1.],\\n          [ 1., -1., -1.,  ..., -1.,  1.,  1.],\\n          [-1.,  1.,  1.,  ..., -1.,  1., -1.],\\n          ...,\\n          [-1.,  1., -1.,  ..., -1., -1.,  1.],\\n          [ 1.,  1., -1.,  ...,  1., -1., -1.],\\n          [-1.,  1.,  1.,  ...,  1., -1.,  1.]],\\n\\n         [[ 1.,  1., -1.,  ...,  1., -1.,  1.],\\n          [ 1., -1., -1.,  ..., -1., -1., -1.],\\n          [-1., -1., -1.,  ...,  1., -1., -1.],\\n          ...,\\n          [ 1., -1., -1.,  ...,  1.,  1., -1.],\\n          [ 1.,  1., -1.,  ...,  1., -1.,  1.],\\n          [-1., -1., -1.,  ..., -1.,  1., -1.]],\\n\\n         [[ 1.,  1., -1.,  ..., -1., -1., -1.],\\n          [ 1.,  1.,  1.,  ..., -1.,  1.,  1.],\\n          [-1., -1.,  1.,  ...,  1., -1.,  1.],\\n          ...,\\n          [-1.,  1., -1.,  ...,  1.,  1., -1.],\\n          [-1.,  1.,  1.,  ..., -1.,  1., -1.],\\n          [-1.,  1., -1.,  ..., -1., -1., -1.]]]])), <class 'diffusers.schedulers.scheduling_utils.SchedulerOutput'>)\n\ntests/test_cosine_scheduler.py:50: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_cosine_scheduler.py::TestCosineAnnealingScheduler::test_step_returns_scheduler_output\n========================= 1 failed, 7 passed in 0.09s ==========================\n"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 6,
+          "check_details": [
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"CosineAnnealingScheduler\"",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"SchedulerMixin\"",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"cosine\"",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"step\"",
+              "passed": true
+            },
+            {
+              "path": "src/diffusers/schedulers/scheduling_cosine_annealing.py",
+              "check": "contains \"add_noise\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775489062736-b48t6r/.venv/bin/activate && python3 -c 'from diffusers import CosineAnnealingScheduler; print(\"Import OK\")'",
+          "exit_code": 1,
+          "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    from diffusers import CosineAnnealingScheduler; print(\"Import OK\")\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'CosineAnnealingScheduler' from 'diffusers' (/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-bases/feature-addition-add-diffusers-scheduler/src/diffusers/__init__.py)\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "class CosineAnnealingScheduler",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "register_to_config",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "def step",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 11051
+  },
+  "session_id": "f56fada8-418d-45dd-909d-1a16b2eb1cb0"
+}

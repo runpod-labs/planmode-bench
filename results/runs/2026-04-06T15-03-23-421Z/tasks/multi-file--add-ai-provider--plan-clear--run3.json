@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "add new AI image provider",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T17:48:01.559Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 728216,
+    "duration_api_ms": 831060,
+    "num_turns": 71,
+    "total_cost_usd": 2.2349703,
+    "input_tokens": 1055,
+    "output_tokens": 34868,
+    "cache_read_tokens": 2203493,
+    "cache_creation_tokens": 113206,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 259129,
+    "plan_api_ms": 395751,
+    "plan_tokens_in": 13,
+    "plan_tokens_out": 12280,
+    "plan_cost_usd": 0.9029671000000001,
+    "plan_content": "Here's a summary of the plan I've produced after a thorough analysis of the codebase:\n\n---\n\n## Plan: `@ai-sdk/pixelart` Provider\n\n### What gets created (15 new files + 1 edit)\n\n**Package at `packages/pixelart/`**, modeled after Replicate (image-only provider) with FAL patterns for the Zod options schema:\n\n| File | Purpose |\n|---|---|\n| `src/version.ts` | VERSION constant |\n| `src/pixelart-image-settings.ts` | Model IDs (`pixelart-v1`, `pixelart-v2`, `pixelart-hd`) + `PixelArtImageStyle` type |\n| `src/pixelart-image-options.ts` | Zod schema for `style` (`'pixel'`\\|`'retro'`\\|`'8bit'`) and `pixelDensity` (1–100) |\n| `src/pixelart-image-model.ts` | `ImageModelV3` impl — POSTs to `/images/generate`, returns base64 |\n| `src/pixelart-provider.ts` | `createPixelArt()` factory; throws `NoSuchModelError` for language/embedding models |\n| `src/index.ts` | Public exports |\n| `src/pixelart-image-model.test.ts` | 9 Vitest test cases |\n| Config files | `package.json`, `tsconfig.json`, `tsconfig.build.json`, `tsup.config.ts`, `vitest.*.config.js` |\n| `.changeset/<hash>.md` | Patch-level changeset |\n\n**1 existing file modified**: root `tsconfig.json` — adds `{ \"path\": \"packages/pixelart\" }` alphabetically. Required for `pnpm type-check:full` to include the package (per `contributing/add-new-provider.md`).\n\n### Key design decisions\n\n- **API**: `POST https://api.pixelart.ai/v1/images/generate` with `Authorization: Bearer` (env: `PIXELART_API_KEY`)\n- **Request body**: `prompt`, `n`, `size` (passed as-is e.g. `\"512x512\"`), `seed`, `style`, `pixel_density`\n- **Response**: `{ images: [{ b64_json: \"...\" }] }` — base64 strings returned directly\n- **`aspectRatio`**: emits `unsupported-setting` warning (not supported by the fictional API)\n- **`maxImagesPerCall`**: 4\n- **Provider options** via `providerOptions.pixelart`: `style` and `pixelDensity`",
+    "execute_duration_ms": 469087,
+    "execute_api_ms": 435309,
+    "execute_tokens_in": 1042,
+    "execute_tokens_out": 22588,
+    "execute_cost_usd": 1.3320032
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation meeting all core rubric requirements. The agent successfully created a complete @ai-sdk/pixelart provider package with proper structure: package.json, createPixelArt factory function, PixelArtProvider interface with image model creation, PixelArtImageModel implementing the v3 specification, image settings supporting all required options (size, style with 'pixel'/'retro'/'8bit', pixelDensity), base URL correctly set to https://api.pixelart.ai/v1, proper error handling, comprehensive tests (9 test cases), and correct monorepo integration. The implementation follows existing AI SDK patterns with appropriate TypeScript configuration, exports, and headers handling. Only minor note: rubric mentions 'generateImage method' but implementation correctly uses 'doGenerate()' per ImageModelV3 specification, which is the accurate pattern for this SDK version. Root tsconfig.json modification is necessary and appropriate for monorepo package registration. No existing provider packages were incorrectly modified.",
+          "diff_length": 23425,
+          "new_files": ".changeset/add-pixelart-provider.md\nPLAN.md\npackages/pixelart/package.json\npackages/pixelart/src/index.ts\npackages/pixelart/src/pixelart-error.ts\npackages/pixelart/src/pixelart-image-model.test.ts\npackages/pixelart/src/pixelart-image-model.ts\npackages/pixelart/src/pixelart-image-options.ts\npackages/pixelart/src/pixelart-image-settings.ts\npackages/pixelart/src/pixelart-provider.ts\npackages/pixelart/src/version.ts\npackages/pixelart/tsconfig.build.json\npackages/pixelart/tsconfig.json\npackages/pixelart/tsup.config.ts\npackages/pixelart/turbo.json\npackages/pixelart/vitest.edge.config.js\npackages/pixelart/vitest.node.config.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 22493
+  },
+  "session_id": "54174b30-64a5-440c-97ef-13454667bf34"
+}

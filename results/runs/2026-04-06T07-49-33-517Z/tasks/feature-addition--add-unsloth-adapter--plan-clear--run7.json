@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-clear",
+  "run_number": 7,
+  "timestamp": "2026-04-06T12:07:57.527Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 396035,
+    "duration_api_ms": 478393,
+    "num_turns": 37,
+    "total_cost_usd": 1.21981625,
+    "input_tokens": 115,
+    "output_tokens": 18443,
+    "cache_read_tokens": 727417,
+    "cache_creation_tokens": 69570,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 287820,
+    "plan_api_ms": 370783,
+    "plan_tokens_in": 19,
+    "plan_tokens_out": 11253,
+    "plan_cost_usd": 0.8827181,
+    "plan_content": "Here's a summary of the plan I've written:\n\n---\n\n## Plan: Add `export_to_onnx` to Unsloth\n\n**Only one file needs to change: `unsloth/save.py`** — because `unsloth/__init__.py` already does `from .save import *`, so everything flows automatically.\n\n### Four targeted edits to `unsloth/save.py`:\n\n1. **Add `import json`** (line ~27) — `json` is not currently imported; needed for writing `metadata.json`.\n\n2. **Update `__all__`** (lines 48–54) — add `\"export_lora_to_onnx\"` so the standalone function is publicly importable.\n\n3. **Add `export_lora_to_onnx(model, output_dir, opset_version=17)`** (just before `not_implemented_save`, ~line 2564):\n   - Reads `model.peft_config[\"default\"]` to get `rank`, `alpha`, and `target_modules`\n   - Walks `model.named_modules()` looking for any module with `.lora_A` / `.lora_B` attributes\n   - For each LoRA layer: extracts `A` and `B` weight tensors as float32, wraps them in a tiny `nn.Module` that computes `(x @ A.T @ B.T) * scaling`, and exports that via `torch.onnx.export` with dynamic batch/sequence axes\n   - Writes `metadata.json` with `rank`, `alpha`, `target_modules`, `opset_version`, `adapter_name`, and `exported_modules`\n   - Raises a clear error if no LoRA layers are found\n\n4. **Add instance-method wrapper `unsloth_export_lora_to_onnx(self, output_dir, opset_version=17)`** — thin wrapper that calls the standalone function.\n\n5. **Update `patch_saving_functions()`** (end of function, ~line 2676) — add `model.export_to_onnx = types.MethodType(unsloth_export_lora_to_onnx, model)` after the existing if/else block, so it's attached on both language and vision models before `return model`.\n\n### Resulting API:\n```python\n# Instance method (primary)\nmodel.export_to_onnx(\"./lora_onnx/\", opset_version=17)\n\n# Standalone function\nfrom unsloth import export_lora_to_onnx\nexport_lora_to_onnx(model, \"./lora_onnx/\", opset_version=17)\n```",
+    "execute_duration_ms": 108215,
+    "execute_api_ms": 107610,
+    "execute_tokens_in": 96,
+    "execute_tokens_out": 7190,
+    "execute_cost_usd": 0.33709815
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 80
+  },
+  "session_id": "7a0f80be-c13f-491c-bcc3-d723b75b4ff2"
+}

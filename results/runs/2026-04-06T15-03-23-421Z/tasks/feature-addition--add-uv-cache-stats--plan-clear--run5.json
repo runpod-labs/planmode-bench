@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-uv-cache-stats",
+  "task_name": "add 'uv cache stats' subcommand",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T17:29:08.132Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 596924,
+    "duration_api_ms": 651334,
+    "num_turns": 65,
+    "total_cost_usd": 1.7387684,
+    "input_tokens": 55,
+    "output_tokens": 28752,
+    "cache_read_tokens": 1606448,
+    "cache_creation_tokens": 93722,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 301017,
+    "plan_api_ms": 375484,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 12023,
+    "plan_cost_usd": 0.9416780000000001,
+    "plan_content": "Here's the plan for implementing `uv cache stats`. It touches **8 files** across 4 layers:\n\n---\n\n### Summary\n\n| Layer | File(s) | Change |\n|---|---|---|\n| **Cache internals** | `crates/uv-cache/src/lib.rs` | Add `CacheBucket::human_name()` method returning friendly labels |\n| **CLI definition** | `crates/uv-cli/src/lib.rs` | Add `Stats(StatsArgs)` variant to `CacheCommand` + new `StatsArgs { human: bool }` struct |\n| **Command impl** | `crates/uv/src/commands/cache_stats.rs` *(new)* | Iterate all 11 buckets, call `DiskUsage` per-bucket, print aligned table + total |\n| **Wiring** | `commands/mod.rs`, `src/lib.rs` | Register module, export fn, dispatch arm |\n| **Tests** | `uv-test/src/lib.rs`, `tests/it/cache_stats.rs` *(new)*, `tests/it/main.rs` | Test helpers + 3 integration tests |\n\n### Key decisions\n\n- **No new dependencies** — reuses `diskus` (already in `Cargo.toml`), `human_readable_bytes()` from `uv-console`, and `DiskUsage::new(vec![path]).count_ignoring_errors()` exactly as `cache_size.rs` does\n- **No new preview feature** — piggybacks on `PreviewFeature::CacheSize` since stats is part of the same surface\n- **`Python` bucket included** — `CacheBucket::iter()` excludes it to protect installs from prune/clean, but stats hardcodes all 11 buckets\n- **Output format** — left-aligned labels padded to max width, separator line, then `Total` row",
+    "execute_duration_ms": 295907,
+    "execute_api_ms": 275850,
+    "execute_tokens_in": 37,
+    "execute_tokens_out": 16729,
+    "execute_cost_usd": 0.7970904
+  },
+  "evaluation": {
+    "overall_score": 0.85,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.85,
+        "weight": 1,
+        "weighted_score": 0.85,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation with nearly all requirements met. The new CLI variant `Stats(StatsArgs)` with human bool flag is correctly added. The command implementation properly computes disk sizes using `DiskUsage`, follows the cache_size pattern, includes --human flag with proper formatting, adds per-bucket and total output with alignment, registers the module correctly, and wires dispatch in lib.rs. Comprehensive tests cover empty cache, packages installed, and human-readable formats. The human_name() method addition improves output quality. However, the rubric explicitly requires using `CacheBucket::iter()` but the implementation uses a hardcoded `ALL_BUCKETS` constant instead. While this is well-documented (the constant deliberately includes the Python bucket which iter() would exclude), it's a direct deviation from stated requirements. The deviation is justified and improves the feature, but still represents non-compliance with the explicit rubric item.",
+          "diff_length": 13508,
+          "new_files": "PLAN.md\ncrates/uv/src/commands/cache_stats.rs\ncrates/uv/tests/it/cache_stats.rs"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18955
+  },
+  "session_id": "7e398323-648d-4fa4-be7c-9294446d4d99"
+}

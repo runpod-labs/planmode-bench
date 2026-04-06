@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T16:09:48.000Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 434442,
+    "duration_api_ms": 541612,
+    "num_turns": 52,
+    "total_cost_usd": 1.6843447999999999,
+    "input_tokens": 44,
+    "output_tokens": 25525,
+    "cache_read_tokens": 1792138,
+    "cache_creation_tokens": 96557,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 220378,
+    "plan_api_ms": 328650,
+    "plan_tokens_in": 12,
+    "plan_tokens_out": 8430,
+    "plan_cost_usd": 0.7319776999999998,
+    "plan_content": "Here is the complete implementation plan for the `@prisma/rest-client-generator` package.\n\n---\n\n## Plan: `packages/rest-client-generator`\n\n### What it generates\nFor each Prisma model, the generator outputs:\n- **`types.ts`** — a TypeScript `interface` per model (scalar + enum fields; relation fields as optional members) and a string-union `type` per enum\n- **`<model>-client.ts`** — one typed class per model with `findMany`, `findUnique`, `create`, `update`, `delete` methods using the `fetch` API against a configurable base URL\n- **`index.ts`** — barrel re-exporting everything\n\n### New package structure (13 files)\n```\npackages/rest-client-generator/\n├── package.json\n├── tsconfig.json\n├── tsconfig.build.json\n├── helpers/build.ts              ← void build(adapterConfig)\n└── src/\n    ├── index.ts                  ← generatorHandler wiring\n    ├── generator.ts              ← RestClientGenerator implements Generator\n    ├── generate-client.ts        ← orchestrates models/enums → FileMap → disk\n    ├── type-mapper.ts            ← DMMF field.type → TypeScript type string\n    ├── model-interface.ts        ← renders interface + enum union source\n    ├── model-client.ts           ← renders CRUD class source\n    ├── write-files.ts            ← recursive FileMap writer (same pattern as existing generators)\n    └── __tests__/\n        ├── type-mapper.test.ts\n        ├── model-interface.test.ts\n        └── model-client.test.ts\n```\n\n### Files to modify (2)\n| File | Change |\n|---|---|\n| `tsconfig.build.bundle.json` | Add `\"@prisma/rest-client-generator\": [\"./packages/rest-client-generator/src\"]` to `paths` |\n| `.github/workflows/test-template.yml` | Add `pnpm run test` step in the `client-packages` job (and its `no-docker` Windows/macOS mirror) |\n\n### Key design decisions\n- **`adapterConfig`** build (dual CJS/ESM bundle) — identical to `client-generator-js`\n- **No `@prisma/ts-builders`** — template strings are sufficient for the simple output; avoids unnecessary dependency\n- **`@prisma/generator-helper`'s `generatorHandler`** handles the JSON-RPC stdin/stderr protocol\n- **`parseEnvValue`** from `@prisma/internals` resolves the output path from `GeneratorOptions`\n- ID field discovery: `model.fields.find(f => f.isId)` — used for `findUnique`/`update`/`delete` signatures\n- Route names: `model.name.toLowerCase() + 's'` (naïve, no extra dep; marked as TODO)\n\n### Scalar type mapping\n| Prisma | TypeScript |\n|---|---|\n| String, ID, UUID | `string` |\n| Int, Float, Decimal | `number` |\n| Boolean | `boolean` |\n| BigInt | `bigint` |\n| DateTime | `string` (ISO-8601) |\n| Json | `unknown` |\n| Bytes | `string` (base64) |\n\n### Verification\n1. `pnpm --filter @prisma/rest-client-generator build` → produces `dist/index.js`, `.mjs`, `.d.ts`\n2. `pnpm --filter @prisma/rest-client-generator test` → all vitest unit tests pass\n3. Smoke: add the generator to a `schema.prisma`, run `prisma generate`, inspect the output directory",
+    "execute_duration_ms": 214064,
+    "execute_api_ms": 212962,
+    "execute_tokens_in": 32,
+    "execute_tokens_out": 17095,
+    "execute_cost_usd": 0.9523671
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation fully meets all rubric requirements. The new package follows the monorepo structure with a properly configured package.json that references @prisma packages. The entry point (src/index.ts) correctly uses generatorHandler with both onManifest and onGenerate callbacks. The generator implementation (src/generator.ts) properly reads DMMF and orchestrates generation. For each model, it generates TypeScript interfaces (buildModelInterface) and complete CRUD client classes (buildModelClient) with all 5 required methods (findMany, findUnique, create, update, delete) using correct HTTP verbs and proper type signatures. Generated output is correctly written to disk via writeFiles. The code quality is high with comprehensive tests for type mapping, model interfaces, and model clients. The implementation follows Prisma generator patterns, includes proper error handling, JSDoc documentation, and integrates correctly into the build/test workflows. No significant gaps or issues detected.",
+          "diff_length": 28765,
+          "new_files": "packages/rest-client-generator/helpers/build.ts\npackages/rest-client-generator/package.json\npackages/rest-client-generator/src/__tests__/model-client.test.ts\npackages/rest-client-generator/src/__tests__/model-interface.test.ts\npackages/rest-client-generator/src/__tests__/type-mapper.test.ts\npackages/rest-client-generator/src/generate-client.ts\npackages/rest-client-generator/src/generator.ts\npackages/rest-client-generator/src/index.ts\npackages/rest-client-generator/src/model-client.ts\npackages/rest-client-generator/src/model-interface.ts\npackages/rest-client-generator/src/type-mapper.ts\npackages/rest-client-generator/src/write-files.ts\npackages/rest-client-generator/tsconfig.build.json\npackages/rest-client-generator/tsconfig.json"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19687
+  },
+  "session_id": "29a19cfe-b955-4a6b-a4ce-70d466761d9e"
+}

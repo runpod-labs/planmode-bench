@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-bun-ini-api",
+  "task_name": "add Bun.INI namespace API",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T15:29:31.849Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1346040,
+    "duration_api_ms": 1522345,
+    "num_turns": 89,
+    "total_cost_usd": 4.6002647,
+    "input_tokens": 2572,
+    "output_tokens": 78264,
+    "cache_read_tokens": 6210475,
+    "cache_creation_tokens": 194821,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 352651,
+    "plan_api_ms": 532216,
+    "plan_tokens_in": 2506,
+    "plan_tokens_out": 10565,
+    "plan_cost_usd": 1.2684857,
+    "plan_content": "Here's the plan summary:\n\n## Plan: Add `Bun.INI` with `parse` and `stringify`\n\n**8 files** to create/modify, following the identical pattern as `Bun.TOML`, `Bun.YAML`, etc.:\n\n### New Files\n\n1. **`src/interchange/ini.zig`** — Self-contained INI parser (no `src/ini.zig` import). Line-oriented algorithm: splits on `\\n`, skips blank/`;`/`#` comment lines, handles `[section]` headers (with dotted nesting `[a.b.c]` → nested objects), `key = value` / `key: value` pairs, auto-typed values (`true`/`false` → bool, numeric → number, else string). Returns a `bun.ast.Expr`.\n\n2. **`src/bun.js/api/INIObject.zig`** — JSC binding. `parse` mirrors `TOMLObject.zig` (INI→AST→`printJSON`→`parseJSON`→JSValue). `stringify` mirrors `JSON5Object.zig`'s Stringifier (walks live JS values: top-level primitives as `key = value`, top-level objects as `[section]` blocks with dotted-key nesting).\n\n3. **`test/js/bun/ini/ini-public.test.ts`** — End-to-end tests using `Bun.INI.parse` / `Bun.INI.stringify` directly.\n\n### Modified Files\n\n4. **`src/interchange.zig`** — Add `pub const ini = @import(\"./interchange/ini.zig\");`\n5. **`src/bun.js/api.zig`** — Add `pub const INIObject = @import(\"./api/INIObject.zig\");`\n6. **`src/bun.js/api/BunObject.zig`** — 3 locations: lazy property decl, getter function, and `@export` in `exportAll()`\n7. **`src/bun.js/bindings/BunObject+exports.h`** — Add `macro(INI) \\` to `FOR_EACH_GETTER`\n8. **`src/bun.js/bindings/BunObject.cpp`** — Add `INI   BunObject_lazyPropCb_wrap_INI   DontDelete|PropertyCallback` to the `bunObjectTable`",
+    "execute_duration_ms": 993389,
+    "execute_api_ms": 990129,
+    "execute_tokens_in": 66,
+    "execute_tokens_out": 67699,
+    "execute_cost_usd": 3.3317790000000005
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete and correct implementation. All rubric requirements met: (1) INIObject.zig has create, parse, stringify with correct signatures using JSGlobalObject/JSValue; (2) Parser handles sections, dotted nesting [a.b.c], key=value/key:value pairs, and both ; and # comments; (3) BunObject.zig properly wired with lazy callback, getter function, and export; (4) C++ header macro entry added; (5) C++ hash table entry in BunObject.cpp correct; (6) TypeScript definitions complete with namespace INI, parse/stringify signatures, and JSDoc examples; (7) Parser is fully self-contained in src/interchange/ini.zig without importing src/ini.zig; (8) Code follows Zig conventions: jsc.JSFunction.create, ZigString.static, @import(\"bun\"), proper memory management. Integration matches established patterns (TOML/YAML/JSON5). Comprehensive test suite covers parse/stringify, sections, dotted nesting, type coercion, roundtrips, edge cases, error handling. All required files created/modified with no omissions.",
+          "diff_length": 32033,
+          "new_files": "PLAN.md\nsrc/bun.js/api/INIObject.zig\nsrc/interchange/ini.zig\ntest/js/bun/ini/ini-public.test.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 21750
+  },
+  "session_id": "28c97c5d-91e0-4dc0-90b2-4d37c41c2a75"
+}

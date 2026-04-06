@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-openclaw-channel",
+  "task_name": "add fictional PulseBoard channel",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T16:44:31.858Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 3421250,
+    "duration_api_ms": 3500988,
+    "num_turns": 155,
+    "total_cost_usd": 9.8844869,
+    "input_tokens": 4103,
+    "output_tokens": 163145,
+    "cache_read_tokens": 14258033,
+    "cache_creation_tokens": 521806,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1807592,
+    "plan_api_ms": 2085008,
+    "plan_tokens_in": 4001,
+    "plan_tokens_out": 76399,
+    "plan_cost_usd": 3.7019218999999994,
+    "plan_content": "Here is the complete plan for implementing the **PulseBoard** channel plugin.\n\n---\n\n## Summary\n\nThe plan creates **18 new files** exclusively under `extensions/pulseboard/` — no existing files touched. It is modelled directly on the Nextcloud Talk and IRC plugins, which are the closest architectural match.\n\n### Key design decisions\n\n| Decision | Choice | Rationale |\n|---|---|---|\n| Integration model | Webhook HTTP server (inbound) + REST API (outbound) | Matches Nextcloud Talk; simple and no extra deps |\n| Auth | `apiToken` (Bearer) + `webhookSecret` (HMAC-SHA256) | Simple credential pair; no external SDK needed |\n| Group concept | \"Board\" (named slug) | Maps naturally to `group` chat type |\n| DM target format | `pulseboard:@alice` (`@` prefix) | Clear DM vs board disambiguation |\n| Webhook port | `8789` | Doesn't collide with Nextcloud Talk (`8788`) |\n| Text chunk limit | `4000` | As specified |\n| `runtime-api.ts` | Custom aggregate barrel from public `openclaw/plugin-sdk/*` subpaths | Can't add `src/plugin-sdk/pulseboard.ts` without modifying existing files |\n| Inbound dispatch | Uses `core.channel.*` methods directly (same pipeline as `dispatchInboundReplyWithBase` but inline) | `dispatchInboundReplyWithBase` is not in any standalone public subpath |\n\n### File structure\n```\nextensions/pulseboard/\n├── openclaw.plugin.json, package.json     # manifest + package\n├── index.ts, api.ts, setup-entry.ts       # entrypoints\n├── runtime-api.ts                          # aggregate SDK barrel\n└── src/\n    ├── types.ts, config-schema.ts          # data shapes + Zod validation\n    ├── accounts.ts, normalize.ts, policy.ts # credential resolution + routing logic\n    ├── runtime.ts                          # plugin runtime store\n    ├── send.ts, monitor.ts, inbound.ts     # outbound, webhook server, dispatch\n    └── setup-core.ts, setup-surface.ts    # CLI setup wizard\n```",
+    "execute_duration_ms": 1613658,
+    "execute_api_ms": 1415980,
+    "execute_tokens_in": 102,
+    "execute_tokens_out": 86746,
+    "execute_cost_usd": 6.182565000000001
+  },
+  "evaluation": {
+    "overall_score": 0.72,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.72,
+        "weight": 1,
+        "weighted_score": 0.72,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation demonstrates a solid understanding of the extension structure with correct package.json (scoped name @openclaw/pulseboard, setupEntry field), openclaw.plugin.json (channels and configSchema), index.ts (defineChannelPluginEntry), and setup-entry.ts (defineSetupPluginEntry). The channel.ts file correctly uses createChatChannelPlugin with proper specifications: chatTypes=['direct','group'], textChunkLimit=4000, outbound sendText capability, gateway handling, messaging with normalizeTarget, and security policies. However, the diff is truncated, critically omitting or incompletely showing: (1) types.ts - required interfaces (PulseBoardAccount, PulseBoardConfig, PulseBoardMessage) with boardUrl and apiToken fields are referenced but their definitions are not shown, (2) runtime.ts - the runtime store using createPluginRuntimeStore with get/set accessors is referenced but not displayed, (3) setup-core.ts and setup-surface.ts - setup wizard implementations not shown, (4) partial display of policy.ts. All visible code follows proper patterns and no existing files are modified, but the missing type definitions and runtime store implementation details prevent full verification of compliance with the rubric's specific requirements.",
+          "diff_length": 50000,
+          "new_files": "extensions/pulseboard/api.ts\nextensions/pulseboard/index.ts\nextensions/pulseboard/openclaw.plugin.json\nextensions/pulseboard/package.json\nextensions/pulseboard/runtime-api.ts\nextensions/pulseboard/setup-entry.ts\nextensions/pulseboard/src/accounts.ts\nextensions/pulseboard/src/channel.ts\nextensions/pulseboard/src/config-schema.ts\nextensions/pulseboard/src/inbound.ts\nextensions/pulseboard/src/monitor.ts\nextensions/pulseboard/src/normalize.ts\nextensions/pulseboard/src/policy.ts\nextensions/pulseboard/src/runtime.ts\nextensions/pulseboard/src/send.ts\nextensions/pulseboard/src/setup-core.ts\nextensions/pulseboard/src/setup-surface.ts\nextensions/pulseboard/src/types.ts\nnode_modules\nui/node_modules"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 17698
+  },
+  "session_id": "c90960b2-9d12-4d54-bff9-9bd5ce66b91f"
+}

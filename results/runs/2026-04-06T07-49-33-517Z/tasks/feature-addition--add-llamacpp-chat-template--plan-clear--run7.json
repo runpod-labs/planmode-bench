@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-clear",
+  "run_number": 7,
+  "timestamp": "2026-04-06T09:01:20.817Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 449347,
+    "duration_api_ms": 531786,
+    "num_turns": 39,
+    "total_cost_usd": 1.17980815,
+    "input_tokens": 36,
+    "output_tokens": 21277,
+    "cache_read_tokens": 830931,
+    "cache_creation_tokens": 75916,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 350006,
+    "plan_api_ms": 433464,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 15591,
+    "plan_cost_usd": 0.9132330999999998,
+    "plan_content": "Here is the complete plan:\n\n---\n\n## Plan: Add `mistral-instruct-v3` Chat Template Handler\n\n### What I found\n\nAfter reading `common/chat.cpp`, `common/chat-peg-parser.h`, `src/llama-chat.cpp`, and `models/templates/mistralai-Mistral-Nemo-Instruct-2407.jinja` in full:\n\n**The Mistral Instruct v0.3 format** (Nemo-Instruct-2407 and kin) is identified by these token markers in the template source:\n- `[INST]` / `[/INST]` — user turns  \n- `[AVAILABLE_TOOLS]` / `[/AVAILABLE_TOOLS]` — tool list  \n- `[TOOL_CALLS][{…}]` — tool call responses (JSON array with `name`, `arguments`, `id` fields)  \n- **No** `[SYSTEM_PROMPT]` (that belongs to Ministral 3 / v7, already handled)  \n- **No** `[ARGS]` (Ministral 3's argument marker)\n\nAll seven existing specialized handlers in `common_chat_try_specialized_template` are pattern-matched on unique tokens. None of them touch `[INST]` or `[AVAILABLE_TOOLS]`, so there is zero ordering conflict.\n\n---\n\n### Changes — only `common/chat.cpp`\n\n**Step 1 – New handler function** (insert after `common_chat_params_init_gigachat_v3` closes, before `namespace workaround {`)\n\n```cpp\nstatic common_chat_params common_chat_params_init_mistral_instruct_v3(\n        const common_chat_template &          tmpl,\n        const autoparser::generation_params & inputs) {\n\n    common_chat_params data;\n    data.prompt            = common_chat_template_direct_apply_impl(tmpl, inputs);\n    data.format            = COMMON_CHAT_FORMAT_PEG_NATIVE;\n    data.supports_thinking = false;\n    data.preserved_tokens  = { \"[TOOL_CALLS]\" };\n\n    auto has_tools       = inputs.tools.is_array() && !inputs.tools.empty();\n    auto include_grammar = has_tools && inputs.tool_choice != COMMON_CHAT_TOOL_CHOICE_NONE;\n\n    auto parser = build_chat_peg_parser([&](common_chat_peg_builder & p) {\n        auto generation_prompt = p.prefix(inputs.generation_prompt, \"[TOOL_CALLS]\");\n\n        if (!has_tools || inputs.tool_choice == COMMON_CHAT_TOOL_CHOICE_NONE) {\n            include_grammar = false;\n            return generation_prompt + p.content(p.rest());\n        }\n\n        // Format: [TOOL_CALLS][{\"name\":\"…\",\"arguments\":{…},\"id\":\"…\"}, …]\n        auto tools_parser = p.standard_json_tools(\n            \"[TOOL_CALLS]\", \"\",\n            inputs.tools, inputs.parallel_tool_calls,\n            inputs.tool_choice == COMMON_CHAT_TOOL_CHOICE_REQUIRED,\n            \"name\", \"arguments\",\n            /*array_wrapped=*/true, /*function_is_key=*/false,\n            \"id\", \"\",\n            { \"name\", \"arguments\", \"id\" }\n        );\n\n        return generation_prompt + p.content(p.until(\"[TOOL_CALLS]\")) + tools_parser;\n    });\n\n    data.parser = parser.save();\n\n    if (include_grammar) {\n        data.grammar_lazy = has_tools && inputs.tool_choice == COMMON_CHAT_TOOL_CHOICE_AUTO;\n        data.grammar = build_grammar([&](const common_grammar_builder & builder) {\n            foreach_function(inputs.tools, [&](const json & tool) {\n                builder.resolve_refs(tool.at(\"function\").at(\"parameters\"));\n            });\n            parser.build_grammar(builder, data.grammar_lazy);\n        });\n        data.grammar_triggers = { { COMMON_GRAMMAR_TRIGGER_TYPE_WORD, \"[TOOL_CALLS]\" } };\n    }\n\n    return data;\n}\n```\n\n**Step 2 – Detection clause** (append inside `common_chat_try_specialized_template`, after GigaChatV3 block, before `return std::nullopt`)\n\n```cpp\n    // Mistral Instruct v0.3 — [INST]/[/INST] turns + [AVAILABLE_TOOLS]\n    // Distinguished from Ministral 3 / v7 by absence of [SYSTEM_PROMPT]\n    if (src.find(\"[INST]\") != std::string::npos &&\n        src.find(\"[AVAILABLE_TOOLS]\") != std::string::npos &&\n        src.find(\"[SYSTEM_PROMPT]\") == std::string::npos) {\n        LOG_DBG(\"Using specialized template: Mistral Instruct v0.3\\n\");\n        return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n    }\n```\n\n### Verification\n1. Build `test-chat-template` and `test-chat-auto-parser` — no regressions.\n2. Run with the Nemo template and check the debug log shows `Using specialized template: Mistral Instruct v0.3`.\n3. Run with a Ministral 3 / v7 template and confirm it still routes to the old handler.\n4. Exercise the tool-call path and confirm the `[TOOL_CALLS]` grammar trigger fires and the JSON array is parsed correctly.",
+    "execute_duration_ms": 99341,
+    "execute_api_ms": 98322,
+    "execute_tokens_in": 19,
+    "execute_tokens_out": 5686,
+    "execute_cost_usd": 0.26657505000000004
+  },
+  "evaluation": {
+    "overall_score": 0.925,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 6,
+          "check_details": [
+            {
+              "path": "common/chat.cpp",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"mistral_instruct_v3\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"common_chat_params_init_mistral_instruct_v3\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"[INST]\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"[/INST]\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"COMMON_CHAT_FORMAT_CONTENT_ONLY\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.75,
+        "weight": 0.3,
+        "weighted_score": 0.22499999999999998,
+        "passed": false,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 4,
+          "pattern_results": [
+            {
+              "pattern": "static common_chat_params common_chat_params_init_mistral_instruct_v3",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "\\[INST\\].*\\[/INST\\]",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "LOG_DBG.*[Mm]istral [Ii]nstruct v3",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "common_chat_params_init_mistral_instruct_v3\\(tmpl, params\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -c 'mistral_instruct_v3' common/chat.cpp",
+          "exit_code": 0,
+          "output": "2\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19
+  },
+  "session_id": "6da4d92c-c6a0-4694-8b6b-13a69dab52cb"
+}

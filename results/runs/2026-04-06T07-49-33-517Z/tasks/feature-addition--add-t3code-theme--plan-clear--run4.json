@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T11:58:11.078Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1262153,
+    "duration_api_ms": 1369238,
+    "num_turns": 69,
+    "total_cost_usd": 3.45888085,
+    "input_tokens": 63,
+    "output_tokens": 57493,
+    "cache_read_tokens": 2720753,
+    "cache_creation_tokens": 178490,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 817385,
+    "plan_api_ms": 931083,
+    "plan_tokens_in": 19,
+    "plan_tokens_out": 28364,
+    "plan_cost_usd": 2.0827188999999997,
+    "plan_content": "Here's the full implementation plan:\n\n## Summary\n\n**8 files touched, 2 new packages, 3 new web components.**\n\n### What changes and why\n\n| File | Change | Reason |\n|------|--------|--------|\n| `packages/shared/src/theme.ts` | **NEW** | Single source of truth for theme IDs, `ThemeColorTokens`, `ThemeDefinition`, and the 3 built-in themes |\n| `packages/shared/package.json` | Add `\"./theme\"` export | Registers the subpath so `@t3tools/shared/theme` resolves in apps/web |\n| `apps/web/src/hooks/useTheme.ts` | **REWRITE** | Extends stored type to `BuiltInThemeId \\| \"system\"`, applies `data-theme` attribute, migrates legacy `\"dark\"`/`\"light\"` values |\n| `apps/web/src/components/ThemeProvider.tsx` | **NEW** | Keeps DOM in sync with OS preference changes by always having an active subscriber |\n| `apps/web/src/router.ts` | Add `ThemeProvider` to Wrap | Mounts the provider for the lifetime of the app |\n| `apps/web/src/index.css` | Append `[data-theme=\"t3-*\"]` blocks | CSS custom property tokens (`--t3-*` namespace, no collision with existing Tailwind vars) |\n| `apps/web/src/components/ThemeSelector.tsx` | **NEW** | Selector with System option + 3 named themes, each with background/accent/sidebar color swatches (inline JS values, not CSS vars) |\n| `apps/web/src/routes/_chat.settings.tsx` | Replace inline radiogroup | Use the new `ThemeSelector` component |\n\n### Key design decisions\n- **`resolvedTheme: \"light\" | \"dark\"` is fully preserved** — `DiffWorkerPoolProvider`, `DiffPanel`, `ChatView`, `ChatMarkdown`, and `ComposerPromptEditor` need zero changes\n- **`--t3-*` CSS variable namespace** avoids any collision with Tailwind's `--background`, `--foreground`, etc.\n- **Swatches use JS color values** from `ThemeDefinition.colors`, not CSS variables — they render correctly before the browser processes the `data-theme` attribute\n- **Legacy migration** is read-time only (no surprise writes) — `\"dark\"` → `\"t3-dark\"`, `\"light\"` → `\"t3-light\"`\n- **No new dependencies, no build config changes**",
+    "execute_duration_ms": 444768,
+    "execute_api_ms": 438155,
+    "execute_tokens_in": 44,
+    "execute_tokens_out": 29129,
+    "execute_cost_usd": 1.37616195
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.35,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/shared/src/themes.ts"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 792
+  },
+  "session_id": "afea0cb0-bdd6-4675-b552-f110a0c38a30"
+}

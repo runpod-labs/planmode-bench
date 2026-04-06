@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-transformersjs-pipeline",
+  "task_name": "add image-text-to-text pipeline",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T17:58:47.191Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 653170,
+    "duration_api_ms": 880087,
+    "num_turns": 61,
+    "total_cost_usd": 1.7292681999999997,
+    "input_tokens": 48,
+    "output_tokens": 31378,
+    "cache_read_tokens": 1269998,
+    "cache_creation_tokens": 90140,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 547008,
+    "plan_api_ms": 774120,
+    "plan_tokens_in": 24,
+    "plan_tokens_out": 25367,
+    "plan_cost_usd": 1.3823408499999998,
+    "plan_content": "Here's the complete implementation plan for the `image-text-to-text` pipeline:\n\n---\n\n## Summary\n\n**Only one file needs to be modified:** `src/pipelines.js`\n\n### The 6 changes, in order:\n\n**1. Add import** (line ~44)\nAdd `AutoModelForImageTextToText` to the named import from `./models.js`. It's already defined and exported at line 8736 of `src/models.js` — no model-side changes needed.\n\n**2. Add JSDoc typedefs** (after line 2779)\nDefine `ImageTextToTextSingle`, `ImageTextToTextOutput`, `ImageTextToTextPipelineCallback`, and `ImageTextToTextPipelineType` — following the identical typedef pattern used by every other pipeline.\n\n**3. Add `ImageTextToTextPipeline` class** (after the typedefs)\n- Extends `Pipeline` via `TextImagePipelineConstructorArgs` (already defined at line 215 — gives model + tokenizer + processor)\n- `_call(image, text, generate_kwargs = {})`  \n- Calls `prepareImages(image)` → `this.processor(preparedImages, text)` → destructures `input_ids` and spreads the rest into `model.generate({ inputs: input_ids, ...processorOutputs, ...generate_kwargs })` → `tokenizer.batch_decode(output, { skip_special_tokens: true })`\n- Returns `Array<{ generated_text: string }>` — always an array, consistent with `ImageToTextPipeline`\n\n**4. Register in `SUPPORTED_TASKS`** (before line 3390's `})`)\n```js\n\"image-text-to-text\": {\n    \"tokenizer\": AutoTokenizer,\n    \"pipeline\": ImageTextToTextPipeline,\n    \"model\": AutoModelForImageTextToText,\n    \"processor\": AutoProcessor,\n    \"default\": { \"model\": \"HuggingFaceTB/SmolVLM-256M-Instruct\" },\n    \"type\": \"multimodal\",\n}\n```\n\n**5. Update `pipeline()` factory JSDoc** — add one bullet: `\"image-text-to-text\": will return a ImageTextToTextPipeline`.\n\n**6. New test file:** `tests/pipelines/test_pipelines_image_text_to_text.js`\n\n---\n\n### ⚠️ One known design consideration\n\nVLM processor subclasses have inconsistent `_call` argument orders in the codebase — `LlavaProcessor(images, text)` vs `Idefics3Processor(text, images)`. The pipeline standardises on **image-first** `this.processor(preparedImages, text)`, which works for the LLaVA/PaliGemma/Moondream family. Idefics3/SmolVLM-style processors (text-first) would need their own processor classes updated to match — that's a separate concern outside this pipeline.",
+    "execute_duration_ms": 106162,
+    "execute_api_ms": 105967,
+    "execute_tokens_in": 24,
+    "execute_tokens_out": 6011,
+    "execute_cost_usd": 0.34692734999999986
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation meeting all rubric requirements. ImageTextToTextPipeline class properly extends Pipeline with async _call method accepting image and text. Correctly imports and uses AutoModelForImageTextToText, calls generate() with proper argument unpacking, returns generated_text objects. Comprehensive JSDoc typedefs follow existing patterns. SUPPORTED_TASKS registration includes type:multimodal. No modifications to existing pipeline classes. Test file created with appropriate batch_size=1 and batch_size>1 test cases. Minor deduction: known design consideration documented (processor argument ordering inconsistency with Idefics3/text-first VLMs) is not an implementation flaw but architectural limitation of the codebase itself. Implementation correctly handles single and batched inputs per test expectations.",
+          "diff_length": 8807,
+          "new_files": "PLAN.md\ntests/pipelines/test_pipelines_image_text_to_text.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 85885
+  },
+  "session_id": "9eba40f5-19ba-4295-9493-0bdc82b3a117"
+}

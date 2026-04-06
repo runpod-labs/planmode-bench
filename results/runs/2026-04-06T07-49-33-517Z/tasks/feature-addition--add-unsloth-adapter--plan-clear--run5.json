@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T12:06:35.880Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 398502,
+    "duration_api_ms": 550040,
+    "num_turns": 27,
+    "total_cost_usd": 1.2121774500000002,
+    "input_tokens": 26,
+    "output_tokens": 20255,
+    "cache_read_tokens": 408614,
+    "cache_creation_tokens": 60239,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 279139,
+    "plan_api_ms": 431760,
+    "plan_tokens_in": 11,
+    "plan_tokens_out": 11352,
+    "plan_cost_usd": 0.9469302000000002,
+    "plan_content": "Here's the complete plan for implementing `export_to_onnx`.\n\n---\n\n## Summary\n\n**One file changes: `unsloth/save.py`** — three targeted edits.\n\n### What gets built\n\n`model.export_to_onnx(output_dir, opset_version=17)` exports all active LoRA adapter A/B matrices into a directory:\n- One `.onnx` file per adapted layer (e.g. `model_layers_0_self_attn_q_proj.onnx`)\n- A root `metadata.json` with rank, lora_alpha, and target_modules\n\nEach ONNX graph represents the LoRA delta computation: `output = scaling * ((input @ lora_A.T) @ lora_B.T)`, making each file directly runnable with ONNX Runtime.\n\n### Three edits to `unsloth/save.py`\n\n**Edit 1 — New standalone function** (~line 2564, before `not_implemented_save`):\nDefine `unsloth_export_lora_to_onnx(self, output_dir, opset_version=17)` decorated with `@torch.inference_mode`. It reads `self.peft_config` for metadata, writes `metadata.json`, then iterates `self.named_modules()` filtering for `Peft_Linear` / `Peft_Linear4bit` instances. For each, it builds an ONNX graph with 3 nodes (MatMul A, MatMul B, Mul scale), embeds 8 metadata props into `metadata_props`, validates with `onnx.checker.check_model`, and saves.\n\n**Edit 2 — Bind to model** (inside `patch_saving_functions`, both the non-vision and vision branches):\n```python\nmodel.export_to_onnx = types.MethodType(unsloth_export_lora_to_onnx, model)\n```\n\n**Edit 3 — `__all__`** (line ~48):\nAdd `\"unsloth_export_lora_to_onnx\"` to the exported names.\n\n### Key design choices\n| Choice | Reason |\n|---|---|\n| One `.onnx` per layer | Small, independently loadable, named by layer path |\n| Computes full delta (not just weights) | Directly runnable in ONNX Runtime |\n| `onnx` imported lazily inside function | Optional dependency — no hard install required |\n| Weights cast to `float32` | ONNX MatMul requires consistent dtype |\n| Skip merged/disabled adapters | Prevents silent export of zero-delta layers |",
+    "execute_duration_ms": 119363,
+    "execute_api_ms": 118280,
+    "execute_tokens_in": 15,
+    "execute_tokens_out": 8903,
+    "execute_cost_usd": 0.26524725000000005
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 84
+  },
+  "session_id": "dd93197f-21d7-4853-b479-857b690a3867"
+}

@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-rate-limiter",
+  "task_name": "add rate limiting middleware",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T10:48:56.141Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 737597,
+    "duration_api_ms": 794235,
+    "num_turns": 39,
+    "total_cost_usd": 1.7055642000000004,
+    "input_tokens": 37,
+    "output_tokens": 36408,
+    "cache_read_tokens": 772675,
+    "cache_creation_tokens": 68203,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 527198,
+    "plan_api_ms": 598041,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 22826,
+    "plan_cost_usd": 1.2075888000000004,
+    "plan_content": "Here's the complete implementation plan:\n\n---\n\n## What I found\n\nThis is the **FastAPI framework source code** itself. A test file `tests/test_rate_limiter.py` already exists on disk with 8 tests — it just needs the implementation to make them pass.\n\n---\n\n## Plan: Two files, no new dependencies\n\n### File 1 — **CREATE** `fastapi/middleware/rate_limit.py`\n\nTwo classes:\n\n**`_TokenBucket`** (per-IP state):\n- Starts full at `capacity = burst_size` tokens\n- `consume()` refills via `tokens += elapsed × (requests_per_minute / 60)` capped at capacity, then consumes 1 if available\n- Returns `(allowed: bool, retry_after: float)` — `time.monotonic()` for internal timing (NTP-safe)\n- Owns an `asyncio.Lock` for per-IP serialization\n\n**`RateLimitMiddleware`** (ASGI class):\n- Constructor: `(app, requests_per_minute=60, burst_size=10)`\n- IP from `scope[\"client\"][0]`, falls back to `\"unknown\"`\n- Non-HTTP scopes (WebSocket, lifespan) pass through untouched\n- **Allowed**: wraps `send` to inject `X-RateLimit-Limit/Remaining/Reset` into `http.response.start` via `starlette.datastructures.MutableHeaders`\n- **Denied**: sends raw ASGI 429 with JSON body `{\"detail\": \"Rate limit exceeded\", \"retry_after\": <float>}`\n- Two-level locking: `_buckets_lock` (guards dict) + per-bucket `lock` (serializes refill+consume)\n\n### File 2 — **UPDATE** `fastapi/middleware/__init__.py`\n\nAdd one line following the existing re-export pattern:\n```python\nfrom fastapi.middleware.rate_limit import RateLimitMiddleware as RateLimitMiddleware  # noqa\n```\n\n### Verification\n```bash\npytest tests/test_rate_limiter.py -v      # 8 new tests\npytest --ignore=docs_src -x -q            # full suite, no regressions\n```",
+    "execute_duration_ms": 210399,
+    "execute_api_ms": 196194,
+    "execute_tokens_in": 21,
+    "execute_tokens_out": 13582,
+    "execute_cost_usd": 0.4979754
+  },
+  "evaluation": {
+    "overall_score": 0.59,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 0,
+        "weight": 0.35,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775471795230-2uln3t/.venv/bin/activate && python3 -m pytest tests/test_rate_limiter.py -v",
+          "tests_passed": 0,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "error": "Command failed: source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775471795230-2uln3t/.venv/bin/activate && python3 -m pytest tests/test_rate_limiter.py -v\n/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-bases/feature-addition-add-rate-limiter/.venv/bin/python3: No module named pytest\n",
+          "output": "/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-bases/feature-addition-add-rate-limiter/.venv/bin/python3: No module named pytest\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.05,
+        "weighted_score": 0.05,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 0.8,
+        "weight": 0.3,
+        "weighted_score": 0.24,
+        "passed": false,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 5,
+          "check_details": [
+            {
+              "path": "fastapi/middleware/rate_limit.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "fastapi/middleware/rate_limit.py",
+              "check": "contains \"RateLimitMiddleware\"",
+              "passed": true
+            },
+            {
+              "path": "fastapi/middleware/rate_limit.py",
+              "check": "contains \"token_bucket\"",
+              "passed": false
+            },
+            {
+              "path": "fastapi/middleware/rate_limit.py",
+              "check": "contains \"429\"",
+              "passed": true
+            },
+            {
+              "path": "fastapi/middleware/rate_limit.py",
+              "check": "contains \"X-RateLimit\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775471795230-2uln3t/.venv/bin/activate && python3 -c 'from fastapi.middleware.rate_limit import RateLimitMiddleware; print(\"Import OK\")'",
+          "exit_code": 0,
+          "output": "Import OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "class RateLimitMiddleware",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "requests_per_minute",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "retry_after",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 396
+  },
+  "session_id": "275da2db-ff0b-4768-a249-ebf3e10eafde"
+}

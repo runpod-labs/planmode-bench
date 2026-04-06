@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T11:40:50.961Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 852569,
+    "duration_api_ms": 965021,
+    "num_turns": 54,
+    "total_cost_usd": 2.9042230499999997,
+    "input_tokens": 56,
+    "output_tokens": 43072,
+    "cache_read_tokens": 3305487,
+    "cache_creation_tokens": 153457,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 606976,
+    "plan_api_ms": 725249,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 27124,
+    "plan_cost_usd": 1.4602701,
+    "plan_content": "Here's the complete implementation plan:\n\n---\n\n## Plan: Custom Theme System for T3 Code\n\n### What we found in the codebase\n\nThe existing theme system in `useTheme.ts` uses a `useSyncExternalStore` pub/sub pattern (no Context API), stores `\"light\" | \"dark\" | \"system\"` in localStorage at `\"t3code:theme\"`, and toggles a `.dark` class on `<html>`. The CSS uses Tailwind v4's `@variant dark { ... }` block inside `:root` for dark mode overrides.\n\n**Critical constraint:** `resolvedTheme` typed as `\"light\" | \"dark\"` is consumed in 5+ downstream components (`ChatView`, `DiffPanel`, `DiffWorkerPoolProvider`, `ChatMarkdown`, `ComposerPromptEditor`) and `resolveDiffThemeName()` in `diffRendering.ts`. These must not break.\n\n---\n\n### Files to create (2)\n\n| File | Purpose |\n|------|---------|\n| `packages/shared/src/theme.ts` | `ThemeColors`, `BuiltInTheme`, `ThemeId`, `ThemePreference` types + `BUILT_IN_THEMES` constant |\n| `apps/web/src/components/ThemeSelector.tsx` | Theme picker with color swatch previews |\n\n### Files to modify (4)\n\n| File | Change |\n|------|--------|\n| `packages/shared/package.json` | Add `\"./theme\": { \"types\": ..., \"import\": ... }` export |\n| `apps/web/src/hooks/useTheme.ts` | New `ThemePreference` type, `data-theme` attribute application, storage migration, adds `themeId: ThemeId` to return |\n| `apps/web/src/index.css` | Remove `@variant dark {}` block inside `:root`; add `html[data-theme=\"t3-dark\"] {}` and `html[data-theme=\"t3-midnight\"] {}` blocks |\n| `apps/web/src/routes/_chat.settings.tsx` | Replace `THEME_OPTIONS` radio buttons with `<ThemeSelector />` |\n\n---\n\n### Key design decisions\n\n1. **CSS via `data-theme` attribute** (not `setProperty()`) — declarative, no FOUC, follows existing CSS-first pattern. `applyTheme()` writes `data-theme` attribute + toggles `.dark` class atomically.\n\n2. **Keep `resolvedTheme: \"light\" | \"dark\"`** on `useTheme()` return — backward compat with all downstream consumers. Add new `themeId: ThemeId` for the `ThemeSelector` to display the active named theme.\n\n3. **Storage migration at module load** (not in `getStored()`) — `\"light\"` → `\"t3-light\"`, `\"dark\"` → `\"t3-dark\"` before the first `applyTheme()` call, preventing FOUC for existing users.\n\n4. **t3-midnight** is a deep navy palette (`#0a0f1e` background, blue-tinted borders, brighter blue primary `oklch(0.65 0.22 258)`) — visually distinct from t3-dark's neutral-black.\n\n5. **`ThemeColors`** in shared package stores 7 concrete hex strings (background, foreground, accent, sidebar, editor, terminal, statusBar) **only for swatch previews** — actual CSS vars are defined in `index.css`.",
+    "execute_duration_ms": 245593,
+    "execute_api_ms": 239772,
+    "execute_tokens_in": 39,
+    "execute_tokens_out": 15948,
+    "execute_cost_usd": 1.4439529499999997
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.35,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/shared/src/themes.ts"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 637
+  },
+  "session_id": "a93e2723-91ee-4c62-b221-93b187b64cb3"
+}

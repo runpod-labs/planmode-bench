@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T12:04:03.206Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 350145,
+    "duration_api_ms": 517338,
+    "num_turns": 34,
+    "total_cost_usd": 1.27162045,
+    "input_tokens": 34,
+    "output_tokens": 15828,
+    "cache_read_tokens": 573756,
+    "cache_creation_tokens": 54764,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 265893,
+    "plan_api_ms": 434377,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 10740,
+    "plan_cost_usd": 1.072168,
+    "plan_content": "Here is the implementation plan. Only **one file** needs to change: `unsloth/save.py`. Three precise edits:\n\n---\n\n### What gets added\n\n**`unsloth_save_pretrained_onnx(self, save_directory, opset_version=17)`**\n\n- Reads `rank`, `alpha`, and `target_modules` from `self.peft_config`\n- Walks `self.named_modules()` to find every module with a `lora_A` dict\n- Extracts `lora_A[adapter].weight` and `lora_B[adapter].weight`, casts to `float32`, and stores them as ONNX initializers named by full module path (e.g. `model.layers.0.self_attn.q_proj.lora_A`)\n- Builds an ONNX model via `onnx.helper` — **no compute nodes, just weight tensors** — so no dummy inputs are needed\n- Embeds rank / alpha / target_modules in ONNX `metadata_props`\n- Writes `lora_adapters.onnx` + `lora_metadata.json` to the output directory\n- Only runtime dependency is `onnx` (lazily imported with a clear error if absent)\n\n---\n\n### The three edits in `unsloth/save.py`\n\n| # | Where | What |\n|---|-------|------|\n| 1 | `__all__` (line ~48) | Add `\"unsloth_save_pretrained_onnx\"` |\n| 2 | After `unsloth_save_pretrained_torchao` ends (~line 2561) | Insert the new ~75-line function |\n| 3 | `patch_saving_functions()` — both the `not vision` block (~line 2665) and the `vision` block (~line 2675) | Add `model.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)` |\n\nAfter the patch, every model from `FastLanguageModel.get_peft_model()` (and `FastVisionModel`) will have `model.save_pretrained_onnx(save_directory, opset_version=17)` available alongside the existing `save_pretrained_gguf`, `save_pretrained_ggml`, etc.",
+    "execute_duration_ms": 84252,
+    "execute_api_ms": 82961,
+    "execute_tokens_in": 17,
+    "execute_tokens_out": 5088,
+    "execute_cost_usd": 0.19945244999999998
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 86
+  },
+  "session_id": "665d4bdb-e120-4cd6-a71f-219cea68076f"
+}

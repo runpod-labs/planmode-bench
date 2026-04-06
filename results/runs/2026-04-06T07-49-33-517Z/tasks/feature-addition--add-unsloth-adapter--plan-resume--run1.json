@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T12:02:33.963Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 541829,
+    "duration_api_ms": 738246,
+    "num_turns": 48,
+    "total_cost_usd": 2.1198349999999997,
+    "input_tokens": 48,
+    "output_tokens": 27794,
+    "cache_read_tokens": 1687327,
+    "cache_creation_tokens": 110562,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 426514,
+    "plan_api_ms": 624397,
+    "plan_tokens_in": 25,
+    "plan_tokens_out": 20809,
+    "plan_cost_usd": 1.4869791499999998,
+    "plan_content": "The plan is written to `/Users/timpietrusky/.claude/plans/quirky-juggling-thunder.md`. Here's a summary:\n\n---\n\n## Plan: Add `save_pretrained_onnx` to Unsloth\n\n**Only one file to edit: `unsloth/save.py`** — 4 targeted changes:\n\n### 1. Extend `__all__` (lines 48–54)\nAdd `\"unsloth_save_pretrained_onnx\"` to the exports list.\n\n### 2. Add `_LoRAAdapterModule` helper class (insert ~line 2562)\nA minimal `torch.nn.Module` holding `lora_A` / `lora_B` as CPU float32 buffers. Its `forward` computes `x @ A.T @ B.T * scaling` — giving `torch.onnx.export` a proper graph to trace.\n\n### 3. Add `unsloth_save_pretrained_onnx(self, save_directory, opset_version=17)` (same location)\n- `@torch.inference_mode` decorated, `self`-first signature (for method binding)\n- Graceful `ImportError` if `onnx` package is missing\n- Reads `self.peft_config` → extracts **rank**, **alpha**, **target_modules**, **adapter_name**\n- Walks `self.named_modules()`, finds LoRA layers via `hasattr(module, \"lora_A\")`, resolves adapter key using the **exact pattern from `kernels/utils.py:209–211`**\n- Per layer: wraps in `_LoRAAdapterModule` → `torch.onnx.export` with dynamic batch/seq axes → file named `<module_name_dots_to_dunder>.onnx`\n- Writes `adapter_metadata.json` with rank, alpha, target_modules, opset_version, and per-layer shape info\n- `gc.collect()` cleanup, returns `os.path.abspath(save_directory)`\n\n### 4. Bind in `patch_saving_functions` (~line 2667)\nIn the `if not vision: if hasattr(model, \"config\"):` block, add:\n```python\nmodel.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)\n```\nVision models are excluded (they don't use the same LoRA adapter-dict structure).\n\n---\n\n**User-facing usage:**\n```python\nmodel.save_pretrained_onnx(\"./onnx_adapters\")              # opset 17 default\nmodel.save_pretrained_onnx(\"./onnx_adapters\", opset_version=18)\n```",
+    "execute_duration_ms": 115315,
+    "execute_api_ms": 113849,
+    "execute_tokens_in": 23,
+    "execute_tokens_out": 6985,
+    "execute_cost_usd": 0.6328558499999998
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 79
+  },
+  "session_id": "8265ba43-095c-4b43-a0e3-3876e6474e07"
+}

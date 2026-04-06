@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T12:01:57.320Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 428280,
+    "duration_api_ms": 547197,
+    "num_turns": 31,
+    "total_cost_usd": 1.5092164499999996,
+    "input_tokens": 30,
+    "output_tokens": 19934,
+    "cache_read_tokens": 963377,
+    "cache_creation_tokens": 105811,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 350760,
+    "plan_api_ms": 469740,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 14973,
+    "plan_cost_usd": 1.0575425999999997,
+    "plan_content": "Here is the complete plan. Only **one file** needs to change — `unsloth/save.py` — with **three targeted edits**:\n\n---\n\n## What the code does\n\n**ONNX graph structure:** Each LoRA-adapted layer contributes two `Identity` nodes — one for `lora_A.weight` `(r, in_features)` and one for `lora_B.weight` `(out_features, r)` — stored as ONNX initializers and exposed as named graph outputs. This is the minimal valid ONNX representation for pure weight tensors (no dummy inputs needed).\n\n**Metadata JSON:** Written alongside the `.onnx` file with `rank`, `lora_alpha`, `target_modules`, `adapter_name`, `opset_version`, and per-layer shape/scaling info.\n\n---\n\n## Three edits to `unsloth/save.py`\n\n### Edit 1 — `__all__` (line 48–54)\nAdd `\"unsloth_save_pretrained_onnx\"` to expose it from `from unsloth.save import *`.\n\n### Edit 2 — New function `unsloth_save_pretrained_onnx` (insert before line 2569)\nPlaced between `not_implemented_save` and `patch_saving_functions`. The function:\n1. Lazy-imports `onnx` with a clear error if missing\n2. Reads `self.peft_config` for rank / alpha / target_modules\n3. Iterates `self.named_modules()`, checks `isinstance(module, (Peft_Linear4bit, Peft_Linear))` (same check as `_merge_lora` at line 162), skips merged layers, extracts `lora_A[adapter].weight`, `lora_B[adapter].weight`, `scaling[adapter]`\n4. Builds a valid ONNX graph with initializers + Identity nodes, runs `onnx.checker.check_model()`, saves to `lora_adapters.onnx`\n5. Writes `lora_metadata.json`, prints a summary, returns the `.onnx` path\n\n### Edit 3 — `patch_saving_functions` (line ~2665)\nOne added line in the `if hasattr(model, \"config\"):` block:\n```python\nmodel.export_to_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)\n```\nThis exposes `model.export_to_onnx(save_directory, opset_version=17)` alongside all existing save/export methods.",
+    "execute_duration_ms": 77520,
+    "execute_api_ms": 77457,
+    "execute_tokens_in": 12,
+    "execute_tokens_out": 4961,
+    "execute_cost_usd": 0.45167385
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 83
+  },
+  "session_id": "6b571781-837c-4235-9b5e-585fe9e59e2e"
+}

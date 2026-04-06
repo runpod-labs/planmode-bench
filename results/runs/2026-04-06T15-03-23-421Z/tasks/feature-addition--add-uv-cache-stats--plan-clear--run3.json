@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-uv-cache-stats",
+  "task_name": "add 'uv cache stats' subcommand",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T17:31:49.245Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 877642,
+    "duration_api_ms": 971305,
+    "num_turns": 73,
+    "total_cost_usd": 2.2688102500000005,
+    "input_tokens": 3963,
+    "output_tokens": 38044,
+    "cache_read_tokens": 2135135,
+    "cache_creation_tokens": 119163,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 232480,
+    "plan_api_ms": 353709,
+    "plan_tokens_in": 21,
+    "plan_tokens_out": 8608,
+    "plan_cost_usd": 0.8912198500000001,
+    "plan_content": "Here's a summary of what I found and planned:\n\n## Plan: `uv cache stats`\n\n### What I explored\n\n- **CLI layer** (`crates/uv-cli/src/lib.rs`): `CacheCommand` enum has `Clean`, `Prune`, `Dir`, `Size`. `SizeArgs` already has `--human`/`-H`/`--human-readable` — I'll copy the exact same pattern for `StatsArgs`.\n- **Cache internals** (`crates/uv-cache/src/lib.rs`): `CacheBucket` has 11 variants (Wheels, SourceDistributions, FlatIndex, Git, Interpreter, Simple, Archive, Builds, Environments, Python, Binaries). `cache.bucket(variant)` returns its `PathBuf`. Note: `CacheBucket::iter()` omits `Python` — the stats command will use an explicit array so all 11 show up.\n- **`cache_size` implementation** (`crates/uv/src/commands/cache_size.rs`): Uses `diskus::DiskUsage`, already-available `human_readable_bytes()` from `uv_console`. Gated behind `PreviewFeature::CacheSize`.\n- **Preview flags** (`crates/uv-preview/src/lib.rs`): Simple bitflag enum; next available slot is `1 << 28`.\n\n### 9 files touched\n\n| | File |\n|---|---|\n| **Modified** | `crates/uv-cache/src/lib.rs` — add `CacheBucket::display_name()` |\n| **Modified** | `crates/uv-cli/src/lib.rs` — add `Stats(StatsArgs)` variant + `StatsArgs` |\n| **Modified** | `crates/uv/src/lib.rs` — dispatch arm |\n| **Modified** | `crates/uv/src/commands/mod.rs` — `mod` decl + re-export |\n| **New** | `crates/uv/src/commands/cache_stats.rs` — core implementation |\n| **Modified** | `crates/uv-preview/src/lib.rs` — `CacheStats = 1 << 28` feature flag |\n| **Modified** | `crates/uv-test/src/lib.rs` — `cache_stats()` + `with_filtered_cache_stats()` helpers |\n| **Modified** | `crates/uv/tests/it/main.rs` — register test module |\n| **New** | `crates/uv/tests/it/cache_stats.rs` — 3 integration tests |",
+    "execute_duration_ms": 645162,
+    "execute_api_ms": 617596,
+    "execute_tokens_in": 3942,
+    "execute_tokens_out": 29436,
+    "execute_cost_usd": 1.3775904
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete and correct implementation of `uv cache stats` subcommand. All rubric requirements fully met: (1) CLI variant `Stats(StatsArgs)` with human bool flag properly added; (2) Command implementation iterates over `CacheBucket::iter_all()` and uses `DiskUsage` for bucket sizing; (3) Function signature is `pub(crate) fn cache_stats` returning `Result<ExitStatus>` with `ExitStatus::Success`; (4) `--human` flag implemented with `human_readable_bytes()` for formatting; (5) Output includes per-bucket lines and total line; (6) Module properly registered in `mod.rs` with public re-export; (7) Dispatch wiring correctly matches `CacheCommand::Stats` in `lib.rs`; (8) Code follows exact patterns of existing `cache size` command including preview feature gating and warning system. Additional quality: helper methods `CacheBucket::iter_all()` and `display_name()` properly added, preview feature flag integrated cleanly, comprehensive integration tests with proper filtering, handles edge cases (non-existent cache root, missing bucket directories). Code is production-ready.",
+          "diff_length": 15161,
+          "new_files": "PLAN.md\ncrates/uv/src/commands/cache_stats.rs\ncrates/uv/tests/it/cache_stats.rs"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18516
+  },
+  "session_id": "0879cb24-c3a1-4bd4-91bc-5f45ad4334dc"
+}

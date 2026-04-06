@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-shadcn-stepper",
+  "task_name": "add stepper component",
+  "mode": "plan-resume",
+  "run_number": 3,
+  "timestamp": "2026-04-06T16:54:55.550Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 756926,
+    "duration_api_ms": 894856,
+    "num_turns": 41,
+    "total_cost_usd": 2.867608299999999,
+    "input_tokens": 38,
+    "output_tokens": 35524,
+    "cache_read_tokens": 2128922,
+    "cache_creation_tokens": 170199,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 533947,
+    "plan_api_ms": 672015,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 15501,
+    "plan_cost_usd": 1.6840901499999996,
+    "plan_content": "Here's a summary of what the plan covers:\n\n---\n\n## Stepper Component — Implementation Plan\n\n### What it is\nA primitive-free compound component (no `@base-ui/react` or Radix dependency) built with semantic HTML + custom React context, following the same pattern as `field.tsx` and `card.tsx`.\n\n### 4 new files to create\n\n| File | Purpose |\n|------|---------|\n| `bases/base/ui/stepper.tsx` | Component with 7 sub-components + 2 React contexts |\n| `bases/base/examples/stepper-example.tsx` | 6 demos: Basic, Vertical, With Content, Completed, Controlled, Disabled |\n| `bases/radix/ui/stepper.tsx` | Identical to base, only `cn` import path differs |\n| `bases/radix/examples/stepper-example.tsx` | Identical to base example, import paths swapped |\n\n### 4 registry index files to edit (inserting new entries only, alphabetically after `spinner`)\n- `bases/base/ui/_registry.ts`\n- `bases/base/examples/_registry.ts`\n- `bases/radix/ui/_registry.ts`\n- `bases/radix/examples/_registry.ts`\n\n### Key design decisions\n- **Two React contexts**: `StepperContext` (root: active value, setter, orientation) and `StepperItemContext` (per-item: value, isActive, isCompleted, disabled)\n- **`data-state`** on `StepperItem` (`active` / `completed` / `inactive`) enables consumer-driven badge styling via `group-data-[state=active]/stepper-item:` selectors — no baked-in visual chrome\n- **Controlled/uncontrolled** via `value`/`defaultValue`/`onValueChange` (same pattern as `Tabs`)\n- **Orientation** via CVA + `group-data-horizontal/stepper:` / `group-data-vertical/stepper:` Tailwind group selectors (same as `tabs.tsx`)\n- **`StepperContent` returns `null`** when inactive (same as `TabsContent`)",
+    "execute_duration_ms": 222979,
+    "execute_api_ms": 222841,
+    "execute_tokens_in": 23,
+    "execute_tokens_out": 20023,
+    "execute_cost_usd": 1.1835181499999996
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation fully satisfies all rubric requirements: (1) Component files marked with 'use client' exporting all required sub-components (Stepper, StepperItem, StepperTrigger, StepperTitle, StepperDescription, StepperSeparator, StepperContent); (2) All sub-components include proper data-slot attributes and use cn() utility for class merging; (3) React context (StepperContext and StepperItemContext) properly implements state sharing between components with useContext hooks; (4) Both horizontal and vertical orientations fully supported with appropriate layout logic and prop handling; (5) Demo example file includes multiple variations with useState for active step management in the controlled example; (6) Registry entries correctly added for both 'stepper' UI component and 'stepper-example' (consistent with codebase naming conventions) in _registry.ts files for both base and radix; (7) No existing component files modified, only new files created and registry entries added. Implementation is thorough, well-structured, and duplicated appropriately for both base and radix variants.",
+          "diff_length": 40716,
+          "new_files": "apps/v4/registry/bases/base/examples/stepper-example.tsx\napps/v4/registry/bases/base/ui/stepper.tsx\napps/v4/registry/bases/radix/examples/stepper-example.tsx\napps/v4/registry/bases/radix/ui/stepper.tsx"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 22779
+  },
+  "session_id": "25f665c4-9f43-4a19-ada9-93825e608e9a"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-transformersjs-pipeline",
+  "task_name": "add image-text-to-text pipeline",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T18:00:02.985Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 913621,
+    "duration_api_ms": 1073721,
+    "num_turns": 55,
+    "total_cost_usd": 2.6875830999999994,
+    "input_tokens": 48,
+    "output_tokens": 46192,
+    "cache_read_tokens": 2797294,
+    "cache_creation_tokens": 148932,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 807196,
+    "plan_api_ms": 967401,
+    "plan_tokens_in": 25,
+    "plan_tokens_out": 39762,
+    "plan_cost_usd": 1.7368424499999997,
+    "plan_content": "Here is the complete plan before I hand it back for your approval:\n\n---\n\n## Summary: Add `image-text-to-text` Pipeline\n\n**One file to modify**: `src/pipelines.js` — plus one new test file.\n\n### Why this is needed\n`AutoModelForImageTextToText` already exists in `src/models.js` (line 8736) with full support for LLaVA, Qwen2-VL, Idefics3, SmolVLM, Florence2, PaliGemma and more. The missing piece is a pipeline that wires them into the standard `pipeline()` API.\n\n### The 5 changes inside `src/pipelines.js`\n\n1. **Import** `AutoModelForImageTextToText` in the existing `import { ... } from './models.js'` block (lines 16–45).\n\n2. **JSDoc typedefs** — `ImageTextToTextSingle`, `ImageTextToTextOutput`, `ImageTextToTextPipelineCallback`, `ImageTextToTextPipelineType` — inserted after `DocumentQuestionAnsweringPipeline` (~line 2779), following the exact pattern of neighboring pipelines.\n\n3. **`ImageTextToTextPipeline` class** — `_call(images, text, generate_kwargs)` that:\n   - Calls existing `prepareImages()` helper\n   - Calls `this.processor(text, preparedImages)` — matches the **text-first** convention used by Qwen2-VL, Idefics3, and SmolVLM (the most-targeted modern VLMs)\n   - Calls `this.model.generate()`\n   - Decodes via `this.processor.batch_decode()` — the `Processor` base class already proxies this to its embedded tokenizer (confirmed at `src/base/processing_utils.js` lines 101–106)\n\n4. **`SUPPORTED_TASKS` entry** — `type: \"multimodal\"`, no separate `tokenizer` key (it's bundled in the processor), default model `HuggingFaceTB/SmolVLM-256M-Instruct`.\n\n5. **`pipeline()` JSDoc** task-list bullet added.\n\n### New test file\n`tests/pipelines/test_pipelines_image_text_to_text.js` — mirrors `test_pipelines_image_to_text.js` structure.",
+    "execute_duration_ms": 106425,
+    "execute_api_ms": 106320,
+    "execute_tokens_in": 23,
+    "execute_tokens_out": 6430,
+    "execute_cost_usd": 0.95074065
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation meeting all rubric requirements. The ImageTextToTextPipeline class is properly implemented with async _call method accepting images and text prompts. Correct imports of AutoModelForImageTextToText added. The pipeline correctly processes inputs through the processor, calls model.generate(), decodes output, and returns generated_text properties in the expected format. Comprehensive JSDoc with proper @typedef definitions for ImageTextToText and callback types. Registered in SUPPORTED_TASKS with correct 'image-text-to-text' key and 'multimodal' type. Follows existing pipeline class patterns with constructor and proper documentation. Test file created with appropriate assertions. No existing pipeline classes modified. Minor: batching logic wraps batched output correctly per typedef contract, though edge cases with mismatched image/text batch dimensions rely on processor implementation details that aren't directly verified in the diff.",
+          "diff_length": 6293,
+          "new_files": "tests/pipelines/test_pipelines_image_text_to_text.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 25049
+  },
+  "session_id": "dadd1e12-1670-4d52-9d53-e1a84bf2e48c"
+}

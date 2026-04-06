@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T17:16:50.545Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 981886,
+    "duration_api_ms": 975998,
+    "num_turns": 59,
+    "total_cost_usd": 2.3006600500000003,
+    "input_tokens": 63,
+    "output_tokens": 52555,
+    "cache_read_tokens": 2324902,
+    "cache_creation_tokens": 111048,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 444120,
+    "plan_api_ms": 441214,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 16690,
+    "plan_cost_usd": 0.84958525,
+    "plan_content": "Here's the full plan for the custom theme system:\n\n---\n\n## Summary\n\n**9 files** touched, no new dependencies, no build-tool config changes.\n\n### What's being built\n\n**`packages/contracts/src/theme.ts`** (new) — Effect/Schema types: `ThemeId` (literal union of the 3 theme IDs), `ThemeColors` (struct with the 7 color slots), `ThemeDefinition` (full theme shape). Exported from `contracts/index.ts`.\n\n**`packages/shared/src/theme.ts`** (new) + `packages/shared/package.json` (add `./theme` subpath export) — The three built-in theme objects with actual hex/oklch color values and a `getThemeById` helper. Follows the same data-pattern as `shared/src/model.ts`.\n\n**`apps/web/src/hooks/useTheme.ts`** (rewrite) — Replaces the old light/dark/system toggle. New storage key `t3code:color-theme`; migrates from old `t3code:theme` on first load. `applyTheme()` now sets `data-theme` attribute (for CSS), `.dark` class (for Tailwind `dark:` variants), and `colorScheme` style property. Same `useSyncExternalStore` pattern; no React Context. Exports `useTheme()` and a thin `ThemeProvider` wrapper component.\n\n**`apps/web/src/components/ThemeSelector.tsx`** (new) — 3-column card grid, each card showing a swatch strip (background / sidebar / accent mini-blocks), the theme label, and a \"Selected\" badge. Styled with existing class patterns from the settings radio buttons.\n\n**`apps/web/src/index.css`** (modify) — Adds `--t3-sidebar`, `--t3-editor`, `--t3-terminal`, `--t3-status-bar` to the existing fallback blocks, then three `[data-theme=\"...\"]` override blocks that set all semantic CSS variables for each theme. Existing `:root` / `.dark` blocks untouched.\n\n**`apps/web/src/routes/_chat.settings.tsx`** (modify) — Removes the `THEME_OPTIONS` radio buttons; replaces with `<ThemeSelector />`.\n\n**`apps/web/src/router.ts`** (modify) — Adds `ThemeProvider` to the Wrap provider stack.",
+    "execute_duration_ms": 537766,
+    "execute_api_ms": 534784,
+    "execute_tokens_in": 47,
+    "execute_tokens_out": 35865,
+    "execute_cost_usd": 1.4510748000000004
+  },
+  "evaluation": {
+    "overall_score": 0.78,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.78,
+        "weight": 1,
+        "weighted_score": 0.78,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation includes all 3 required themes with correct color properties, a working ThemeProvider and useTheme hook with local storage persistence, CSS custom properties applied via data-theme attribute, and a ThemeSelector component with color swatches. No new dependencies or build config changes. However: (1) Type definitions are in packages/contracts, not packages/shared as specified (though exported from shared), (2) Missing explicit listThemes() utility function—only getThemeById() is provided, while rubric requires both getTheme and listThemes functions. The core functionality is solid and well-implemented, but these naming/location discrepancies prevent a higher score.",
+          "diff_length": 21447,
+          "new_files": "PLAN.md\napps/web/src/components/ThemeSelector.tsx\npackages/contracts/src/theme.ts\npackages/shared/src/theme.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 17141
+  },
+  "session_id": "bdd36058-dbf0-4b7b-88b3-e9df3db15241"
+}

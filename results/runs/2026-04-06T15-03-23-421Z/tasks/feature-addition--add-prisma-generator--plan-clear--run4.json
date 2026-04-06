@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T16:32:28.178Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1246623,
+    "duration_api_ms": 1406954,
+    "num_turns": 67,
+    "total_cost_usd": 3.3230522999999996,
+    "input_tokens": 51,
+    "output_tokens": 38547,
+    "cache_read_tokens": 1419793,
+    "cache_creation_tokens": 145532,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1065486,
+    "plan_api_ms": 1227362,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 27690,
+    "plan_cost_usd": 2.7092372999999994,
+    "plan_content": "Here is the complete implementation plan for the new `@prisma/rest-client-generator` package:\n\n---\n\n## What this adds\n\nA new package `packages/rest-client-generator` (`@prisma/rest-client-generator`) that users activate in their schema with:\n```prisma\ngenerator restClient {\n  provider = \"@prisma/rest-client-generator\"\n  output   = \"./src/generated\"\n}\n```\n\nOn `prisma generate` it emits a single `index.ts` with full TypeScript typings and `fetch`-based CRUD implementations for every model.\n\n---\n\n## Files to create (9 new files, 1 edit)\n\n| Path | Purpose |\n|------|---------|\n| `packages/rest-client-generator/package.json` | Package metadata + workspace deps |\n| `packages/rest-client-generator/tsconfig.json` | IDE type-checking |\n| `packages/rest-client-generator/tsconfig.build.json` | Build config (`outDir: dist`) |\n| `packages/rest-client-generator/helpers/build.ts` | `build(adapterConfig)` — CJS + ESM output |\n| `src/index.ts` | Calls `generatorHandler()` — the JSON-RPC entry point |\n| `src/generator.ts` | `RestClientGenerator` class with `getManifest` / `generate` |\n| `src/generate-client.ts` | Orchestrates generation, writes `index.ts` via `fs/promises` |\n| `src/type-map.ts` | DMMF scalar → `ts-builders` `TypeBuilder` lookup |\n| `src/model-file-generator.ts` | Per-model: all 6 declarations + factory function string |\n| `tsconfig.build.bundle.json` | **Edit**: add `\"@prisma/rest-client-generator\"` path alias |\n\n---\n\n## Key design decisions\n\n- **Generator protocol**: uses `generatorHandler` from `@prisma/generator-helper` (JSON-RPC over stdin/stderr) — the correct primitive for a standalone generator, not the internal `Generator` interface used by built-in generators via `client-generator-registry`.\n- **Code generation**: `@prisma/ts-builders` for all type-level declarations (interfaces, type aliases, method signatures); raw template literals for the `fetch` factory function bodies, since `ts-builders` has no function-body builder.\n- **Field filtering**: precise rules for each input type (e.g. auto-generated IDs excluded from `CreateInput`, ID fields excluded from `UpdateInput`, only `@id`/`@unique` fields in `WhereUniqueInput`).\n- **REST/JSON type mapping**: `BigInt`, `Decimal`, `DateTime`, `Bytes` → `string` (JSON-safe); `Json` → `unknown`.\n- **URL convention**: `BlogPost` → `/blog-posts` (kebab-case plural via regex, no external library).\n- **Build**: standard `adapterConfig` — same as `client-generator-js` — produces CJS + ESM + `.d.ts`/`.d.mts`.\n- **Dependencies**: only `@prisma/dmmf`, `@prisma/generator`, `@prisma/generator-helper`, `@prisma/internals`, `@prisma/ts-builders` — all workspace packages already in the repo.",
+    "execute_duration_ms": 181137,
+    "execute_api_ms": 179592,
+    "execute_tokens_in": 34,
+    "execute_tokens_out": 10857,
+    "execute_cost_usd": 0.6138150000000001
+  },
+  "evaluation": {
+    "overall_score": 0.98,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.98,
+        "weight": 1,
+        "weighted_score": 0.98,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation meeting all rubric requirements. The new package directory is properly structured under packages/ with complete package.json dependencies (prisma/generator/dmmf). Entry point correctly uses generatorHandler with onManifest and onGenerate callbacks. Generator implementation properly reads DMMF and iterates models. All five CRUD methods (findMany, findUnique, create, update, delete) are generated with correct TypeScript interfaces and fetch implementations. Output is correctly written to the generator output directory. Code follows TypeScript conventions and Prisma generator patterns using @prisma/ts-builders for type declarations. Field filtering is precise (auto-generated excluded from CreateInput, IDs excluded from UpdateInput, only @id/@unique in WhereUniqueInput). Type mapping handles all scalars including JSON serialization for BigInt/Decimal/DateTime/Bytes. Build configuration properly follows the monorepo pattern. Minor observation: PLAN.md is included (not strictly required by rubric but doesn't harm). The raw template literal approach for factory function is well-documented as necessary since ts-builders lacks function body builder support.",
+          "diff_length": 16986,
+          "new_files": "PLAN.md\npackages/rest-client-generator/helpers/build.ts\npackages/rest-client-generator/package.json\npackages/rest-client-generator/src/generate-client.ts\npackages/rest-client-generator/src/generator.ts\npackages/rest-client-generator/src/index.ts\npackages/rest-client-generator/src/model-file-generator.ts\npackages/rest-client-generator/src/type-map.ts\npackages/rest-client-generator/tsconfig.build.json\npackages/rest-client-generator/tsconfig.json"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 21021
+  },
+  "session_id": "f231e0a4-e6c5-4c68-a68e-5c999814da50"
+}

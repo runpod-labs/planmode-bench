@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "task_id": "refactoring/extract-service-layer",
+  "task_name": "extract service layer from route handlers",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T17:59:12.939Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 237783,
+    "duration_api_ms": 234523,
+    "num_turns": 30,
+    "total_cost_usd": 0.54158545,
+    "input_tokens": 25,
+    "output_tokens": 15588,
+    "cache_read_tokens": 329106,
+    "cache_creation_tokens": 44960,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 131259,
+    "plan_api_ms": 129834,
+    "plan_tokens_in": 10,
+    "plan_tokens_out": 7207,
+    "plan_cost_usd": 0.2691985,
+    "plan_content": "## Plan: Extract Service Layer\n\nHere's exactly what will be done — no existing files other than the two route files need to change, and no tests need modification.\n\n---\n\n### New files to create\n\n**`src/services/products.ts`**\n- `listProducts(filters)` — moves the category/price filtering and `totalInventoryValue`/`averagePrice` stats calculation out of `GET /products`\n- `getProductById(id)` — moves the `isLowStock` and `inventoryValue` computed fields out of `GET /products/:id`\n- `adjustProductStock(id, adjustment)` — moves the stock validation and mutation out of `PATCH /products/:id/stock`\n\n**`src/services/orders.ts`**\n- `listOrders(filters)` — moves userId/status filtering and `totalRevenue` calculation out of `GET /orders`\n- `getOrderById(id)` — moves the item-enrichment join (adding `productName`) out of `GET /orders/:id`\n- `createOrder(input)` — moves all validation (product existence, quantity > 0, stock check), stock deduction, and order assembly out of `POST /orders`\n- `updateOrderStatus(id, status)` — moves the status state-machine transition logic out of `PATCH /orders/:id/status`\n\n---\n\n### Files to modify\n\n**`src/routes/products.ts`** and **`src/routes/orders.ts`** — each handler is slimmed down to: parse HTTP input → call service → send response (or error).\n\n---\n\n### Pattern used\n\nServices return a discriminated union so route handlers stay clean without `try/catch`:\n```ts\ntype ServiceResult<T> =\n  | { ok: true;  data: T }\n  | { ok: false; status: number; error: string }\n```\nThe one thing that stays in route handlers is **HTTP-level input parsing** (e.g. checking `typeof adjustment !== \"number\"`, coercing query strings), since that's inherently about the HTTP layer.\n\n---\n\n### Verification\n\n```bash\nnpm test\n```\nAll 11 existing tests pass unchanged — they drive the app through `supertest` over HTTP, so they validate the full stack without any test modifications.",
+    "execute_duration_ms": 106524,
+    "execute_api_ms": 104689,
+    "execute_tokens_in": 15,
+    "execute_tokens_out": 8381,
+    "execute_cost_usd": 0.27238695
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 2,
+          "tests_failed": 0,
+          "tests_total": 2,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775498111855-dj8tpk\n\n ✓ tests/products.test.ts (5 tests) 14ms\n ✓ tests/orders.test.ts (9 tests) 22ms\n\n Test Files  2 passed (2)\n      Tests  14 passed (14)\n   Start at  19:59:11\n   Duration  261ms (transform 46ms, setup 0ms, collect 171ms, tests 36ms, environment 0ms, prepare 67ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 0.5,
+        "weight": 0.2,
+        "weighted_score": 0.1,
+        "passed": false,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/services/product-service.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "src/services/order-service.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "src/routes/products.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/routes/orders.ts",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*product",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "patterns_matched": 0,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "import.*services.*order",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1427
+  },
+  "session_id": "8dd6f867-7e60-440a-b73e-e703710867be"
+}

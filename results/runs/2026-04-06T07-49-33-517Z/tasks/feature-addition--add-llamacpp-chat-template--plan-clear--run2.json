@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T09:07:39.888Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 943273,
+    "duration_api_ms": 994671,
+    "num_turns": 45,
+    "total_cost_usd": 1.8611348499999998,
+    "input_tokens": 42,
+    "output_tokens": 49738,
+    "cache_read_tokens": 1356928,
+    "cache_creation_tokens": 101412,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 884696,
+    "plan_api_ms": 936298,
+    "plan_tokens_in": 29,
+    "plan_tokens_out": 46590,
+    "plan_cost_usd": 1.7149143999999998,
+    "plan_content": "Here is the implementation plan. Review it and approve when ready.\n\n---\n\n## Plan: Add `mistral-instruct-v3` Specialized Chat Template Handler\n\n### Context\n\n`common/chat.cpp` hosts a set of **specialized template handlers** — static functions for model families with unique token/tool-call formats that the generic autoparser cannot reliably handle. Each is registered inside `common_chat_try_specialized_template()` via pattern-matching on the template source string.\n\nThe existing Ministral 3 / Magistral Large handler covers Mistral-family templates that use `[SYSTEM_PROMPT]...[/SYSTEM_PROMPT]`. This plan adds a new handler for the simpler **Mistral Instruct v0.3 format**, which wraps user turns in `[INST]/[/INST]`, prepends system messages to the first user turn, and ends assistant turns with `</s>` — without using `[SYSTEM_PROMPT]`.\n\n**Constraint:** Only new code is added — no existing handler bodies or `common/chat.h` are modified.\n\n---\n\n### Only file touched: `common/chat.cpp`\n\n---\n\n### Step 1 — New handler function\n\nInserted **after** `common_chat_params_init_gigachat_v3` (ends ~line 1517), **before** `namespace workaround {` (line 1519):\n\n```cpp\n// Mistral Instruct v0.3 handler\n// Format: system message prepended to first [INST] turn, user wrapped in [INST]/[/INST],\n// assistant content followed by </s>.\nstatic common_chat_params common_chat_params_init_mistral_instruct_v3(\n        const common_chat_template &          tmpl,\n        const autoparser::generation_params & inputs) {\n    common_chat_params data;\n\n    data.prompt           = common_chat_template_direct_apply_impl(tmpl, inputs);\n    data.format           = COMMON_CHAT_FORMAT_PEG_NATIVE;\n    data.preserved_tokens = {\n        \"[INST]\",\n        \"[/INST]\",\n    };\n\n    auto parser = build_chat_peg_parser([&](common_chat_peg_builder & p) {\n        return p.prefix(inputs.generation_prompt) + p.content(p.rest());\n    });\n\n    data.parser = parser.save();\n    return data;\n}\n```\n\nThe Mistral v0.3 format places no structural tokens around assistant output — the model generates content immediately after `[/INST]`. `p.prefix(inputs.generation_prompt)` skips any trailing generation-prompt bytes; `p.content(p.rest())` captures everything else as assistant content.\n\n---\n\n### Step 2 — Detection block in `common_chat_try_specialized_template()`\n\nInserted immediately **before** the final `return std::nullopt;` (after the GigaChatV3 block, ~line 1690):\n\n```cpp\n// Mistral Instruct v0.3 - wraps user turns with [INST]/[/INST], prepends system to first\n// user turn, appends </s> after assistant turns.\n// Distinguished from Ministral/Magistral Large 3 by absence of [SYSTEM_PROMPT].\n// [AVAILABLE_TOOLS] exclusion prevents capturing Nemo-style templates that carry\n// their own tool-call format and are correctly handled by the autoparser.\nif (src.find(\"[INST]\") != std::string::npos &&\n    src.find(\"[SYSTEM_PROMPT]\") == std::string::npos &&\n    src.find(\"[AVAILABLE_TOOLS]\") == std::string::npos) {\n    LOG_DBG(\"Using specialized template: mistral-instruct-v3\\n\");\n    return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n}\n```\n\n| Check | Purpose |\n|---|---|\n| `[INST]` present | Identifies the Mistral `[INST]/[/INST]` family |\n| `[SYSTEM_PROMPT]` absent | Distinguishes from Ministral 3 / Mistral v7 (as specified) |\n| `[AVAILABLE_TOOLS]` absent | Excludes Nemo and other tool-capable templates (prevents regression of existing peg_tester tests) |\n\n---\n\n### Nothing else changes\n\n- `common/chat.h` — no new declarations needed; the function is `static`\n- `src/llama-chat.h` / `src/llama-chat.cpp` — the older enum-based system is unrelated\n- All existing handler function bodies — untouched\n\n---\n\n### Verification\n\n1. The Mistral Nemo template source contains `[AVAILABLE_TOOLS]`, so the new check evaluates `false` → Nemo continues through the autoparser → no regression\n2. A template with `[INST]` but without `[SYSTEM_PROMPT]` or `[AVAILABLE_TOOLS]` (pure Mistral v0.3) hits the new handler\n3. `ctest -R test-chat` should pass unchanged",
+    "execute_duration_ms": 58577,
+    "execute_api_ms": 58373,
+    "execute_tokens_in": 13,
+    "execute_tokens_out": 3148,
+    "execute_cost_usd": 0.14622045
+  },
+  "evaluation": {
+    "overall_score": 0.925,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 6,
+          "check_details": [
+            {
+              "path": "common/chat.cpp",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"mistral_instruct_v3\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"common_chat_params_init_mistral_instruct_v3\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"[INST]\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"[/INST]\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"COMMON_CHAT_FORMAT_CONTENT_ONLY\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.75,
+        "weight": 0.3,
+        "weighted_score": 0.22499999999999998,
+        "passed": false,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 4,
+          "pattern_results": [
+            {
+              "pattern": "static common_chat_params common_chat_params_init_mistral_instruct_v3",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "\\[INST\\].*\\[/INST\\]",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "LOG_DBG.*[Mm]istral [Ii]nstruct v3",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "common_chat_params_init_mistral_instruct_v3\\(tmpl, params\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -c 'mistral_instruct_v3' common/chat.cpp",
+          "exit_code": 0,
+          "output": "2\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 7
+  },
+  "session_id": "21a8eba0-dcd7-4672-8927-73b2464ee492"
+}

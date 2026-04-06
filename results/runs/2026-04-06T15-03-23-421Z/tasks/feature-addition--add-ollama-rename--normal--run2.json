@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-ollama-rename",
+  "task_name": "add model rename API endpoint and CLI command",
+  "mode": "normal",
+  "run_number": 2,
+  "timestamp": "2026-04-06T15:43:02.845Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 229196,
+    "duration_api_ms": 227271,
+    "num_turns": 26,
+    "total_cost_usd": 0.5933745999999999,
+    "input_tokens": 23,
+    "output_tokens": 9959,
+    "cache_read_tokens": 502216,
+    "cache_creation_tokens": 24382,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "All rubric requirements fully met: (1) RenameRequest struct in api/types.go with correctly json-tagged Source and Destination fields; (2) Client.Rename method in api/client.go POSTs to /api/rename; (3) Server RenameHandler in server/routes.go properly validates inputs, copies model via CopyModel(), deletes source with srcManifest.Remove(), returns 404 StatusNotFound when source missing and 409 StatusConflict when destination exists; (4) Route registration r.POST(\"/api/rename\", s.RenameHandler) correctly wired; (5) CLI command \"rename SOURCE DESTINATION\" with cobra.ExactArgs(2); (6) CLI RenameHandler calls client.Rename method with proper request construction; (7) No existing test files or code modified or removed. Implementation is complete, follows existing patterns, includes proper error handling, and preserves all existing functionality.",
+          "diff_length": 5131,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 11057
+  },
+  "session_id": "658d0f3b-2472-4ed3-8a8d-f3c033ee3982"
+}

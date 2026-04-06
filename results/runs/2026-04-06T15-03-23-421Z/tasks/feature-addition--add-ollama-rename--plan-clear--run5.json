@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-ollama-rename",
+  "task_name": "add model rename API endpoint and CLI command",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T15:51:08.820Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 456636,
+    "duration_api_ms": 452530,
+    "num_turns": 48,
+    "total_cost_usd": 1.1219490500000002,
+    "input_tokens": 45,
+    "output_tokens": 19022,
+    "cache_read_tokens": 828254,
+    "cache_creation_tokens": 59789,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 336369,
+    "plan_api_ms": 333484,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 10558,
+    "plan_cost_usd": 0.7593864500000003,
+    "plan_content": "## Plan: Add `ollama rename` Feature\n\nHere's what I found and how I'll implement it.\n\n---\n\n### How the existing code works\n\nOllama uses **Gin** for HTTP routing, **Cobra** for CLI, and a 4-layer pattern:\n\n1. `api/types.go` — request/response structs\n2. `api/client.go` — HTTP client methods (`Copy`, `Delete`, etc.)\n3. `server/routes.go` — server handlers + route registration\n4. `cmd/cmd.go` — CLI handler functions + Cobra command definitions\n\nEvery \"model operation\" (copy, delete, push, pull) follows an identical boilerplate. The rename is a copy-then-delete, reusing `CopyModel()` from `server/images.go` and `manifest.ParseNamedManifest()` / `m.Remove()` / `m.RemoveLayers()` from the manifest package.\n\n---\n\n### 8 targeted edits across 4 files\n\n| # | File | What | Line |\n|---|------|------|------|\n| 1 | `api/types.go` | Add `RenameRequest{Source, Destination string}` | After `CopyRequest` (~765) |\n| 2 | `api/client.go` | Add `Client.Rename()` via `POST /api/rename` | After `Delete()` (~395) |\n| 3 | `server/routes.go` | Add `RenameHandler` func | After `CopyHandler` (~1483) |\n| 4 | `server/routes.go` | Register `r.POST(\"/api/rename\", s.RenameHandler)` | After `/api/copy` (~1698) |\n| 5 | `cmd/cmd.go` | Add `RenameHandler` CLI func | After CLI `CopyHandler` (~1350) |\n| 6 | `cmd/cmd.go` | Add `renameCmd` Cobra definition | After `copyCmd` (~2263) |\n| 7 | `cmd/cmd.go` | Add `renameCmd` to env-docs loop | ~line 2298 |\n| 8 | `cmd/cmd.go` | Add `renameCmd` to `rootCmd.AddCommand()` | ~line 2345 |\n\n---\n\n### Handler logic\n\n```\nPOST /api/rename  {\"source\": \"...\", \"destination\": \"...\"}\n```\n\n1. Bind + validate JSON → **400** on bad/missing body or invalid names\n2. `manifest.ParseNamedManifest(src)` → **404** if source doesn't exist  *(same technique used by `DeleteHandler`)*\n3. `manifest.ParseNamedManifest(dst)` succeeds → **409** destination already exists\n4. `CopyModel(src, dst)` — copies only the manifest file (blobs are shared by content-addressed digest)\n5. `srcManifest.Remove()` + `srcManifest.RemoveLayers()` — deletes source manifest; prunes blobs no longer referenced by any manifest (safe because the destination now points to them)\n6. **200** empty body on success",
+    "execute_duration_ms": 120267,
+    "execute_api_ms": 119046,
+    "execute_tokens_in": 27,
+    "execute_tokens_out": 8464,
+    "execute_cost_usd": 0.3625626
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "All rubric requirements fully satisfied: (1) RenameRequest struct correctly defined with Source/Destination fields and proper json tags; (2) Client.Rename method POSTs to /api/rename as required; (3) RenameHandler implements copy-then-delete logic with 404 on missing source (via manifest.ParseNamedManifest) and 409 on existing destination (http.StatusConflict); (4) Route r.POST(\"/api/rename\", s.RenameHandler) properly registered after /api/copy; (5) CLI command \"rename SOURCE DESTINATION\" with cobra.ExactArgs(2) defined; (6) CLI RenameHandler correctly calls api.ClientFromEnvironment() and client.Rename(); (7) Only additions made—no existing files or tests modified. Implementation follows existing patterns, error handling is comprehensive, and all status codes are correct.",
+          "diff_length": 7519,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 13407
+  },
+  "session_id": "3160a6a5-600e-42ec-bee2-a27d54079aa4"
+}

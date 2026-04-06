@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T12:04:21.247Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 633905,
+    "duration_api_ms": 783528,
+    "num_turns": 45,
+    "total_cost_usd": 1.92648265,
+    "input_tokens": 44,
+    "output_tokens": 21815,
+    "cache_read_tokens": 1653949,
+    "cache_creation_tokens": 69193,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 465208,
+    "plan_api_ms": 614923,
+    "plan_tokens_in": 25,
+    "plan_tokens_out": 15156,
+    "plan_cost_usd": 1.4215624,
+    "plan_content": "Here's a summary of what the plan covers — all changes are confined to a single file: **`unsloth/save.py`**.\n\n---\n\n## Plan Summary\n\n### What's being added\nA `save_pretrained_onnx` method (and backing standalone `export_lora_to_onnx` function) that iterates the LoRA-patched layers in the model, extracts the A and B weight matrices, and writes them to an ONNX weight-only file alongside a JSON metadata sidecar.\n\n### 4 changes to `unsloth/save.py`\n\n| # | What | Where |\n|---|---|---|\n| 1 | Add `\"export_lora_to_onnx\"` to `__all__` | Line 53 |\n| 2 | Add `@torch.inference_mode` standalone `export_lora_to_onnx(model, save_directory, opset_version=17)` | After line 2561, before `not_implemented_save` |\n| 3 | Add `unsloth_save_pretrained_onnx(self, ...)` thin wrapper | Immediately after Change 2 |\n| 4 | Bind `model.save_pretrained_onnx` via `types.MethodType` in both `if not vision` and `else` branches of `patch_saving_functions` | Lines 2667 and 2675 |\n\n`unsloth/__init__.py` needs no changes — it already does `from .save import *`.\n\n### ONNX structure (initializer-as-output pattern)\nThe ONNX graph has **zero nodes, zero inputs**. All adapter tensors are stored as **initializers** and simultaneously listed as **graph outputs** — a standard ONNX weight-only format. Tensor names use the convention `\"{module_name}.lora_A\"` / `\"{module_name}.lora_B\"`. All weights are cast to `float32` for maximum ONNX compatibility.\n\n### Output files\n```\noutput_dir/\n├── lora_adapters.onnx      # weight-only ONNX model\n└── lora_metadata.json      # {opset_version, rank, alpha, target_modules, adapter_layers}\n```\n\n### Error handling\n- `ImportError` with `pip install onnx` hint if `onnx` isn't installed\n- `ValueError` if no active (non-merged) LoRA adapters are found\n- Soft warning (non-fatal) if `onnx.checker` reports a validation issue",
+    "execute_duration_ms": 168697,
+    "execute_api_ms": 168605,
+    "execute_tokens_in": 19,
+    "execute_tokens_out": 6659,
+    "execute_cost_usd": 0.5049202500000001
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'onnx\\|export_to_onnx\\|ONNX' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "grep -r 'export_to_onnx' unsloth/ | wc -l | xargs test 0 -lt",
+          "exit_code": 1,
+          "output": ""
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "find unsloth/ -name '*.py' -newer unsloth/__init__.py | wc -l | xargs test 0 -lt || find unsloth/ -name '*.py' | xargs grep -l 'onnx' | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 81
+  },
+  "session_id": "504fdcf6-f56c-4ce2-b569-1a983cc88eaa"
+}

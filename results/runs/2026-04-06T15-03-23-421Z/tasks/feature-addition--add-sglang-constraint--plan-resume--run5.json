@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T16:47:06.662Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 907175,
+    "duration_api_ms": 1091621,
+    "num_turns": 69,
+    "total_cost_usd": 3.2388742499999994,
+    "input_tokens": 60,
+    "output_tokens": 41478,
+    "cache_read_tokens": 4267991,
+    "cache_creation_tokens": 181331,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 581198,
+    "plan_api_ms": 765914,
+    "plan_tokens_in": 19,
+    "plan_tokens_out": 20369,
+    "plan_cost_usd": 1.45333605,
+    "plan_content": "Here is the complete implementation plan.\n\n---\n\n## Plan: Add `json_path` Output Constraint to SGLang\n\n### Strategy\n\n**Convert JSONPath → JSON Schema → existing constrained decoding.** Rather than writing a new grammar backend, the JSONPath expression is parsed and converted into a minimal JSON Schema that requires the path's structure to exist in the generated JSON. The existing `dispatch_json()` infrastructure (xgrammar, outlines, llguidance) then handles constrained decoding as it does today. **No per-backend changes are needed.**\n\n---\n\n### New File: `json_path_converter.py`\n\nThe core of the feature. `json_path_to_schema(\"$.store.book[*].author\")` parses the path bottom-up and produces:\n```json\n{\"type\":\"object\",\"properties\":{\"store\":{\"type\":\"object\",\"properties\":{\"book\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"author\":{}},\"required\":[\"author\"]}}},\"required\":[\"book\"]}},\"required\":[\"store\"]}\n```\n\nSupported segments: `.field`, `['field']`, `[*]`, `[N]`. Falls back to `{\"type\":\"object\"}` (valid JSON) for unsupported features like recursive descent `..`, filters `?`, and scripts `(`.\n\n---\n\n### 7 Files to Modify\n\n| File | Change |\n|------|--------|\n| `srt/sampling/sampling_params.py` | Add `json_path` param + store it + include in mutual-exclusion check |\n| `srt/constrained/grammar_manager.py` | Detect `json_path` in `process_req_with_grammar()`, create key `(\"json_path\", ...)` |\n| `srt/constrained/base_grammar_backend.py` | Add `dispatch_json_path()` default method + `elif key_type == \"json_path\"` dispatch |\n| `lang/ir.py` | Add `json_path` to `SglSamplingParams`, `clone()`, `to_srt_kwargs()`, `SglGen.__init__()` |\n| `lang/api.py` | Add `json_path` parameter to `gen()`, pass to `SglGen` |\n| `lang/interpreter.py` | Add `\"json_path\"` to `_resolve_sampling_params()` param list |\n| `srt/entrypoints/openai/protocol.py` | Add `json_path: Optional[str] = None` to both completions + chat completions Pydantic models |\n\n### 2 New Files\n\n- **`srt/constrained/json_path_converter.py`** — `json_path_to_schema()` conversion utility\n- **`test/kits/json_path_constrained_kit.py`** — `TestJSONPathConstrainedMixin` test class",
+    "execute_duration_ms": 325977,
+    "execute_api_ms": 325707,
+    "execute_tokens_in": 41,
+    "execute_tokens_out": 21109,
+    "execute_cost_usd": 1.7855381999999995
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation that fully meets rubric requirements. Created json_path_converter.py with comprehensive JSONPath-to-schema conversion logic that validates output contains the specified path pattern. Properly registered as a new constraint throughout the system: added to SglSamplingParams IR definition, integrated into grammar_manager dispatch logic, added to sampling_params validation (mutually exclusive with other constraints), registered in OpenAI protocol, and included in interpreter/API layers. Follows identical patterns to existing constraints (json_schema, regex, ebnf). Includes comprehensive test suite with edge cases. Only minor note: validation is indirect via JSON schema conversion rather than direct JSONPath validation, but this is actually a superior design choice enabling constraint reuse.",
+          "diff_length": 21900,
+          "new_files": "python/sglang/srt/constrained/json_path_converter.py\npython/sglang/test/kits/json_path_constrained_kit.py"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 15756
+  },
+  "session_id": "d26e451a-5441-40ca-a58a-9d0a8dcf9ae4"
+}

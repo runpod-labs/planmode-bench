@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T10:32:56.132Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1049975,
+    "duration_api_ms": 1185533,
+    "num_turns": 51,
+    "total_cost_usd": 3.1457655499999997,
+    "input_tokens": 46,
+    "output_tokens": 25701,
+    "cache_read_tokens": 1266669,
+    "cache_creation_tokens": 108510,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 799090,
+    "plan_api_ms": 936055,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 9598,
+    "plan_cost_usd": 2.4687723499999996,
+    "plan_content": "Here's the implementation plan for `@prisma/generator-rest-client`:\n\n---\n\n## What will be created\n\n**10 new files** in `packages/generator-rest-client/`:\n\n| File | Purpose |\n|------|---------|\n| `package.json` | `@prisma/generator-helper` & `@prisma/dmmf` in **`devDependencies`** so they bundle into the self-contained executable |\n| `tsconfig.json` / `tsconfig.build.json` | Extends existing root configs |\n| `helpers/build.ts` | 2-line `adapterConfig` build → dual CJS/ESM to `dist/` |\n| `src/index.ts` | `generatorHandler` entry point — `onManifest` + `onGenerate` |\n| `src/generate.ts` | Iterates models, writes one `.ts` file per model + `enums.ts` + `index.ts` |\n| `src/map-scalar-type.ts` | `String→string`, `DateTime→Date`, `Json→unknown`, `Bytes→string`, etc. |\n| `src/build-model-interface.ts` | `interface Model {}` — scalar/enum fields only; relations excluded |\n| `src/build-input-types.ts` | `WhereUniqueInput` (id/unique fields), `CreateInput` (auto-defaults optional), `UpdateInput` (all optional, no `isReadOnly` FK fields) |\n| `src/build-model-client.ts` | `ModelRestClient` class with 5 CRUD methods using native `fetch` |\n| `src/build-index-file.ts` | Output `index.ts` with `export * from './model-name'` per model |\n\n**1 existing file modified:**\n\n- **`tsconfig.build.bundle.json`** — add `\"@prisma/generator-rest-client\": [\"./packages/generator-rest-client/src\"]` to `paths`\n\n---\n\n## Key confirmed design decisions\n\n- **`devDependencies` for bundled deps** — directly confirmed from `helpers/compile/build.ts` `getProjectExternals()`: when `bundle: true`, all `dependencies` are marked external by esbuild. Putting `@prisma/generator-helper` and `@prisma/dmmf` in `devDependencies` means they get bundled into `dist/index.js`, making the generator self-contained.\n- **Out-of-process `generatorHandler`** — no changes to `client-generator-registry`. Users invoke it via `provider = \"node ./dist/index.js\"` in their schema.\n- **One file per model** — follows the monorepo's \"avoid barrel files\" convention.\n- **Native `fetch`** — no extra runtime deps in the generated client.\n- **Composite `uniqueIndexes` deferred** — v1 handles only single-field `@id`/`@unique`; documented with a comment.",
+    "execute_duration_ms": 250885,
+    "execute_api_ms": 249478,
+    "execute_tokens_in": 30,
+    "execute_tokens_out": 16103,
+    "execute_cost_usd": 0.6769932000000001
+  },
+  "evaluation": {
+    "overall_score": 0.4928571428571429,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0.8571428571428571,
+        "weight": 0.4,
+        "weighted_score": 0.34285714285714286,
+        "passed": false,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 7,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"prisma\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "contains \"generator\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"generatorHandler\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "contains \"onGenerate\"",
+              "passed": true
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 2,
+          "output": "../generator-helper/src/GeneratorProcess.ts(6,23): error TS2307: Cannot find module 'cross-spawn' or its corresponding type declarations.\n../generator-helper/src/GeneratorProcess.ts(86,7): error TS2532: Object is possibly 'undefined'.\n../generator-helper/src/GeneratorProcess.ts(101,7): error TS2532: Object is possibly 'undefined'.\n../generator-helper/src/GeneratorProcess.ts(103,7): error TS2532: Object is possibly 'undefined'.\n../generator-helper/src/GeneratorProcess.ts(125,16): error TS2532: Object is possibly 'undefined'.\n../generator-helper/src/GeneratorProcess.ts(142,7): error TS2532: Object is possibly 'undefined'.\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/generator-rest-client/src/generator.ts"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "generatorHandler",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "onGenerate|onManifest",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1264
+  },
+  "session_id": "2f0d86ac-4418-43ed-a780-4ab30e3e0504"
+}

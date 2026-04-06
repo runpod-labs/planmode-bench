@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "plan-resume",
+  "run_number": 7,
+  "timestamp": "2026-04-06T12:39:40.011Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 689329,
+    "duration_api_ms": 958887,
+    "num_turns": 96,
+    "total_cost_usd": 3.5524505,
+    "input_tokens": 92,
+    "output_tokens": 33283,
+    "cache_read_tokens": 6365799,
+    "cache_creation_tokens": 158056,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 320665,
+    "plan_api_ms": 590552,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 8376,
+    "plan_cost_usd": 1.05966845,
+    "plan_content": "Here's a summary of the plan I've written:\n\n## Plan: Add Top-A Sampling to vLLM\n\n**Algorithm:** Top-A keeps tokens whose probability ≥ `top_a × max_probability`. This is algorithmically identical to the existing `min_p` filter — the implementation follows the `min_p` pattern exactly throughout the codebase.\n\n### 7 files to modify:\n\n| File | Change |\n|------|--------|\n| `vllm/sampling_params.py` | Add `top_a: float = 0.0` field, validation (`[0,1]`), `from_optional` param, greedy reset |\n| `vllm/entrypoints/openai/protocol.py` | Add `top_a` to both `ChatCompletionRequest` and `CompletionRequest` (field + default dict + `to_sampling_params`) |\n| `vllm/model_executor/sampling_metadata.py` | Add `top_as` tensor to `SamplingTensors`, extract + flag it in `from_sampling_metadata`, thread through `from_lists` |\n| `vllm/model_executor/layers/sampler.py` | Unpack `do_top_a`, add `_apply_top_a()` function (mirrors `_apply_min_p`), call it in `forward()` |\n| `vllm/v1/worker/gpu_input_batch.py` | Add `top_a` CPU/GPU tensor pair + tracking set, extraction, removal, condensing, `no_top_a` property |\n| `vllm/v1/sample/metadata.py` | Add `top_a: Optional[torch.Tensor]` field |\n| `vllm/v1/sample/sampler.py` | Apply a `_apply_top_a_v1` helper on logits before `topk_topp_sampler` is called |\n\nThe TPU path (`tpu_input_batch.py`, `tpu/metadata.py`) and the FlashInfer path in `topk_topp_sampler.py` are **not modified** — top_a is applied as a pre-filter on logits before those samplers are invoked.",
+    "execute_duration_ms": 368664,
+    "execute_api_ms": 368335,
+    "execute_tokens_in": 74,
+    "execute_tokens_out": 24907,
+    "execute_cost_usd": 2.49278205
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.35,
+        "weighted_score": 0.35,
+        "passed": true,
+        "details": {
+          "checks_passed": 2,
+          "checks_total": 2,
+          "check_details": [
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "vllm/sampling_params.py",
+              "check": "contains \"top_a\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "patterns_matched": 2,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "top_a.*float|float.*top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "0\\.0.*top_a|top_a.*0\\.0",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "python3 -c 'import ast; ast.parse(open(\"vllm/sampling_params.py\").read()); print(\"Syntax OK\")'",
+          "exit_code": 0,
+          "output": "Syntax OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "top_a",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 32
+  },
+  "session_id": "5efd09c5-28fb-4f16-bab4-fe8b02d3c58c"
+}

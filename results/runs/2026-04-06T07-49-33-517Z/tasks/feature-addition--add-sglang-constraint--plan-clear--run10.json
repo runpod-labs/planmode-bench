@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-clear",
+  "run_number": 10,
+  "timestamp": "2026-04-06T11:07:22.533Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 674397,
+    "duration_api_ms": 739566,
+    "num_turns": 81,
+    "total_cost_usd": 2.3646547,
+    "input_tokens": 64,
+    "output_tokens": 37039,
+    "cache_read_tokens": 2700558,
+    "cache_creation_tokens": 137864,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 348647,
+    "plan_api_ms": 415474,
+    "plan_tokens_in": 21,
+    "plan_tokens_out": 15601,
+    "plan_cost_usd": 1.2332391999999999,
+    "plan_content": "Here is the complete implementation plan:\n\n---\n\n## Plan: Add `json_path` Output Constraint to SGLang\n\n### Technical Approach\n\nThe `json_path` constraint (e.g. `\"$.store.book[*].author\"`) is implemented by **converting the JSONPath expression into a JSON Schema** that captures the nested structure implied by the path, then delegating entirely to the existing `dispatch_json()` machinery. This means all three grammar backends (xgrammar, outlines, llguidance) gain support for free, with only a thin shim method per backend.\n\n---\n\n### Files to Change\n\n**New file:**\n- `python/sglang/srt/constrained/json_path_utils.py` — stdlib-only JSONPath parser + JSON Schema emitter; no new dependencies\n\n**11 existing files modified:**\n\n| # | File | Change |\n|---|------|--------|\n| 1 | `srt/constrained/base_grammar_backend.py` | Add `dispatch_json_path()` stub + `\"json_path\"` case in `_init_value_dispatch()` |\n| 2 | `srt/constrained/grammar_manager.py` | Detect `json_path` in condition, key-selection `elif`, and error message |\n| 3 | `srt/constrained/xgrammar_backend.py` | Implement `dispatch_json_path()` → convert path → call `dispatch_json()` |\n| 4 | `srt/constrained/outlines_backend.py` | Same pattern |\n| 5 | `srt/constrained/llguidance_backend.py` | Same pattern |\n| 6 | `srt/sampling/sampling_params.py` | Add `json_path` parameter + add it to mutual-exclusion `verify()` check |\n| 7 | `srt/entrypoints/openai/protocol.py` | Add `json_path` field to `CompletionRequest`, `ChatCompletionRequest`, and `to_sampling_params()` |\n| 8 | `srt/entrypoints/openai/serving_completions.py` | Add `\"json_path\": request.json_path` in `_build_sampling_params()` |\n| 9 | `lang/ir.py` | Add `json_path` to `SglSamplingParams`, `to_srt_kwargs()`, and `SglGen.__init__()` |\n| 10 | `lang/api.py` | Add `json_path` param to `gen()`, pass to `SglGen` |\n\n---\n\n### Key Design Decisions\n\n1. **No new dependencies** — The JSONPath parser uses only `re` + `json` from the stdlib.\n2. **Reuses all existing backends** — `dispatch_json_path()` converts to a schema string and calls `self.dispatch_json()` in each backend. Zero new grammar compilation logic.\n3. **Mutual exclusivity** — `json_path` joins the existing mutex group (`json_schema`, `regex`, `ebnf`) in `SamplingParams.verify()`.\n4. **Recursive descent (`$..field`) is approximated** — Returns `{\"type\": \"object\"}` with a logged warning, since JSON Schema cannot express recursive descent. All other common path patterns are fully supported.\n5. **`validate_json_path()` utility** — A post-generation validator (no external lib) is included in `json_path_utils.py` for callers who want to confirm the output matches at runtime.",
+    "execute_duration_ms": 325750,
+    "execute_api_ms": 324092,
+    "execute_tokens_in": 43,
+    "execute_tokens_out": 21438,
+    "execute_cost_usd": 1.1314155000000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 343
+  },
+  "session_id": "1a6cbcf6-30e1-4ebd-8d2c-00b6e6c9222c"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T17:35:59.064Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 583273,
+    "duration_api_ms": 738440,
+    "num_turns": 80,
+    "total_cost_usd": 2.38247065,
+    "input_tokens": 9550,
+    "output_tokens": 28778,
+    "cache_read_tokens": 3054093,
+    "cache_creation_tokens": 125074,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 304714,
+    "plan_api_ms": 461297,
+    "plan_tokens_in": 2941,
+    "plan_tokens_out": 10866,
+    "plan_cost_usd": 1.03946095,
+    "plan_content": "Here is the complete implementation plan. The change is deliberately narrow — `top_a` follows the **exact same pattern as `min_p`** at every level of the stack, so there are no architectural surprises.\n\n---\n\n## Summary of the Plan\n\n**5 files to touch, all mechanical edits:**\n\n### 1. `vllm/sampling_params.py`\n- Add `top_a: float = 0.0` field (after `min_p`, line 214)\n- Add to `from_optional()` signature and its internal `SamplingParams(...)` call\n- Reset to `0.0` in `__post_init__` when temperature is below epsilon (greedy path)\n- Validate range `[0.0, 1.0]` in `_verify_args()`\n- Add to `__repr__`\n\n### 2. `vllm/model_executor/sampling_metadata.py`\n- Add `top_as: torch.Tensor` to the `SamplingTensors` dataclass\n- In `from_sampling_metadata()`: accumulate `top_as` list, detect `do_top_a` flag, populate per prefill/sample entry\n- Widen the return tuple from 4-tuple to 5-tuple (adds `do_top_a`)\n- In `from_lists()`: add `top_as` parameter, build tensor, transfer to device\n\n### 3. `vllm/model_executor/layers/sampler.py` (V0 path)\n- Unpack `do_top_a` from the now-5-tuple `from_sampling_metadata()` return in `_init_sampling_tensors()`\n- Extract and apply in `forward()` right after the `min_p` block\n- Add `_apply_top_a()` function modeled on `_apply_min_p()` (identical math, different variable name)\n\n### 4. `vllm/v1/sample/logits_processor.py` (V1 path)\n- Add `TopALogitsProcessor` class after `MinPLogitsProcessor` — copy structure verbatim, swap `min_p` → `top_a`\n- Register it in `init_builtin_logitsprocs()` alongside `min_p_logitproc` in the `argmax_invariant` list\n\n### 5. `vllm/entrypoints/openai/protocol.py`\n- Add `top_a: Optional[float] = None` field + `\"top_a\": 0.0` default + defaulting logic + pass-through in `to_sampling_params()` for all three request classes: `ChatCompletionRequest`, `CompletionRequest`, `TranscriptionCreateRequest`",
+    "execute_duration_ms": 278559,
+    "execute_api_ms": 277143,
+    "execute_tokens_in": 6609,
+    "execute_tokens_out": 17912,
+    "execute_cost_usd": 1.3430096999999999
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.45,
+        "weight": 1,
+        "weighted_score": 0.45,
+        "passed": false,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Critical algorithmic error: The rubric specifies the filtering logic should be 'mask tokens below top_a * max_prob', but the implementation computes 'top_a * max_prob^2' (squaring the max probability) in both V0 sampler.py (_apply_top_a function) and V1 logits_processor.py (TopALogitsProcessor.apply). This is a fundamental deviation from the specified algorithm. However, the implementation does successfully: (1) add top_a parameter with correct default 0.0 and range [0.0, 1.0] validation, (2) thread the value through all intermediate data structures (sampling_params → sampling_metadata → sampler/logits_processor), and (3) follow syntactic Python conventions. Minor issues include missing docstring on the SamplingParams.top_a field itself and misleading documentation in TranscriptionRequest. The structure and threading are solid, but the core algorithm is incorrect per rubric specification.",
+          "diff_length": 20342,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 21978
+  },
+  "session_id": "12ebd1d4-0c05-462e-959a-ccf2190ec602"
+}

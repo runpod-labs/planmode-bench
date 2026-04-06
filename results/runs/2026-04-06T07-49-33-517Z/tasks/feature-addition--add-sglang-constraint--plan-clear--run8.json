@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-clear",
+  "run_number": 8,
+  "timestamp": "2026-04-06T11:01:45.179Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 541749,
+    "duration_api_ms": 614437,
+    "num_turns": 65,
+    "total_cost_usd": 1.6687596499999997,
+    "input_tokens": 52,
+    "output_tokens": 23537,
+    "cache_read_tokens": 1643909,
+    "cache_creation_tokens": 93846,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 365497,
+    "plan_api_ms": 439674,
+    "plan_tokens_in": 23,
+    "plan_tokens_out": 11207,
+    "plan_cost_usd": 1.0195288999999998,
+    "plan_content": "Here is the complete plan:\n\n---\n\n## Plan: Add `json_path` Output Constraint to SGLang\n\n### How it works\n\nA JSONPath like `$.store.book[*].author` is converted to a nested JSON Schema (requiring the path to exist) and routed through the **existing `dispatch_json` machinery** — so the three backend files (`xgrammar_backend.py`, `outlines_backend.py`, `llguidance_backend.py`) need **zero changes**.\n\n### 7 files to touch (+ 1 new file)\n\n| # | File | Change |\n|---|------|--------|\n| 1 | **`srt/constrained/json_path_converter.py`** | **New file** — `json_path_to_json_schema()` converts `$.a.b[*].c` → JSON Schema dict |\n| 2 | **`srt/constrained/base_grammar_backend.py`** | Add `dispatch_json_path()` default impl (converts → calls `dispatch_json`); add `\"json_path\"` case in `_init_value_dispatch()` |\n| 3 | **`srt/constrained/grammar_manager.py`** | Detect `req.sampling_params.json_path`, build `(\"json_path\", ...)` cache key, update error message |\n| 4 | **`srt/sampling/sampling_params.py`** | Add `json_path` field; add to mutual-exclusivity check in `verify()` |\n| 5 | **`lang/ir.py`** | Add `json_path` to `SglSamplingParams` dataclass, `clone()`, `to_srt_kwargs()`, and `SglGen.__init__` |\n| 6 | **`lang/api.py`** | Add `json_path=None` param to `gen()`, pass to `SglGen()` |\n| 7 | **`lang/interpreter.py`** | Add `\"json_path\"` to `_resolve_sampling_params()` merge list |\n\n### JSONPath → JSON Schema conversion\n\n`$.store.book[*].author` produces:\n```json\n{\"type\":\"object\",\"properties\":{\"store\":{\"type\":\"object\",\"properties\":{\"book\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"author\":{}},\"required\":[\"author\"]}}},\"required\":[\"book\"]}},\"required\":[\"store\"]}\n```\n\nSupported syntax: dot-notation properties, `[*]` array wildcards, `[N]` numeric indices.\n\n### Public API after implementation\n```python\nsgl.gen(\"output\", max_tokens=200, json_path=\"$.store.book[*].author\")\n```",
+    "execute_duration_ms": 176252,
+    "execute_api_ms": 174763,
+    "execute_tokens_in": 29,
+    "execute_tokens_out": 12330,
+    "execute_cost_usd": 0.64923075
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 364
+  },
+  "session_id": "164a5211-25ec-4301-a53d-e241ee89829b"
+}

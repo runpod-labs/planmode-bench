@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T17:32:08.458Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 601477,
+    "duration_api_ms": 697098,
+    "num_turns": 77,
+    "total_cost_usd": 3.144900849999999,
+    "input_tokens": 72,
+    "output_tokens": 32386,
+    "cache_read_tokens": 5188901,
+    "cache_creation_tokens": 175059,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 301352,
+    "plan_api_ms": 397273,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 12336,
+    "plan_cost_usd": 1.10537095,
+    "plan_content": "Here is the complete implementation plan for adding `top_a` sampling to vLLM.\n\n---\n\n## What Top-A Sampling Does\n\nKeeps only tokens whose softmax probability ≥ `top_a × max_prob²` (the squaring makes the threshold adaptive to the sharpness of the distribution — a very peaked distribution means fewer tokens survive; a flat one lets more through). Then the sampler renormalizes via softmax as usual. `top_a = 0.0` means disabled.\n\n---\n\n## Files to Modify (5 total)\n\n| File | What changes |\n|------|-------------|\n| `vllm/sampling_params.py` | New `top_a: float = 0.0` field, docstring, range validation, greedy reset, `from_optional()`, `__repr__()` |\n| `vllm/model_executor/sampling_metadata.py` | New `top_as: torch.Tensor` in `SamplingTensors`; collect per-sequence values; add `do_top_a` flag; thread through `from_lists()` |\n| `vllm/model_executor/layers/sampler.py` | New `_apply_top_a()` function; unpack `do_top_a`; call it in `forward()` after `_apply_min_p` |\n| `vllm/v1/sample/logits_processor.py` | New `TopALogitsProcessor` class (mirrors `MinPLogitsProcessor`); register in `init_builtin_logitsprocs()` as argmax-invariant |\n| `vllm/entrypoints/openai/protocol.py` | `top_a: Optional[float] = None` in both `ChatCompletionRequest` and `CompletionRequest`; default `0.0`; thread through `to_sampling_params()` |\n\n---\n\n## Key Design Decisions\n\n1. **Formula is `top_a × max_prob²`** — this matches the original Top-A paper and the oobabooga reference implementation. Squaring makes the threshold self-adapt to distribution sharpness.\n\n2. **V0 uses the `SamplingTensors` batched-tensor path** (same as `min_p`), returning a 5-element tuple from `from_sampling_metadata()` instead of 4.\n\n3. **V1 uses the `LogitsProcessor` plugin path** (same as `min_p`) — the `TopALogitsProcessor` manages its own CPU/GPU pinned tensors and responds to `BatchUpdate` events. No changes needed to `gpu_input_batch.py` or `v1/sample/metadata.py`.\n\n4. **`top_a = 0.0` is treated as disabled** (the flag `do_top_a` / `top_a_count` ensures no-op cost is zero).\n\n5. **Greedy sampling resets `top_a` to 0.0** in `__post_init__()`, consistent with how `min_p`, `top_p`, and `top_k` are reset.",
+    "execute_duration_ms": 300125,
+    "execute_api_ms": 299825,
+    "execute_tokens_in": 54,
+    "execute_tokens_out": 20050,
+    "execute_cost_usd": 2.0395298999999993
+  },
+  "evaluation": {
+    "overall_score": 0.92,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.92,
+        "weight": 1,
+        "weighted_score": 0.92,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation is comprehensive and well-integrated. All core requirements are met: (1) top_a parameter properly added to SamplingParams with float type, default 0.0, validation for [0.0, 1.0] range; (2) filtering logic implemented in _apply_top_a and TopALogitsProcessor; (3) top_a threaded through all intermediate structures (sampling_params → openai/protocol → sampling_metadata → sampler); (4) documentation provided with docstrings; (5) syntactically valid Python following vLLM conventions. Minor deduction: the implementation uses top_a * max_probability²  (squared) rather than the rubric's stated top_a * max_prob, though this matches the actual Top-A algorithm from referenced sources (text-generation-webui), suggesting the rubric's description may be simplified. Both the v0 (sampler.py) and v1 (logits_processor.py) implementations are consistent and properly integrated.",
+          "diff_length": 17224,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 25809
+  },
+  "session_id": "642c891f-a750-4b1c-b1db-38af58040953"
+}

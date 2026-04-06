@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-bun-ini-api",
+  "task_name": "add Bun.INI namespace API",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T15:24:35.430Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1100640,
+    "duration_api_ms": 1261780,
+    "num_turns": 102,
+    "total_cost_usd": 4.49809845,
+    "input_tokens": 90,
+    "output_tokens": 60444,
+    "cache_read_tokens": 8077558,
+    "cache_creation_tokens": 151724,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 315119,
+    "plan_api_ms": 478518,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 12005,
+    "plan_cost_usd": 1.10520615,
+    "plan_content": "## Implementation Plan: `Bun.INI` namespace\n\nI've fully explored the codebase and mapped the complete architecture. Here's what needs to happen across **9 files** (2 new, 7 modified):\n\n---\n\n### Files to Create\n\n**1. `src/interchange/ini.zig`** — Self-contained INI parser + stringifier\n- Line-by-line parser: skip blank lines & comments (`;`/`#`), parse `[sections]` as nested objects, parse `key=value` pairs with whitespace trimming\n- Builds an `Expr` AST (same as TOML) for parse output\n- `stringify()` walks JSValue properties directly: global scalars first, then `[section]` headers for object values\n- Values are always strings (no type coercion)\n\n**2. `src/bun.js/api/INIObject.zig`** — JS binding (parse + stringify)\n- `parse`: follows TOMLObject.zig exactly — `INI.parse() → Expr → printJSON → toJSByParseJSON`\n- `stringify`: follows YAMLObject.zig pattern — INI.stringify() → `bun.String` → JSValue\n\n---\n\n### Files to Modify (all surgical)\n\n**3. `src/interchange.zig`** — Add `pub const ini = @import(\"./interchange/ini.zig\");`\n\n**4. `src/bun.js/api.zig`** — Add `pub const INIObject = @import(\"./api/INIObject.zig\");`\n\n**5. `src/bun.js/api/BunObject.zig`** — 3 insertions:\n  - Line ~70: `pub const INI = toJSLazyPropertyCallback(Bun.getINIObject);`\n  - Line ~1289: `pub fn getINIObject(...)` getter\n  - Line ~140: `@export(&BunObject.INI, .{ .name = lazyPropertyCallbackName(\"INI\") });`\n\n**6. `src/bun.js/bindings/BunObject+exports.h`** — Add `macro(INI)` to `FOR_EACH_GETTER` (between `Glob` and `JSON5`)\n\n**7. `src/bun.js/bindings/BunObject.cpp`** — Add one row to `@begin bunObjectTable` (near line 963)\n\n**8. `packages/bun-types/bun.d.ts`** — Add `namespace INI { parse, stringify }` after `namespace TOML`\n\n**9. `test/js/bun/ini/ini.test.ts`** — New test file with parse + stringify cases\n\n---\n\n### Key Design Decisions\n- Values are always **strings** (INI has no native types)  \n- Global keys (before any `[section]`) become flat top-level properties  \n- Parse path mirrors TOML: `Expr AST → printJSON → toJSByParseJSON`  \n- Stringify: globals first, then `[section]` blocks; skips arrays/null/undefined  \n- Lazy property — `Bun.INI` created on first access (same as all other namespaces)",
+    "execute_duration_ms": 785521,
+    "execute_api_ms": 783262,
+    "execute_tokens_in": 72,
+    "execute_tokens_out": 48439,
+    "execute_cost_usd": 3.3928922999999998
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete and correct implementation. All rubric requirements met: (1) INIObject.zig created with create, parse, and stringify functions using JSGlobalObject/JSValue signatures; (2) parse handles sections as nested objects, key=value pairs, and both ; and # comments; (3) properly wired in BunObject.zig with lazy property callback (Bun.getINIObject); (4) C++ exports header updated with INI macro entry; (5) C++ hash table entry added with correct callback naming; (6) TypeScript definitions include INI namespace with properly documented parse and stringify; (7) self-contained INI parser in interchange/ini.zig with no npm dependencies; (8) follows Zig conventions using jsc.JSFunction.create, ZigString.static, @import('bun'). Comprehensive test suite covers parsing/stringifying with sections, comments, whitespace trimming, CRLF support, edge cases, and roundtrip validation. Implementation matches established patterns from TOML/JSONC formatters.",
+          "diff_length": 26235,
+          "new_files": "src/bun.js/api/INIObject.zig\nsrc/interchange/ini.zig"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19850
+  },
+  "session_id": "9ca27907-e033-417d-9e03-97fa2e5c36f6"
+}

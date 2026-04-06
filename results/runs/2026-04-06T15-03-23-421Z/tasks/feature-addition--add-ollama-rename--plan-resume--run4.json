@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-ollama-rename",
+  "task_name": "add model rename API endpoint and CLI command",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-06T15:50:33.911Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 548871,
+    "duration_api_ms": 619552,
+    "num_turns": 43,
+    "total_cost_usd": 1.5553706000000003,
+    "input_tokens": 40,
+    "output_tokens": 23915,
+    "cache_read_tokens": 1440120,
+    "cache_creation_tokens": 87363,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 370948,
+    "plan_api_ms": 441770,
+    "plan_tokens_in": 14,
+    "plan_tokens_out": 15805,
+    "plan_cost_usd": 0.8649219499999999,
+    "plan_content": "Here's the complete implementation plan:\n\n---\n\n## Plan: Add `ollama rename` Feature\n\n### What & Why\nOllama currently requires users to `cp` then `rm` to rename a model — two commands, non-atomic. This adds a first-class `rename` that does both in one call with proper error semantics (404 source missing, 409 dest exists).\n\n### 4 files, 8 targeted edits\n\n#### `api/types.go` — after line 765 (after `CopyRequest`)\nAdd `RenameRequest` struct with `Source`/`Destination` string fields — mirrors `CopyRequest` exactly.\n\n#### `api/client.go` — after line 395 (after `Delete()`)\nAdd `Rename(ctx, *RenameRequest) error` method calling `POST /api/rename` — mirrors `Copy()` exactly.\n\n#### `server/routes.go` — after line 1483 (after `CopyHandler`)\nAdd `RenameHandler()` with this logic:\n1. Parse + validate body\n2. `model.ParseName` + `getExistingName` for both source and dest (same as CopyHandler)\n3. `manifest.ParseNamedManifest(src)` → **404** if `os.IsNotExist`\n4. `manifest.ParseNamedManifest(dst)` → **409** if it *succeeds* (dest exists)\n5. `CopyModel(src, dst)` — copies manifest file only\n6. `srcManifest.Remove()` — deletes source manifest\n7. `srcManifest.RemoveLayers()` — **safe**: this is reference-counted; it calls `Manifests(true)` first and only deletes blobs with no remaining references. Since `CopyModel` already wrote the destination manifest before `Remove()` runs, all blobs remain referenced → zero blob deletion.\n\n#### `server/routes.go` — after line 1698 (after `/api/copy` route)\nAdd `r.POST(\"/api/rename\", s.RenameHandler)`\n\n#### `cmd/cmd.go` — after line 1350 (after CLI `CopyHandler`)\nAdd `RenameHandler` CLI function — creates `api.RenameRequest{Source: args[0], Destination: args[1]}`, calls `client.Rename()`, prints `\"renamed 'X' to 'Y'\"`.\n\n#### `cmd/cmd.go` — after line 2271 (after `deleteCmd`)\nAdd `renameCmd` cobra command: `Use: \"rename SOURCE DESTINATION\"`, `Args: cobra.ExactArgs(2)`, `PreRunE: checkServerHeartbeat`.\n\n#### `cmd/cmd.go` — doc loop (~line 2297) + `rootCmd.AddCommand` (~line 2346)\nAdd `renameCmd` to both the documentation loop and the `AddCommand` call (after `deleteCmd`).",
+    "execute_duration_ms": 177923,
+    "execute_api_ms": 177782,
+    "execute_tokens_in": 26,
+    "execute_tokens_out": 8110,
+    "execute_cost_usd": 0.6904486500000002
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation fully satisfies all rubric requirements: (1) RenameRequest struct correctly defined with Source/Destination fields and proper json tags; (2) Client.Rename method correctly POSTs to /api/rename; (3) Server RenameHandler properly validates inputs, copies model, deletes source, returns 404 for missing source and 409 for existing destination; (4) Route registration correctly wired with r.POST(\"/api/rename\", s.RenameHandler); (5) CLI command defined with 'rename SOURCE DESTINATION' and ExactArgs(2); (6) CLI RenameHandler correctly calls client.Rename method; (7) No existing test files modified. All layers (API types, API client, server routes, CLI) are properly implemented with appropriate error handling.",
+          "diff_length": 5322,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 9990
+  },
+  "session_id": "c2af3efb-ecf5-4013-89e3-20c683d2bc0a"
+}

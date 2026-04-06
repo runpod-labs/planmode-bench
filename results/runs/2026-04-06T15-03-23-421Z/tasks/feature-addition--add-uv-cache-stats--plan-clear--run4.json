@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-uv-cache-stats",
+  "task_name": "add 'uv cache stats' subcommand",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T17:25:13.179Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 466004,
+    "duration_api_ms": 496641,
+    "num_turns": 62,
+    "total_cost_usd": 1.5696953,
+    "input_tokens": 54,
+    "output_tokens": 23539,
+    "cache_read_tokens": 1560328,
+    "cache_creation_tokens": 118920,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 253197,
+    "plan_api_ms": 308419,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 12124,
+    "plan_cost_usd": 0.791132,
+    "plan_content": "Here's a summary of what I found and the plan I've written:\n\n---\n\n## What I discovered\n\nThe codebase has a clean, consistent pattern for `uv cache` subcommands. The key pieces are:\n\n- **`CacheBucket` enum** (`crates/uv-cache/src/lib.rs:934`) — 11 buckets: Wheels, SourceDistributions, FlatIndex, Git, Interpreter, Simple, Archive, Builds, Environments, Python, Binaries. Has `iter()` (which omits `Python` intentionally for prune purposes), `to_str()` (directory names like `wheels-v6`), and `bucket()` on `Cache` to get the full path.\n- **`cache_size.rs`** — uses `diskus::DiskUsage::new(vec![path]).count_ignoring_errors()` and `human_readable_bytes()` from `uv-console`. `cache_stats` will follow this exact pattern per-bucket.\n- **`PreviewFeature`** (`crates/uv-preview/src/lib.rs:168`) — bitflag enum; next available slot is `1 << 28`.\n- **CLI** (`crates/uv-cli/src/lib.rs:878`) — `CacheCommand` enum + `SizeArgs` struct pattern to copy.\n- **Tests** (`crates/uv/tests/it/cache_size.rs`) — use `uv_snapshot!` + `with_filtered_cache_size()` in the test context.\n\n## The plan (9 steps across 9 files)\n\n1. **`uv-preview/src/lib.rs`** — Add `CacheStats = 1 << 28` feature flag\n2. **`uv-cache/src/lib.rs`** — Add `CacheBucket::display_name()` returning short labels (`\"wheels\"`, `\"sdists\"`, etc.)\n3. **`uv-cli/src/lib.rs`** — Add `Stats(StatsArgs)` to `CacheCommand` + `StatsArgs { human: bool }`\n4. **`commands/cache_stats.rs`** *(new)* — Core implementation: iterate all buckets + Python, `DiskUsage` each, print aligned table, sum total\n5. **`commands/mod.rs`** — Declare + re-export `cache_stats`\n6. **`src/lib.rs`** — Add dispatch arm for `CacheCommand::Stats`\n7. **`uv-test/src/lib.rs`** — Add `cache_stats()` command helper + `with_filtered_cache_stats()` filter\n8. **`tests/it/cache_stats.rs`** *(new)* — Integration tests (empty cache, raw bytes, human-readable)\n9. **`tests/it/main.rs`** — Register `mod cache_stats`",
+    "execute_duration_ms": 212807,
+    "execute_api_ms": 188222,
+    "execute_tokens_in": 36,
+    "execute_tokens_out": 11415,
+    "execute_cost_usd": 0.7785633000000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete implementation meets all rubric requirements. The CLI variant (Stats(StatsArgs)) with human bool flag is correctly added. The command implementation properly iterates CacheBucket::iter() and uses DiskUsage::new().count_ignoring_errors() to compute sizes. Function signature is pub(crate) and returns ExitStatus::Success. The --human flag uses human_readable_bytes() correctly. Output includes per-bucket lines and a total line with proper formatting. Module registration (mod cache_stats, use cache_stats::cache_stats) is correct in mod.rs. Dispatch wiring in lib.rs correctly matches CacheCommand::Stats and calls commands::cache_stats. Implementation follows the exact same patterns as cache_size (same imports, same printer usage, same human_readable output logic). Additionally includes proper PreviewFeature flag registration, display_name() helper on CacheBucket, test helpers with filtering, and comprehensive integration tests with snapshot testing.",
+          "diff_length": 13704,
+          "new_files": "PLAN.md\ncrates/uv/src/commands/cache_stats.rs\ncrates/uv/tests/it/cache_stats.rs"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16860
+  },
+  "session_id": "260e063c-5fbd-499c-90f6-3fad17a5964d"
+}

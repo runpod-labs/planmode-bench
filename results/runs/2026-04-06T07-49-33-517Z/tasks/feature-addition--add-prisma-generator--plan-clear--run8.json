@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-clear",
+  "run_number": 8,
+  "timestamp": "2026-04-06T10:38:16.243Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1109686,
+    "duration_api_ms": 1264397,
+    "num_turns": 89,
+    "total_cost_usd": 3.0278987500000003,
+    "input_tokens": 82,
+    "output_tokens": 64841,
+    "cache_read_tokens": 3534614,
+    "cache_creation_tokens": 114909,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 562783,
+    "plan_api_ms": 740863,
+    "plan_tokens_in": 14,
+    "plan_tokens_out": 29566,
+    "plan_cost_usd": 1.2614889999999999,
+    "plan_content": "Here's the complete plan for the `@prisma/rest-client-generator` package:\n\n---\n\n## Plan Summary\n\n### What gets built\nA new monorepo package `packages/rest-client-generator/` that implements the Prisma generator protocol and outputs a typed TypeScript REST API client from the DMMF.\n\n### New files (13)\n| File | Purpose |\n|---|---|\n| `package.json` | `@prisma/rest-client-generator`, deps on `@prisma/dmmf`, `generator`, `generator-helper`, `internals` |\n| `tsconfig.json` / `tsconfig.build.json` | Standard monorepo tsconfig pattern |\n| `helpers/build.ts` | `adapterConfig` (dual CJS+ESM) + extra `bin.ts` bundle with shebang |\n| `src/scalar-types.ts` | Maps DMMF type names (`String`, `Int`, `DateTime`, …) → TS type strings |\n| `src/generate-types.ts` | Produces `types.ts`: model interfaces, enum constants, `WhereUniqueInput` / `CreateInput` / `UpdateInput` |\n| `src/generate-client.ts` | Produces `client.ts`: per-model client classes + top-level `RestClient` composer |\n| `src/generate-index.ts` | Produces `index.ts`: re-exports `./types` and `./client` |\n| `src/generate.ts` | Orchestrator: builds `FileMap`, writes to disk |\n| `src/generator.ts` | `RestClientGenerator` class implementing `Generator` (in-process use) |\n| `src/bin.ts` | `generatorHandler` entry for standalone schema `provider =` use |\n| `src/index.ts` | Package entry — exports `RestClientGenerator` |\n| `src/__tests__/generate.test.ts` | Vitest tests over a mock DMMF document |\n\n### Modified file (1)\n- `tsconfig.build.bundle.json` — add `\"@prisma/rest-client-generator\"` path alias\n\n### Key design decisions\n- Relations are **excluded** from model interfaces (REST APIs return flat objects)\n- `WhereUniqueInput` is a **discriminated union** of all `@id` / `@unique` field objects\n- `CreateInput` marks only non-defaulted, non-generated required fields as required\n- `UpdateInput` makes everything optional (partial update / `PUT` semantics)\n- Uses native `#private` fields (per codebase conventions)\n- Ships **both** in-process `Generator` class and a standalone `bin.ts` (via `generatorHandler`) so it works programmatically or as a schema `provider`",
+    "execute_duration_ms": 546903,
+    "execute_api_ms": 523534,
+    "execute_tokens_in": 68,
+    "execute_tokens_out": 35275,
+    "execute_cost_usd": 1.7664097500000002
+  },
+  "evaluation": {
+    "overall_score": 0,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.4,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 3,
+          "check_details": [
+            {
+              "path": "packages/generator-rest-client/package.json",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/index.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/generator-rest-client/src/generator.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/generator-rest-client && npx tsc --noEmit",
+          "exit_code": 1,
+          "output": "/bin/bash: line 0: cd: packages/generator-rest-client: No such file or directory\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/generator-rest-client/src/generator.ts"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/generator-rest-client/src/index.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 3
+  },
+  "session_id": "a2401f57-09f8-43b6-989b-8fad2dc590e8"
+}

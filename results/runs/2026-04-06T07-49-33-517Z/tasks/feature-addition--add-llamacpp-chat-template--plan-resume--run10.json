@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-resume",
+  "run_number": 10,
+  "timestamp": "2026-04-06T09:13:19.202Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1313849,
+    "duration_api_ms": 1366290,
+    "num_turns": 46,
+    "total_cost_usd": 2.6747733999999994,
+    "input_tokens": 39,
+    "output_tokens": 72628,
+    "cache_read_tokens": 2078426,
+    "cache_creation_tokens": 175534,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1231230,
+    "plan_api_ms": 1283782,
+    "plan_tokens_in": 26,
+    "plan_tokens_out": 67966,
+    "plan_cost_usd": 1.95028075,
+    "plan_content": "Here's a summary of the complete plan:\n\n---\n\n## Plan: Add `mistral-instruct-v3` Chat Template Handler\n\n**Single file modified**: `common/chat.cpp` only — no header or existing handler changes.\n\n### 4 purely-additive changes:\n\n**1. Template source constant** (after the existing `CHATML_TEMPLATE_SRC` macro, ~line 568)  \nA `#define MISTRAL_INSTRUCT_V3_TEMPLATE_SRC` holding the canonical Mistral Instruct v0.3 Jinja template. It extracts a leading system message, prepends it only to the **first** user turn, wraps every user turn in `[INST] … [/INST]`, and appends `</s>` (via `eos_token`) after assistant turns.\n\n**2. Named registration** (new `if` block before the existing `chatml` check in `common_chat_templates_init()`, ~line 613)  \n```cpp\nif (default_template_src == \"mistral-instruct-v3\") {\n    default_template_src = MISTRAL_INSTRUCT_V3_TEMPLATE_SRC;\n}\n```  \nEnables `--chat-template mistral-instruct-v3` to work without touching the enum or header.\n\n**3. Handler function** (new static function before `common_chat_params_init_ministral_3()`, ~line 824)  \nRenders the prompt via `common_chat_template_direct_apply(tmpl, inputs)` and sets `COMMON_CHAT_FORMAT_CONTENT_ONLY` (no tool-call parsing for this simple format).\n\n**4. Auto-detection** (new `if` block before `return std::nullopt;` in `common_chat_try_specialized_template()`, ~line 1689)  \n```cpp\nif (src.find(\"[INST]\") != std::string::npos &&\n    src.find(\"[SYSTEM_PROMPT]\") == std::string::npos &&   // not Ministral 3\n    src.find(\"[AVAILABLE_TOOLS]\") == std::string::npos) { // not Mistral v3/v3-tekken\n    LOG_DBG(\"Using specialized template: mistral-instruct-v3\\n\");\n    return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n}\n```  \nThe double-absence check is exactly the described way to distinguish from the Ministral 3 handler (`[SYSTEM_PROMPT]` absent) while also excluding the tool-capable v3 templates.",
+    "execute_duration_ms": 82619,
+    "execute_api_ms": 82508,
+    "execute_tokens_in": 13,
+    "execute_tokens_out": 4662,
+    "execute_cost_usd": 0.7244926499999997
+  },
+  "evaluation": {
+    "overall_score": 0.925,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "checks_passed": 6,
+          "checks_total": 6,
+          "check_details": [
+            {
+              "path": "common/chat.cpp",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"mistral_instruct_v3\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"common_chat_params_init_mistral_instruct_v3\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"[INST]\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"[/INST]\"",
+              "passed": true
+            },
+            {
+              "path": "common/chat.cpp",
+              "check": "contains \"COMMON_CHAT_FORMAT_CONTENT_ONLY\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.75,
+        "weight": 0.3,
+        "weighted_score": 0.22499999999999998,
+        "passed": false,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 4,
+          "pattern_results": [
+            {
+              "pattern": "static common_chat_params common_chat_params_init_mistral_instruct_v3",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "\\[INST\\].*\\[/INST\\]",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "LOG_DBG.*[Mm]istral [Ii]nstruct v3",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "common_chat_params_init_mistral_instruct_v3\\(tmpl, params\\)",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "grep -c 'mistral_instruct_v3' common/chat.cpp",
+          "exit_code": 0,
+          "output": "2\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 6
+  },
+  "session_id": "6ff2c938-b1d5-4007-81c7-5e6e040b2523"
+}

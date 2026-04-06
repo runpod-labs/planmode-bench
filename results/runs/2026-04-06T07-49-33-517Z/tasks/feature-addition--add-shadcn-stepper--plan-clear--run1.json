@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-shadcn-stepper",
+  "task_name": "add stepper component",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T11:24:02.293Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 856854,
+    "duration_api_ms": 1033708,
+    "num_turns": 56,
+    "total_cost_usd": 2.39128575,
+    "input_tokens": 150,
+    "output_tokens": 50701,
+    "cache_read_tokens": 1793400,
+    "cache_creation_tokens": 109367,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 361807,
+    "plan_api_ms": 545400,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 11957,
+    "plan_cost_usd": 1.1346135000000002,
+    "plan_content": "Here is the full implementation plan:\n\n---\n\n## Plan: Stepper Compound Component\n\n### What's being built\nA `Stepper` compound component for multi-step wizards/onboarding flows — from scratch, no existing stepper in the codebase.\n\n### Files (4 total)\n\n| Action | File |\n|--------|------|\n| **Create** | `apps/v4/registry/bases/base/ui/stepper.tsx` |\n| **Create** | `apps/v4/registry/bases/base/examples/stepper-example.tsx` |\n| **Edit** (append 1 entry) | `apps/v4/registry/bases/base/ui/_registry.ts` |\n| **Edit** (append 1 entry) | `apps/v4/registry/bases/base/examples/_registry.ts` |\n\n---\n\n### Component Architecture\n\n**Two React contexts** (mirrors `carousel.tsx` exactly):\n- `StepperContext` — root-level: `{ activeStep, setActiveStep, orientation }`\n- `StepperItemContext` — per-item: `{ step, isActive, isCompleted, isDisabled }`\n\n**9 sub-components:**\n\n| Sub-component | Element | Key behavior |\n|---------------|---------|-------------|\n| `Stepper` | `<div>` | Root; controlled/uncontrolled state; provides `StepperContext` |\n| `StepperList` | `<div role=\"tablist\">` | `flex-row` (horizontal) or `flex-col` (vertical) |\n| `StepperItem` | `<div>` | Requires `step: number`; sets `data-active`, `data-completed`, `data-disabled` |\n| `StepperTrigger` | `<button>` | Calls `setActiveStep(step)` on click |\n| `StepperIndicator` | `<span>` | Shows step number; swaps to `CheckIcon` when completed |\n| `StepperTitle` | `<span>` | Step label text |\n| `StepperDescription` | `<span>` | Subtitle text |\n| `StepperSeparator` | `<div>` | `h-px flex-1` (horizontal) or `w-px self-stretch` (vertical) |\n| `StepperContent` | `<div role=\"tabpanel\">` | Only renders when `activeStep === step` |\n\n**No new npm dependencies** — only `lucide-react` (already installed, for `CheckIcon`).\n\n---\n\n### Orientation pattern (mirrors `tabs.tsx`)\n```tsx\n// Root:\ndata-orientation={orientation}  className=\"group/stepper ...\"\n// Children use useStepper() and branch on orientation value\n```\n\n---\n\n### Demo (6 variants in `stepper-example.tsx`)\n\n| Function | Shows |\n|----------|-------|\n| `StepperBasic` | 3-step horizontal, click-to-navigate |\n| `StepperWithDescriptions` | Title + description per step |\n| `StepperVertical` | `orientation=\"vertical\"` |\n| `StepperWithContent` | `StepperContent` panels below the list |\n| `StepperDisabledStep` | Middle step disabled |\n| `StepperControlled` | Prev/Next `Button` components driving `activeStep` |\n\n---\n\n### Registry entries\n- **`ui/_registry.ts`**: `{ name: \"stepper\", type: \"registry:ui\", files: [...] }` — no `dependencies`/`registryDependencies`\n- **`examples/_registry.ts`**: `{ name: \"stepper-example\", title: \"Stepper\", registryDependencies: [\"stepper\", \"button\", \"example\"] }`\n\n---\n\n### Verification\n1. `pnpm tsc --noEmit` inside `apps/v4/` — zero type errors\n2. `pnpm registry:build` — new entries appear in `registry.json`\n3. `pnpm dev` — navigate to the Stepper example page, all 6 demos interactive",
+    "execute_duration_ms": 495047,
+    "execute_api_ms": 488308,
+    "execute_tokens_in": 133,
+    "execute_tokens_out": 38744,
+    "execute_cost_usd": 1.25667225
+  },
+  "evaluation": {
+    "overall_score": 0.25,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "apps/v4/registry/new-york-v4/ui/stepper.tsx",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: apps/v4/registry/new-york-v4/ui/stepper.tsx"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "apps/v4/registry/new-york-v4/examples/stepper-demo.tsx",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.1,
+        "weighted_score": 0.05,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "\"stepper\"",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "registry:ui",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0.5,
+        "weight": 0.1,
+        "weighted_score": 0.05,
+        "passed": false,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 2,
+          "pattern_results": [
+            {
+              "pattern": "\"stepper-demo\"",
+              "should_match": true,
+              "actual_match": false,
+              "correct": false
+            },
+            {
+              "pattern": "registry:example",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.15,
+        "weighted_score": 0.15,
+        "passed": true,
+        "details": {
+          "command": "cd apps/v4 && npx tsc --noEmit --strict --jsx react-jsx --moduleResolution bundler --module ESNext --target ES2022 --esModuleInterop --skipLibCheck --paths '{\"@/*\": [\"./\"]}' registry/new-york-v4/ui/stepper.tsx 2>&1 | tail -20",
+          "exit_code": 0,
+          "output": "node:internal/modules/cjs/loader:1228\n  throw err;\n  ^\n\nError: Cannot find module '/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775473781853-fs5vzs/node_modules/typescript/bin/tsc'\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)\n    at Function._load (node:internal/modules/cjs/loader:1055:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)\n    at node:internal/main/run_main_module:36:49 {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: []\n}\n\nNode.js v22.14.0\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 341
+  },
+  "session_id": "03db8443-b66a-4f4e-8bbc-9f7f104f7a57"
+}

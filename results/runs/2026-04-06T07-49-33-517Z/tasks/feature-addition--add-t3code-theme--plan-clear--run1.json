@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T11:55:34.860Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1176108,
+    "duration_api_ms": 1362187,
+    "num_turns": 60,
+    "total_cost_usd": 2.6078545999999996,
+    "input_tokens": 57,
+    "output_tokens": 63403,
+    "cache_read_tokens": 2065681,
+    "cache_creation_tokens": 131510,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 708241,
+    "plan_api_ms": 898515,
+    "plan_tokens_in": 12,
+    "plan_tokens_out": 35516,
+    "plan_cost_usd": 1.4829044,
+    "plan_content": "Here's a summary of the complete plan:\n\n## What will be built\n\n**7 files total** — 3 new, 4 modified. No build config or dependency changes.\n\n### New files\n| File | Purpose |\n|---|---|\n| `packages/shared/src/theme.ts` | `ThemeId` type, `ThemeColorTokens` interface, `ThemeDefinition` interface, 3 built-in themes (`t3-dark`, `t3-light`, `t3-midnight`), `getThemeById()` helper |\n| `apps/web/src/components/ThemeProvider.tsx` | Thin root-level component that mounts the theme subscription |\n| `apps/web/src/components/ThemeSelector.tsx` | Radio-group of theme buttons, each with a 72×48px swatch showing sidebar/background/foreground/accent/status-bar colours |\n\n### Modified files\n| File | Change |\n|---|---|\n| `packages/shared/package.json` | Add `\"./theme\"` subpath export |\n| `apps/web/src/hooks/useTheme.ts` | **Rewrite** — replaces `\"light\"/\"dark\"/\"system\"` with `ThemeId`; `applyTheme` sets 8 CSS custom properties via inline styles; graceful migration of stored legacy values |\n| `apps/web/src/router.ts` | Wrap `children` in `<ThemeProvider>` inside the existing `Wrap` function |\n| `apps/web/src/routes/_chat.settings.tsx` | Replace the existing radio-button Appearance section with `<ThemeSelector />` |\n\n### Key design decisions\n- **CSS specificity trick**: inline `style.setProperty()` on `<html>` wins over all stylesheet rules, so `--background`, `--foreground`, `--primary`, `--ring` are fully theme-owned without touching `index.css`\n- **`.dark` class still toggled** — the existing Tailwind dark-mode utilities (`--muted`, `--border`, `--card`, etc.) continue working unchanged\n- **4 new CSS vars** (`--sidebar`, `--editor-background`, `--terminal-background`, `--status-bar`) are set by the theme system and ready for component adoption\n- **Legacy migration** — old `\"light\"` maps to `\"t3-light\"`, old `\"dark\"`/`\"system\"` maps to `\"t3-dark\"` (same localStorage key)\n- **Flash prevention** — `applyTheme(getStored())` runs synchronously at module load, same as today",
+    "execute_duration_ms": 467867,
+    "execute_api_ms": 463672,
+    "execute_tokens_in": 45,
+    "execute_tokens_out": 27887,
+    "execute_cost_usd": 1.1249501999999998
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.35,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "packages/shared/src/themes.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.25,
+        "weighted_score": 0.25,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'useTheme\\|ThemeProvider\\|theme-selector\\|ThemeSelector' apps/web/src/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/shared/src/themes.ts"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 || echo 'ts check done'",
+          "exit_code": 0,
+          "output": ".\npackages/shared/src/Net.ts(98,33): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(110,31): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(136,42): error TS7006: Parameter 'resume' implicitly has an 'any' type.\npackages/shared/src/Net.ts(146,30): error TS7006: Parameter 'cause' implicitly has an 'any' type.\npackages/shared/src/Net.ts(147,43): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(158,45): error TS2554: Expected 0 arguments, but got 1.\npackages/shared/src/Net.ts(173,12): error TS7006: Parameter 'ipv4' implicitly has an 'any' type.\npackages/shared/src/Net.ts(173,18): error TS7006: Parameter 'ipv6' implicitly has an 'any' type.\npackages/shared/src/shell.ts(1,30): error TS2591: Cannot find name 'node:child_process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.\nts check done\n"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 563
+  },
+  "session_id": "c372e42b-b091-46b1-b39e-a93381e1cf36"
+}

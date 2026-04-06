@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-06T15:37:12.087Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 506952,
+    "duration_api_ms": 583079,
+    "num_turns": 36,
+    "total_cost_usd": 1.6694956,
+    "input_tokens": 32,
+    "output_tokens": 27517,
+    "cache_read_tokens": 1345648,
+    "cache_creation_tokens": 139547,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 456055,
+    "plan_api_ms": 532234,
+    "plan_tokens_in": 23,
+    "plan_tokens_out": 24408,
+    "plan_cost_usd": 1.2114028000000001,
+    "plan_content": "Here is the complete implementation plan.\n\n---\n\n## Plan: `mistral-instruct-v3` Specialized Chat Template Handler\n\n### Context\nThe Mistral Instruct v0.3 format (`[INST] user [/INST] assistant</s>`) has no dedicated handler in `common/chat.cpp`. It differs from the already-handled Ministral 3 format precisely by the **absence** of `[SYSTEM_PROMPT]` — Ministral 3 wraps system messages with `[SYSTEM_PROMPT]...[/SYSTEM_PROMPT]`, whereas v0.3 prepends the system text directly into the first `[INST]` block.\n\nThe \"no header, no existing handler changes\" constraint means everything goes in `common/chat.cpp` and a new Jinja file — no enum, no `src/llama-chat.h` changes needed.\n\n---\n\n### Files\n\n| File | Change |\n|---|---|\n| `models/templates/mistralai-Mistral-7B-Instruct-v0.3.jinja` | **Create** |\n| `common/chat.cpp` | **Add** handler function + detection `if`-block |\n| `tests/test-chat.cpp` | **Add** `peg_tester` block |\n\n---\n\n### Step 1 — New Jinja template\nProduces `[INST] … [/INST]` user turns, prepends system to the first user turn with `\\n\\n`, appends `eos_token` (`</s>`) after each assistant turn, and emits a single trailing space when `add_generation_prompt=true` (this becomes `inputs.generation_prompt` in the handler).\n\nCrucially: **no `[SYSTEM_PROMPT]` anywhere** — that is the sole key distinguishing marker from Ministral 3.\n\n### Step 2 — Handler function in `common/chat.cpp`\nInsert `common_chat_params_init_mistral_instruct_v3` **before** `namespace workaround` (~line 1519), after `common_chat_params_init_gigachat_v3`:\n```cpp\nstatic common_chat_params common_chat_params_init_mistral_instruct_v3(\n        const common_chat_template &          tmpl,\n        const autoparser::generation_params & inputs) {\n    common_chat_params data;\n    data.prompt           = common_chat_template_direct_apply_impl(tmpl, inputs);\n    data.format           = COMMON_CHAT_FORMAT_PEG_NATIVE;\n    data.preserved_tokens = { \"[INST]\", \"[/INST]\" };\n    auto parser = build_chat_peg_parser([&](common_chat_peg_builder & p) {\n        return p.prefix(inputs.generation_prompt) + p.content(p.rest());\n    });\n    data.parser = parser.save();\n    return data;\n}\n```\n\n### Step 3 — Detection block in `common_chat_try_specialized_template()`\nInsert **before** `return std::nullopt;` (~line 1690):\n```cpp\n// Mistral Instruct v3 (v0.3): [INST]/[/INST] without [SYSTEM_PROMPT]\n// Distinguishes from Ministral 3 by the absence of [SYSTEM_PROMPT].\nif (src.find(\"[INST]\") != std::string::npos &&\n    src.find(\"[SYSTEM_PROMPT]\") == std::string::npos) {\n    LOG_DBG(\"Using specialized template: Mistral Instruct v3\\n\");\n    return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n}\n```\n**Safety:** All 4 existing templates containing `[INST]` (`Ministral-3`, `Mistral-Nemo`, `Mistral-Small-3.2`, `Devstral-Small`) also contain `[SYSTEM_PROMPT]`, so this condition has zero false-positive risk against current files.\n\n### Step 4 — Test block in `tests/test-chat.cpp`\nInsert after the Ministral 3 block (~line 1770):\n```cpp\n{\n    // Mistral Instruct v3 (v0.3)\n    auto tst = peg_tester(\"models/templates/mistralai-Mistral-7B-Instruct-v0.3.jinja\", detailed_debug);\n    tst.test(\"Hello, world!\\nWhat's up?\").expect(message_assist).expect_reconstruction().run();\n}\n```",
+    "execute_duration_ms": 50897,
+    "execute_api_ms": 50845,
+    "execute_tokens_in": 9,
+    "execute_tokens_out": 3109,
+    "execute_cost_usd": 0.45809279999999997
+  },
+  "evaluation": {
+    "overall_score": 0.7,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.7,
+        "weight": 1,
+        "weighted_score": 0.7,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation is mostly correct with the static function, auto-detection logic, LOG_DBG call, and handler dispatch all properly implemented. The Jinja template correctly wraps user turns with [INST]/[/INST] markers and prepends system messages to the first user turn. The template detection correctly distinguishes from Ministral 3 by checking for the absence of [SYSTEM_PROMPT]. However, there is one critical issue: the format is set to COMMON_CHAT_FORMAT_PEG_NATIVE (line 1528) instead of the required COMMON_CHAT_FORMAT_CONTENT_ONLY. This is an explicit rubric requirement that was not met. Additionally, while the Jinja template uses eos_token (which is technically correct), the rubric specifically called for '</s>' to be appended after assistant turns, though this is a minor issue compared to the format constant violation.",
+          "diff_length": 3754,
+          "new_files": "models/templates/mistralai-Mistral-7B-Instruct-v0.3.jinja"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 11712
+  },
+  "session_id": "c723901e-7e8e-4615-99c2-2083e26cf5c2"
+}

@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-rate-limiter",
+  "task_name": "add rate limiting middleware",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-06T10:46:00.985Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 946642,
+    "duration_api_ms": 892316,
+    "num_turns": 41,
+    "total_cost_usd": 2.0018469000000003,
+    "input_tokens": 46,
+    "output_tokens": 25135,
+    "cache_read_tokens": 1856064,
+    "cache_creation_tokens": 61733,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 569207,
+    "plan_api_ms": 566067,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 12706,
+    "plan_cost_usd": 1.2066129000000005,
+    "plan_content": "## Implementation Plan: Token Bucket Rate Limiting Middleware\n\nHere's the complete plan. **3 files touched** — 2 new, 1 one-line change.\n\n---\n\n### Files\n\n| Action | Path |\n|--------|------|\n| **CREATE** | `fastapi/middleware/ratelimit.py` |\n| **MODIFY** | `fastapi/middleware/__init__.py` (+1 line) |\n| **CREATE** | `tests/test_middleware_ratelimit.py` |\n\n---\n\n### `fastapi/middleware/ratelimit.py` — Core design\n\n**Data structure:** A private `@dataclass _Bucket(tokens: float, last_refill: float)` per IP, stored in a `dict[str, _Bucket]` on the middleware instance.\n\n**`__init__` parameters:** `app`, `requests_per_minute: int = 60`, `burst_size: int | None = None` (defaults to `requests_per_minute`). Derives `refill_rate = requests_per_minute / 60.0`. Creates an `asyncio.Lock` (correct for FastAPI's single-event-loop ASGI model).\n\n**IP extraction priority:** `x-forwarded-for` header (first comma-split IP) → `scope[\"client\"][0]` → `\"unknown\"`.\n\n**Token bucket logic (sync, called inside lock):**\n1. Refill: `tokens = min(burst_size, tokens + elapsed * refill_rate)`\n2. If `tokens >= 1.0` → consume 1, return `(allowed=True, remaining=int(tokens), reset_ts)`\n3. Else → return `(allowed=False, remaining=0, retry_after)`\n\n**Critical lock discipline:** The lock is held only for the synchronous consume step — released *before* `await self.app(...)`. This preserves async concurrency.\n\n**Allowed path:** Wrap `send` to inject `X-RateLimit-{Limit,Remaining,Reset}` headers into the `http.response.start` message (shallow-copy the dict before mutating the headers list).\n\n**Denied path (429):** Skip `self.app` entirely. Send raw ASGI `http.response.start` (status 429) + `http.response.body` messages with JSON body `{\"detail\": \"Rate limit exceeded\", \"retry_after\": N}` and headers including `Retry-After` + all `X-RateLimit-*`.\n\n**Non-HTTP scopes** (WebSocket, lifespan): `if scope[\"type\"] != \"http\"` → pass through unchanged.\n\n---\n\n### `fastapi/middleware/__init__.py` — One line added\n\n```python\nfrom starlette.middleware import Middleware as Middleware\nfrom fastapi.middleware.ratelimit import RateLimitMiddleware as RateLimitMiddleware\n```\n\n---\n\n### `tests/test_middleware_ratelimit.py` — 18 test cases\n\nEach test creates a fresh `FastAPI()` instance to isolate bucket state. Time is controlled via `patch(\"fastapi.middleware.ratelimit.time\")` — no `sleep()` calls anywhere.\n\n| # | Test | Covers |\n|---|------|--------|\n| 1–3 | Allowed request | 200 status, response body, `X-RateLimit-*` headers present, no `Retry-After` |\n| 4 | Remaining decrements | Fixed clock → remaining goes 4→3→2 with burst=5 |\n| 5–9 | Rate limit exceeded | Burst+1 → 429, body `detail`+`retry_after`, all headers on 429 |\n| 10 | Per-IP isolation | IP `1.1.1.1` exhausted, IP `2.2.2.2` still gets 200 |\n| 11–12 | X-Forwarded-For | Single IP keying, multi-IP comma list uses first IP only |\n| 13 | Token refill | Mock `time.time` forward 1s → previously-denied IP allowed again |\n| 14 | WebSocket passthrough | Non-HTTP scope bypassed entirely |\n| 15–16 | IP unit tests | `_get_client_ip` with `None` client → `\"unknown\"`, tuple → host |\n| 17–18 | Configuration | Default burst==rpm, custom burst independent of rpm |\n\n---\n\n### Verification steps\n\n```bash\npython -c \"from fastapi.middleware import RateLimitMiddleware; print('ok')\"\npytest tests/test_middleware_ratelimit.py -v   # new tests\npytest tests/ -x                               # full regression\nruff check fastapi/middleware/ratelimit.py\nmypy fastapi/middleware/ratelimit.py --strict\n```",
+    "execute_duration_ms": 377435,
+    "execute_api_ms": 326249,
+    "execute_tokens_in": 30,
+    "execute_tokens_out": 12429,
+    "execute_cost_usd": 0.7952339999999998
+  },
+  "evaluation": {
+    "overall_score": 0.05,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 0,
+        "weight": 0.35,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775471411053-lxgrdz/.venv/bin/activate && python3 -m pytest tests/test_rate_limiter.py -v",
+          "tests_passed": 0,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "error": "Command failed: source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775471411053-lxgrdz/.venv/bin/activate && python3 -m pytest tests/test_rate_limiter.py -v\n/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-bases/feature-addition-add-rate-limiter/.venv/bin/python3: No module named pytest\n",
+          "output": "/private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-bases/feature-addition-add-rate-limiter/.venv/bin/python3: No module named pytest\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.05,
+        "weighted_score": 0.05,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "fastapi/middleware/rate_limit.py",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.2,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "source /var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775471411053-lxgrdz/.venv/bin/activate && python3 -c 'from fastapi.middleware.rate_limit import RateLimitMiddleware; print(\"Import OK\")'",
+          "exit_code": 1,
+          "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    from fastapi.middleware.rate_limit import RateLimitMiddleware; print(\"Import OK\")\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nModuleNotFoundError: No module named 'fastapi.middleware.rate_limit'\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.1,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: fastapi/middleware/rate_limit.py"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 979
+  },
+  "session_id": "ba1a59cb-b142-4bfa-8ac4-adc384a3ba63"
+}

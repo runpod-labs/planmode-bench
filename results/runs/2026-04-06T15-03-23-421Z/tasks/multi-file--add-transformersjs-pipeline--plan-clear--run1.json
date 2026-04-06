@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-transformersjs-pipeline",
+  "task_name": "add image-text-to-text pipeline",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T18:01:38.097Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 920777,
+    "duration_api_ms": 1102618,
+    "num_turns": 79,
+    "total_cost_usd": 2.42898645,
+    "input_tokens": 113,
+    "output_tokens": 46007,
+    "cache_read_tokens": 2174345,
+    "cache_creation_tokens": 118007,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 597103,
+    "plan_api_ms": 779627,
+    "plan_tokens_in": 79,
+    "plan_tokens_out": 30696,
+    "plan_cost_usd": 1.7287669499999998,
+    "plan_content": "Here's my complete implementation plan for the `image-text-to-text` pipeline.\n\n---\n\n## Summary of Findings\n\n**`AutoModelForImageTextToText` already exists** in `src/models.js` (line 8736), mapping 11 VLMs (SmolVLM, Qwen2-VL, LLaVA, PaliGemma, Florence2, etc.) — it just has no pipeline wired up. The entire change is confined to **one file** (`src/pipelines.js`) plus a new test file.\n\n---\n\n## What the plan does (5 steps)\n\n### Step 1 — Import `AutoModelForImageTextToText`\nAdd it to the existing `import { ... } from './models.js'` block (lines 21–45). It's already exported from `models.js`, just not imported in `pipelines.js`.\n\n### Step 2 — New `ImageTextToTextPipeline` class (inserted after `ImageToTextPipeline` at line 2005)\n- **Constructor**: same `TextImagePipelineConstructorArgs` typedef already used by `ImageToTextPipeline`, `DocumentQuestionAnsweringPipeline`, etc.\n- **`_call(image, text_or_messages, generate_kwargs)`**:\n  1. `prepareImages(image)` — reuses the existing helper (line 91)\n  2. `isChat(text_or_messages)` check — reuses the existing helper (~line 910)\n  3. If chat messages: `this.tokenizer.apply_chat_template(…, { tokenize: false, add_generation_prompt: true })`\n  4. `await this.processor(text, preparedImages)` — text-first convention (works for SmolVLM/Idefics3 and Qwen2-VL)\n  5. `this.model.generate({ ...inputs, ...generate_kwargs })`\n  6. `this.tokenizer.batch_decode(outputTokenIds, { skip_special_tokens: true })`\n  7. Returns `[{ generated_text: string }]`\n\n### Step 3 — `SUPPORTED_TASKS` entry (after `\"image-to-text\"` at line ~3255)\n```js\n\"image-text-to-text\": {\n    tokenizer: AutoTokenizer,\n    pipeline: ImageTextToTextPipeline,\n    model: AutoModelForImageTextToText,\n    processor: AutoProcessor,\n    default: { model: \"HuggingFaceTB/SmolVLM-256M-Instruct\" },\n    type: \"multimodal\",\n}\n```\n\n### Step 4 — Add `\"image-text-to-text\"` to the `pipeline()` function's JSDoc task list\n\n### Step 5 — New test file `tests/pipelines/test_pipelines_image_text_to_text.js`\nAuto-discovered by the test runner's filesystem scan via `collect_and_execute_pipeline_tests()`.\n\n---\n\n## Key Design Decision\n\nVLM processors have inconsistent calling conventions: `Idefics3Processor` and `Qwen2VLProcessor` use `_call(text, images)`, while `LlavaProcessor`, `PaliGemmaProcessor`, and `Florence2Processor` use `_call(images, text)`. The pipeline uses **text-first** convention — matching the most modern VLMs (SmolVLM, Qwen2-VL) which are the primary targets for chat/instruction use cases.",
+    "execute_duration_ms": 323674,
+    "execute_api_ms": 322991,
+    "execute_tokens_in": 34,
+    "execute_tokens_out": 15311,
+    "execute_cost_usd": 0.7002195000000002
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation that fully meets all rubric requirements. The ImageTextToTextPipeline class is properly created with an async _call method that accepts images and text prompts. It correctly imports and uses AutoModelForImageTextToText, calls generate() for text generation, processes pixel_values via prepareImages(), and returns results in the expected {generated_text} format. The pipeline is registered in SUPPORTED_TASKS with type 'multimodal'. Comprehensive JSDoc documentation includes proper @typedef declarations. The implementation follows existing pipeline patterns (extending Pipeline, reusing helper functions like prepareImages and isChat, using the TextImagePipelineConstructorArgs typedef). No existing classes were modified. The included test file provides good coverage of single/batch images and text/chat message formats. The text-first processor convention is intentional and documented. All requirements are satisfied.",
+          "diff_length": 10366,
+          "new_files": "PLAN.md\ntests/pipelines/test_pipelines_image_text_to_text.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16093
+  },
+  "session_id": "d18073ff-2730-49fc-8d20-4167eb9e586d"
+}

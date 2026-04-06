@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-transformersjs-pipeline",
+  "task_name": "add image-text-to-text pipeline",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T18:03:45.418Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1022559,
+    "duration_api_ms": 1129360,
+    "num_turns": 50,
+    "total_cost_usd": 2.4119527499999993,
+    "input_tokens": 44,
+    "output_tokens": 39157,
+    "cache_read_tokens": 1200583,
+    "cache_creation_tokens": 89079,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 873883,
+    "plan_api_ms": 980773,
+    "plan_tokens_in": 30,
+    "plan_tokens_out": 34917,
+    "plan_cost_usd": 2.2206838499999995,
+    "plan_content": "Here is the complete implementation plan.\n\n---\n\n## Plan: `image-text-to-text` Pipeline\n\n**Only `src/pipelines.js` needs to change.** The full model backend (`AutoModelForImageTextToText`, `imageTextToTextForward`, 11 model families) already exists in `src/models.js` — the pipeline glue layer is simply missing.\n\n### 5 insertions, ~83 new lines, zero deletions\n\n**Step 1 — Import** (line ~33)\nAdd `AutoModelForImageTextToText` to the existing `import { ... } from './models.js'` block, right after `AutoModelForVision2Seq`.\n\n**Step 2 — Typedefs** (after line 2005, after `ImageToTextPipeline`)\nAdd `ImageTextToTextSingle`, `ImageTextToTextOutput`, `ImageTextToTextPipelineCallback`, and `ImageTextToTextPipelineType` — same pattern as the `ImageToTextPipeline` typedefs directly above.\n\n**Step 3 — Class** (after Step 2 typedefs)\nAdd `ImageTextToTextPipeline extends Pipeline` with `_call(images, text, generate_kwargs = {})`:\n- `prepareImages(images)` to load images\n- Normalize `text` to an array (one per image)\n- `this.processor(texts, preparedImages)` — **text-first** convention (Idefics3/SmolVLM/Qwen2-VL)\n- `model.generate({ ...inputs, ...generate_kwargs })` — processor output spreads directly since `main_input_name = 'input_ids'` is found in kwargs\n- Prompt stripping via `batch_decode` character-length slicing (same as `TextGenerationPipeline`)\n- Output grouping for `num_return_sequences > 1`\n\n**Step 4 — `SUPPORTED_TASKS` entry** (after line 3255, between `\"image-to-text\"` and `\"image-classification\"`)\n```javascript\n\"image-text-to-text\": {\n    \"tokenizer\": AutoTokenizer,\n    \"pipeline\": ImageTextToTextPipeline,\n    \"model\": AutoModelForImageTextToText,\n    \"processor\": AutoProcessor,\n    \"default\": { \"model\": \"HuggingFaceTB/SmolVLM-256M-Instruct\" },\n    \"type\": \"multimodal\",\n},\n```\n\n**Step 5 — `pipeline()` JSDoc** (after line 3427)\nAdd one bullet: `` `\"image-text-to-text\"`: will return a `ImageTextToTextPipeline`. ``\n\n### Key design note\n`LlavaProcessor`, `PaliGemmaProcessor`, and `Florence2Processor` use `_call(images, text)` (images first), making them incompatible with the text-first processor call. This is documented in the class JSDoc as a known limitation.",
+    "execute_duration_ms": 148676,
+    "execute_api_ms": 148587,
+    "execute_tokens_in": 14,
+    "execute_tokens_out": 4240,
+    "execute_cost_usd": 0.1912689
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation. All rubric requirements are met: (1) ImageTextToTextPipeline class with async _call method is present, (2) accepts images and text prompts as parameters, (3) imports and uses AutoModelForImageTextToText, (4) calls model.generate() correctly, (5) handles image processing via prepareImages/processor and returns generated_text objects, (6) registered in SUPPORTED_TASKS with type 'multimodal', (7) comprehensive JSDoc with all required typedefs (ImageTextToTextSingle, ImageTextToTextOutput, ImageTextToTextPipelineCallback, ImageTextToTextPipelineType), (8) follows existing pipeline patterns consistently (constructor, prepareImages utility, processor usage, tokenizer.batch_decode, output formatting), and (9) no modifications to existing classes. Minor: prompt stripping uses character-level slicing which could be suboptimal in edge cases, though it mirrors the TextGenerationPipeline pattern. Implementation is production-ready.",
+          "diff_length": 7861,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18478
+  },
+  "session_id": "c464b140-6c87-4898-a3fa-e83f572629d2"
+}

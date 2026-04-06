@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-t3code-theme",
+  "task_name": "add custom theme system",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T17:14:25.637Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1012969,
+    "duration_api_ms": 1138307,
+    "num_turns": 52,
+    "total_cost_usd": 3.5321881499999996,
+    "input_tokens": 56,
+    "output_tokens": 52208,
+    "cache_read_tokens": 3834247,
+    "cache_creation_tokens": 222929,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 730406,
+    "plan_api_ms": 874108,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 33442,
+    "plan_cost_usd": 1.8381389999999997,
+    "plan_content": "Here's a summary of the full plan before you approve:\n\n---\n\n## What the plan covers\n\n**8 files** — 3 created, 5 modified. No new dependencies, no build config changes.\n\n### New files\n1. **`packages/shared/src/theme.ts`** — Pure TypeScript. Defines `ThemeId`, `ThemeColorTokens`, `AppTheme`, the 3 built-in themes (`t3-light`, `t3-dark`, `t3-midnight`) with complete resolved CSS values for all 7 color areas, and a safe `getBuiltInTheme()` accessor.\n2. **`apps/web/src/components/ThemeProvider.tsx`** — Thin React context wrapper around the existing module-level `useTheme()` singleton. Provides `useThemeContext()` as an opt-in context accessor.\n3. **`apps/web/src/components/ThemeSelector.tsx`** — Theme cards matching the existing Settings page card style. Each card shows 5 colored swatches (background, sidebar, accent, terminal, statusBar) + a System card. Replaces the existing radio buttons in the Appearance section.\n\n### Modified files\n4. **`packages/shared/package.json`** — Adds `\"./theme\"` subpath export following the identical pattern of `./model`, `./git`, etc.\n5. **`apps/web/src/hooks/useTheme.ts`** — Rewritten to support `ThemeId | \"system\"`, apply all CSS custom properties via `style.setProperty()`, toggle `.dark` class, and migrate old stored values (`\"light\"` → `\"t3-light\"`, `\"dark\"` → `\"t3-dark\"`). Returns `resolvedTheme: \"light\" | \"dark\"` unchanged for full backward compatibility with `DiffWorkerPoolProvider`.\n6. **`apps/web/src/index.css`** — Adds 6 new `--theme-*` CSS custom property defaults in `:root` and maps them into Tailwind's `@theme inline` block.\n7. **`apps/web/src/routes/__root.tsx`** — Wraps the app content with `<ThemeProvider>`.\n8. **`apps/web/src/routes/_chat.settings.tsx`** — Replaces the existing 3-option radio group with `<ThemeSelector />`.\n\n### Key design decisions\n- The module-level singleton in `useTheme.ts` is **preserved** (flash prevention, cross-tab sync)\n- `resolvedTheme: \"light\" | \"dark\"` return stays intact — zero changes needed in `DiffWorkerPoolProvider`\n- All `cssVars` values are fully resolved (hex/oklch/rgba) — no Tailwind functions or `var()` refs, since they're applied via JS `style.setProperty()`\n- `noUncheckedIndexedAccess` satisfied throughout via the `getBuiltInTheme()` helper with an explicit throw guard",
+    "execute_duration_ms": 282563,
+    "execute_api_ms": 264199,
+    "execute_tokens_in": 40,
+    "execute_tokens_out": 18766,
+    "execute_cost_usd": 1.69404915
+  },
+  "evaluation": {
+    "overall_score": 0.8,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.8,
+        "weight": 1,
+        "weighted_score": 0.8,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Strong implementation with all core components present. Theme types with all required color properties are defined in shared package. All 3 required themes (t3-dark, t3-light, t3-midnight) are implemented with complete color specifications and CSS variables. ThemeProvider and useTheme hook properly persist to localStorage and apply CSS custom properties via document.documentElement. ThemeSelector component with color swatches is well-implemented. No new dependencies added. Minor issue: The rubric requires both 'getTheme' and 'listThemes' utility functions, but the code exports 'getBuiltInTheme' and relies on THEME_IDS array instead of a dedicated listThemes() function. While the functionality exists (THEME_IDS can be mapped with getBuiltInTheme), the specific 'listThemes' convenience function is missing. The package.json export path addition is minimal and necessary for module resolution.",
+          "diff_length": 23268,
+          "new_files": "apps/web/src/components/ThemeProvider.tsx\napps/web/src/components/ThemeSelector.tsx\npackages/shared/src/theme.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19153
+  },
+  "session_id": "9b1f96bb-17d4-4173-8d5e-ec43ebda63fd"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T15:41:41.215Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 741077,
+    "duration_api_ms": 826695,
+    "num_turns": 38,
+    "total_cost_usd": 1.713879,
+    "input_tokens": 37,
+    "output_tokens": 41627,
+    "cache_read_tokens": 976963,
+    "cache_creation_tokens": 89641,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 659873,
+    "plan_api_ms": 747173,
+    "plan_tokens_in": 21,
+    "plan_tokens_out": 37241,
+    "plan_cost_usd": 1.5085632,
+    "plan_content": "Here is the complete implementation plan. Only **one file** needs to change: `common/chat.cpp`.\n\n---\n\n## What to add\n\n### 1. New handler function — insert just before line 1634 (before `common_chat_try_specialized_template`)\n\n```cpp\n// Mistral Instruct v0.3 - [INST]/[/INST] user turns, system prepended to first user turn, </s> after assistant.\n// No tool-call or reasoning tokens; [SYSTEM_PROMPT] is absent (that marker belongs to the Ministral/v7 family).\nstatic common_chat_params common_chat_params_init_mistral_instruct_v3(\n        const common_chat_template &              tmpl,\n        const autoparser::generation_params &     inputs) {\n    common_chat_params data;\n\n    data.prompt            = common_chat_template_direct_apply_impl(tmpl, inputs);\n    data.format            = COMMON_CHAT_FORMAT_PEG_NATIVE;\n    data.supports_thinking = false;\n\n    auto parser = build_chat_peg_parser([&](common_chat_peg_builder & p) {\n        return p.literal(inputs.generation_prompt) + p.content(p.rest());\n    });\n\n    data.parser = parser.save();\n    return data;\n}\n```\n\n- Uses `common_chat_template_direct_apply_impl(tmpl, inputs)` (no messages override) so the Jinja template's own logic handles where the system message is injected.\n- Content-only PEG rule — v0.3 has no `[TOOL_CALLS]` or reasoning tags.\n- `supports_thinking = false`.\n\n---\n\n### 2. Registration — insert just before `return std::nullopt;` at line 1690 of `common_chat_try_specialized_template`\n\n```cpp\n    // Mistral Instruct v0.3 - [INST]/[/INST] format, no [SYSTEM_PROMPT].\n    // Placed last so all more-specific handlers (Ministral 3, etc.) take priority first.\n    // Key distinguisher from Ministral 3: absence of [SYSTEM_PROMPT].\n    if (src.find(\"[INST]\") != std::string::npos && src.find(\"[SYSTEM_PROMPT]\") == std::string::npos) {\n        LOG_DBG(\"Using specialized template: mistral-instruct-v3\\n\");\n        return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n    }\n```\n\n**Why no conflicts:** Ministral 3 requires `[SYSTEM_PROMPT]` to be *present*; all other handlers check entirely different tokens (`<|channel|>`, `>>>all`, `<|tool_calls_section_begin|>`, etc.). Placing this condition last lets every more-specific handler win first.\n\n---\n\n### Verification\n1. Build: `cmake -B build -DLLAMA_BUILD_TESTS=ON && cmake --build build`\n2. Existing tests pass: `./build/bin/test-chat-template`\n3. Smoke-test with a v0.3 Jinja template; with debug logging enabled, expect the line: `Using specialized template: mistral-instruct-v3`",
+    "execute_duration_ms": 81204,
+    "execute_api_ms": 79522,
+    "execute_tokens_in": 16,
+    "execute_tokens_out": 4386,
+    "execute_cost_usd": 0.2053158
+  },
+  "evaluation": {
+    "overall_score": 0.72,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.72,
+        "weight": 1,
+        "weighted_score": 0.72,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation has correct overall structure with the new handler function, proper registration with [INST]/[SYSTEM_PROMPT] detection logic, correct LOG_DBG call, and proper dispatch from template detection. However, there is a CRITICAL error: the format is set to COMMON_CHAT_FORMAT_PEG_NATIVE instead of the required COMMON_CHAT_FORMAT_CONTENT_ONLY (requirement #7). Additionally, the implementation delegates [INST]/[/INST] wrapping, system message prepending, and </s> appending entirely to the Jinja template via common_chat_template_direct_apply_impl(), rather than implementing these behaviors explicitly in the handler as the rubric implies they should be. While this may be architecturally valid, it doesn't fully satisfy requirements #2-4 at the handler level. The wrong format constant is a significant defect that would affect runtime behavior.",
+          "diff_length": 4662,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 14796
+  },
+  "session_id": "648c66be-ea56-499c-a6b5-c3b806245fc6"
+}

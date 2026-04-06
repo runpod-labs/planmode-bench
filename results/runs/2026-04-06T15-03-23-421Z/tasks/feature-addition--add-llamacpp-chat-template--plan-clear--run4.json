@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T15:40:34.080Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 637916,
+    "duration_api_ms": 673813,
+    "num_turns": 32,
+    "total_cost_usd": 1.2146041499999998,
+    "input_tokens": 31,
+    "output_tokens": 30505,
+    "cache_read_tokens": 630262,
+    "cache_creation_tokens": 68875,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 507171,
+    "plan_api_ms": 543651,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 26532,
+    "plan_cost_usd": 0.9886017499999998,
+    "plan_content": "Here's the complete plan I've developed after thorough codebase analysis:\n\n---\n\n## Plan: Add `mistral-instruct-v3` Specialized Handler\n\n### What I found\n\nThe codebase has a well-established pattern in `common/chat.cpp`:\n1. Static handler functions (e.g. `common_chat_params_init_ministral_3` at line 825)\n2. A central dispatcher `common_chat_try_specialized_template()` at line 1634 that pattern-matches template source strings and calls the right handler\n3. Jinja templates in `models/templates/` that serve as the canonical format definition\n\nThe **Ministral 3** handler detects: `[SYSTEM_PROMPT]` + `[TOOL_CALLS]` + `[ARGS]` – no `[CALL_ID]`. The **Nemo** template has `[INST]` but also `[TOOL_CALLS]` and no current specialized handler.\n\n---\n\n### The 3 additions (no existing code touched)\n\n**1. New Jinja template** — `models/templates/mistralai-Mistral-7B-Instruct-v0.3.jinja`\n- Has `[INST]` / `[/INST]` for user turns\n- System message prepended to the **first** user turn via `loop.first`\n- Uses `eos_token` after assistant turns\n- Deliberately contains **no** `[SYSTEM_PROMPT]` and **no** `[TOOL_CALLS]`\n\n**2. New handler function** in `common/chat.cpp` (inserted just before `common_chat_try_specialized_template()`, after line 1632):\n```cpp\nstatic common_chat_params common_chat_params_init_mistral_instruct_v3(\n        const common_chat_template & tmpl,\n        const autoparser::generation_params & inputs) {\n    common_chat_params data;\n    data.prompt = common_chat_template_direct_apply_impl(tmpl, inputs);\n    data.format = COMMON_CHAT_FORMAT_CONTENT_ONLY;\n    return data;\n}\n```\n\n**3. Detection block** in `common_chat_try_specialized_template()` (after the Ministral 3 block, line 1644):\n```cpp\nif (src.find(\"[INST]\") != std::string::npos &&\n    src.find(\"[SYSTEM_PROMPT]\") == std::string::npos &&\n    src.find(\"[TOOL_CALLS]\") == std::string::npos) {\n    LOG_DBG(\"Using specialized template: Mistral Instruct v0.3\\n\");\n    return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n}\n```\n\nThe `[SYSTEM_PROMPT]` absence is the primary distinction from Ministral 3 (as required). The `[TOOL_CALLS]` absence additionally ensures Nemo templates (which also lack `[SYSTEM_PROMPT]` but do have `[TOOL_CALLS]`) continue to fall through to the autoparser unchanged.",
+    "execute_duration_ms": 130745,
+    "execute_api_ms": 130162,
+    "execute_tokens_in": 14,
+    "execute_tokens_out": 3973,
+    "execute_cost_usd": 0.2260024
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete and correct implementation. All rubric requirements are met: (1) new static function common_chat_params_init_mistral_instruct_v3 added to common/chat.cpp with proper signature; (2) Jinja template wraps user turns with [INST]/[/INST] markers; (3) system message is prepended to first user turn via loop.first conditional; (4) eos_token (which expands to </s>) is appended after assistant turns; (5) auto-detection logic checks for [INST] presence AND [SYSTEM_PROMPT] absence to distinguish from Ministral 3, with additional [TOOL_CALLS] absence check to distinguish from Nemo; (6) LOG_DBG call properly identifies template; (7) handler uses COMMON_CHAT_FORMAT_CONTENT_ONLY format; (8) handler dispatched from common_chat_try_specialized_template with (tmpl, params); (9) no existing handlers or header file modified. Implementation follows established patterns and all detection logic is sound.",
+          "diff_length": 5339,
+          "new_files": "PLAN.md\nmodels/templates/mistralai-Mistral-7B-Instruct-v0.3.jinja"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 13036
+  },
+  "session_id": "5f424e8b-c93f-4d1c-b5cb-35414f8e5cfb"
+}

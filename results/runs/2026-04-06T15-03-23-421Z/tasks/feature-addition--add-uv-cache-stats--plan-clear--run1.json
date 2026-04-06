@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-uv-cache-stats",
+  "task_name": "add 'uv cache stats' subcommand",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T17:34:15.743Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 986212,
+    "duration_api_ms": 1020952,
+    "num_turns": 94,
+    "total_cost_usd": 2.9777183000000003,
+    "input_tokens": 87,
+    "output_tokens": 47289,
+    "cache_read_tokens": 3317600,
+    "cache_creation_tokens": 133911,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 688741,
+    "plan_api_ms": 752480,
+    "plan_tokens_in": 31,
+    "plan_tokens_out": 28917,
+    "plan_cost_usd": 1.7550633500000001,
+    "plan_content": "Here's the complete implementation plan for `uv cache stats`:\n\n---\n\n## Overview\n\n9 files to change (2 new, 7 modified), in this dependency order:\n\n1. **`crates/uv-preview/src/lib.rs`** — Add `CacheStats = 1 << 28` to the `PreviewFeature` bitflags enum (next available bit after `ProjectDirectoryMustExist = 1 << 27`), wire into `as_str()`, `FromStr`, and the existing unit test.\n\n2. **`crates/uv-cache/src/lib.rs`** — Add a new `pub fn display_name(self) -> &'static str` method on `CacheBucket` (after `to_str()`) returning human-friendly labels like `\"Wheels\"`, `\"Source distributions\"`, `\"Simple (index)\"`, etc. This keeps naming concerns co-located with the bucket enum.\n\n3. **`crates/uv-cli/src/lib.rs`** — Add `StatsArgs { human: bool }` struct (identical shape to `SizeArgs`), then add `Stats(StatsArgs)` variant to `CacheCommand` with doc comment noting the total-vs-`cache size` discrepancy.\n\n4. **`crates/uv/src/commands/cache_stats.rs`** *(new)* — Core implementation: iterates `CacheBucket::iter()` **plus** `CacheBucket::Python` (explicitly appended; Python is excluded from `iter()` for clean/prune semantics, but its disk size is still meaningful to report). For each bucket calls `DiskUsage::new(vec![path]).count_ignoring_errors()` guarded by `path.exists()`. Left-aligns labels to `max_label_width` (computed dynamically from `display_name()` lengths). Blank line then total. Supports `--human` and preview warning.\n\n5. **`crates/uv/src/commands/mod.rs`** — Add `mod cache_stats;` and `pub(crate) use cache_stats::cache_stats;`.\n\n6. **`crates/uv/src/lib.rs`** — Add synchronous dispatch arm `CacheCommand::Stats(args) => commands::cache_stats(&cache, args.human, printer, globals.preview)` after the `Size` arm.\n\n7. **`crates/uv-test/src/lib.rs`** — Add `fn cache_stats()` command builder and `fn with_filtered_cache_stats()` snapshot filter (replaces size values with `[SIZE]` while preserving labels).\n\n8. **`crates/uv/tests/it/cache_stats.rs`** *(new)* — Three tests: `cache_stats_empty` (exact snapshot, all zeros), `cache_stats_with_packages_raw` (filtered), `cache_stats_with_packages_human` (filtered).\n\n9. **`crates/uv/tests/it/main.rs`** — Add `mod cache_stats;`.\n\n**Sample output (`--human`):**\n```\nWheels                1.2 GiB\nSource distributions  384.0 MiB\nFlat index            12.3 KiB\nGit                   0B\nInterpreter           128.0 KiB\nSimple (index)        96.0 KiB\nArchives              512.0 MiB\nBuilds                0B\nEnvironments          256.0 MiB\nBinaries              48.0 KiB\nPython                1.8 GiB\n\nTotal                 4.2 GiB\n```\n\n**One caveat to note after implementation:** `show_settings` snapshot tests in `crates/uv/tests/it/show_settings.rs` enumerate all `PreviewFeature` variants — those snapshots will need updating to include `CacheStats`.",
+    "execute_duration_ms": 297471,
+    "execute_api_ms": 268472,
+    "execute_tokens_in": 56,
+    "execute_tokens_out": 18372,
+    "execute_cost_usd": 1.2226549500000004
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation successfully meets all rubric requirements: (1) CLI variant Stats(StatsArgs) with human bool flag correctly added; (2) iterates CacheBucket::iter() plus Python, uses DiskUsage properly; (3) function is pub(crate) returning ExitStatus::Success; (4) human_readable_bytes flag works correctly; (5) output includes per-bucket lines and total; (6) module registration complete in mod.rs; (7) dispatch wiring correct in lib.rs; (8) follows cache_size patterns. Additional strengths: proper preview feature setup, comprehensive test coverage (empty cache, raw bytes, human-readable), test helper functions (with_filtered_cache_stats, cache_stats), display_name method for bucket labels, and snapshot test updates. Minor deduction: PLAN.md shouldn't be committed to repo (development artifact), though this is a convention issue rather than functional failure.",
+          "diff_length": 17148,
+          "new_files": "PLAN.md\ncrates/uv/src/commands/cache_stats.rs\ncrates/uv/tests/it/cache_stats.rs"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 81348
+  },
+  "session_id": "83b85a9a-eaa1-49a4-b47a-47c1c22f841e"
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "normal",
+  "run_number": 5,
+  "timestamp": "2026-04-06T17:27:00.878Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 298460,
+    "duration_api_ms": 294885,
+    "num_turns": 33,
+    "total_cost_usd": 1.0422816999999998,
+    "input_tokens": 32,
+    "output_tokens": 15937,
+    "cache_read_tokens": 1556972,
+    "cache_creation_tokens": 57572,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete and correct implementation. All rubric requirements met: (1) top_a parameter added to SamplingParams as float with default 0.0 and validation for [0.0, 1.0] range; (2) Filtering logic correctly implemented in _apply_top_a function - computes max probability, creates threshold mask, applies -inf masking for sub-threshold tokens, relies on subsequent softmax for renormalization; (3) top_a properly threaded through SamplingTensors dataclass, from_sampling_metadata method, and from_lists method with full tensor creation pipeline; (4) Clear docstrings in both SamplingParams and _apply_top_a function explaining the algorithm; (5) Code is syntactically valid Python, follows vLLM conventions (e.g., replicates _apply_min_p pattern for consistency), includes proper error handling/validation, and maintains type hints throughout. No significant gaps or issues identified.",
+          "diff_length": 10088,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 24678
+  },
+  "session_id": "eddf263e-de7f-4a56-828e-30df348cb216"
+}

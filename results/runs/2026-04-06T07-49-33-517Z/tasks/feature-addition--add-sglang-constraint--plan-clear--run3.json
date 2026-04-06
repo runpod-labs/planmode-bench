@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T11:00:26.462Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 615332,
+    "duration_api_ms": 702402,
+    "num_turns": 65,
+    "total_cost_usd": 2.31548745,
+    "input_tokens": 3190,
+    "output_tokens": 32209,
+    "cache_read_tokens": 2102708,
+    "cache_creation_tokens": 170635,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 343902,
+    "plan_api_ms": 433091,
+    "plan_tokens_in": 26,
+    "plan_tokens_out": 14185,
+    "plan_cost_usd": 1.1669276499999999,
+    "plan_content": "Here's a summary of the plan I've prepared:\n\n## Plan: `json_path` Output Constraint for SGLang\n\n### Strategy\nConvert JSONPath → JSON Schema → delegate to existing `dispatch_json()` machinery in all backends. No new token-masking or FSM logic needed.\n\n### New file\n- **`python/sglang/srt/constrained/json_path_utils.py`** — A standalone utility with `jsonpath_to_json_schema(path)` that parses JSONPath segments (`.key`, `[*]`, `[n]`, `['key']`) and builds a nested JSON Schema. Example: `$.store.book[*].author` → `{\"type\":\"object\",\"properties\":{\"store\":{\"type\":\"object\",\"properties\":{\"book\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"author\":{}},\"required\":[\"author\"]}}},\"required\":[\"book\"]}},\"required\":[\"store\"]}`.\n\n### Files to modify (10 files)\n1. **`base_grammar_backend.py`** — Add `dispatch_json_path()` stub + `\"json_path\"` case in `_init_value_dispatch()`\n2. **`outlines_backend.py`** — Add `dispatch_json_path()` → converts path → schema → calls `dispatch_json()`\n3. **`xgrammar_backend.py`** — Same pattern\n4. **`llguidance_backend.py`** — Same pattern\n5. **`grammar_manager.py`** — Add `json_path` to the condition check and key creation\n6. **`srt/sampling/sampling_params.py`** — Add `json_path` param + mutual exclusivity in `verify()`\n7. **`lang/ir.py`** — Add `json_path` to `SglSamplingParams`, `to_srt_kwargs()`, and `SglGen.__init__`\n8. **`lang/api.py`** — Add `json_path` to `gen()` with upfront syntax validation\n9. **`lang/interpreter.py`** — Add `\"json_path\"` to `_resolve_sampling_params()` item list\n\n`reasoner_grammar_backend.py` and `runtime_endpoint.py` require **no changes** — they inherit the new constraint automatically.",
+    "execute_duration_ms": 271430,
+    "execute_api_ms": 269311,
+    "execute_tokens_in": 3164,
+    "execute_tokens_out": 18024,
+    "execute_cost_usd": 1.1485598
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 1,
+          "checks_total": 1,
+          "check_details": [
+            {
+              "path": "python/sglang",
+              "check": "exists",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.4,
+        "weighted_score": 0.4,
+        "passed": true,
+        "details": {
+          "command": "grep -r 'json_path' python/sglang/ | wc -l | xargs test 0 -lt",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "patterns_matched": 1,
+          "patterns_total": 1,
+          "pattern_results": [
+            {
+              "pattern": "json_path|JsonPath",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 304
+  },
+  "session_id": "c8d0d438-7710-466c-bf50-89eb524c7673"
+}

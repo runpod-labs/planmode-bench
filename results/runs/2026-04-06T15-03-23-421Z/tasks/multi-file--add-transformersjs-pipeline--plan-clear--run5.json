@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-transformersjs-pipeline",
+  "task_name": "add image-text-to-text pipeline",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T18:02:07.636Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 902222,
+    "duration_api_ms": 1076716,
+    "num_turns": 71,
+    "total_cost_usd": 2.4168612000000005,
+    "input_tokens": 692,
+    "output_tokens": 26668,
+    "cache_read_tokens": 1572879,
+    "cache_creation_tokens": 144766,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 668877,
+    "plan_api_ms": 843608,
+    "plan_tokens_in": 664,
+    "plan_tokens_out": 17202,
+    "plan_cost_usd": 1.9299834000000005,
+    "plan_content": "Here is the complete implementation plan.\n\n---\n\n## Plan: `image-text-to-text` Pipeline\n\n### What's being added and why\n\n`AutoModelForImageTextToText` already exists in `src/models.js` (line 8736), supporting LLaVA, SmolVLM, PaliGemma, Florence-2, and more. The only missing piece is the pipeline layer. **Only `src/pipelines.js` needs to be edited** (plus one new test file). Nothing else changes.\n\n### 5 precise changes\n\n| # | File | Change | Location |\n|---|------|--------|----------|\n| 1 | `src/pipelines.js` | Add `AutoModelForImageTextToText` to the `./models.js` import | After line 43 |\n| 2 | `src/pipelines.js` | Insert JSDoc typedefs + `ImageTextToTextPipeline` class | After line 2005 (end of `ImageToTextPipeline`) |\n| 3 | `src/pipelines.js` | Add `\"image-text-to-text\"` entry to `SUPPORTED_TASKS` | After line 3255 (after `\"image-to-text\"`) |\n| 4 | `src/pipelines.js` | Add task to `pipeline()` JSDoc list | ~Line 3427 |\n| 5 | `tests/pipelines/test_pipelines_image_text_to_text.js` | New test file (auto-discovered) | (new) |\n\n### Key design decisions\n\n- **`_call(images, texts, generate_kwargs)`** — processes one image+text pair at a time in a loop (same as `ImageToTextPipeline`), because processors like `LlavaProcessor` need to expand `<image>` tokens in the prompt per-call.\n- **Prompt-token slicing** — `output.slice(null, [inputs.input_ids.dims[1], null])` strips the prompt from the output before decoding. This is essential because `AutoModelForImageTextToText` models are **decoder-only** (unlike `AutoModelForVision2Seq` encoder-decoders used by `image-to-text`, which never include the prompt in their output).\n- **Both `tokenizer` and `processor`** in `SUPPORTED_TASKS` — processor handles image+text preprocessing together; tokenizer is used separately for `batch_decode` on the generated tokens.\n- **Default model**: `HuggingFaceTB/SmolVLM-256M-Instruct` (smallest production VLM with ONNX support).\n- **Test model**: `Xenova/tiny-random-LlavaForConditionalGeneration` (already confirmed working in `tests/models/llava/test_modeling_llava.js`).",
+    "execute_duration_ms": 233345,
+    "execute_api_ms": 233108,
+    "execute_tokens_in": 28,
+    "execute_tokens_out": 9466,
+    "execute_cost_usd": 0.48687779999999997
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation. All requirements met: (1) ImageTextToTextPipeline class with async _call method present, (2) accepts and processes both images and text prompts, (3) imports and uses AutoModelForImageTextToText, (4) calls model.generate() correctly, (5) handles pixel_values via processor and returns generated_text format, (6) registered in SUPPORTED_TASKS with 'image-text-to-text' key and 'multimodal' type, (7) comprehensive JSDoc documentation with ImageTextToTextSingle and ImageTextToTextOutput typedefs, (8) follows existing pipeline patterns (batching, prepareImages, processor, tokenizer.batch_decode), (9) no existing classes modified. Also includes well-structured test file covering single and batched inputs. Implementation is production-ready.",
+          "diff_length": 9271,
+          "new_files": "PLAN.md\ntests/pipelines/test_pipelines_image_text_to_text.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 13527
+  },
+  "session_id": "2a0093b6-7fba-4d1b-b9b4-2716b4e05926"
+}

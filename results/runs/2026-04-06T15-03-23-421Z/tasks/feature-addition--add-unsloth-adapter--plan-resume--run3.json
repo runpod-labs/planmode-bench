@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 3,
+  "timestamp": "2026-04-06T17:14:29.351Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 429588,
+    "duration_api_ms": 509441,
+    "num_turns": 42,
+    "total_cost_usd": 1.6696786000000001,
+    "input_tokens": 41,
+    "output_tokens": 19827,
+    "cache_read_tokens": 1364916,
+    "cache_creation_tokens": 118088,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 309990,
+    "plan_api_ms": 389921,
+    "plan_tokens_in": 21,
+    "plan_tokens_out": 12029,
+    "plan_cost_usd": 1.06362895,
+    "plan_content": "Here is my complete plan. The entire change lives in **one file**: `unsloth/save.py`.\n\n---\n\n## What I found\n\n| Finding | Detail |\n|---|---|\n| All save/export functions | `unsloth/save.py` (2,678 lines) |\n| Instance methods are bound at runtime | `patch_saving_functions()` at line 2569 uses `types.MethodType` |\n| LoRA layer types already imported | `Bnb_Linear4bit`, `Peft_Linear4bit`, `Peft_Linear` (lines 17–19) |\n| Weight extraction helper already available | `get_lora_parameters_bias` (imported line 29 from `kernels/utils.py`) |\n| LoRA metadata source | `model.peft_config[\"default\"]` → `.r`, `.lora_alpha`, `.target_modules` |\n| Active adapter resolution pattern | `proj.active_adapters[0]` or `proj.active_adapter` (established in `kernels/utils.py`) |\n| No ONNX code exists yet | Confirmed — zero references to `onnx` in the codebase |\n\n---\n\n## Plan (4 edits, all in `unsloth/save.py`)\n\n### 1. Update `__all__` (line 48–54)\nAdd `\"export_lora_to_onnx\"` to the list.\n\n---\n\n### 2. Add `export_lora_to_onnx()` standalone function\nInsert just before `patch_saving_functions()` (after `not_implemented_save` at ~line 2566).\n\nThe function:\n- Guards with a helpful `ImportError` if `onnx` isn't installed\n- Reads `rank`, `lora_alpha`, `target_modules` from `model.peft_config[adapter_name]`\n- Walks `model.named_modules()`, finds every `Peft_Linear` / `Peft_Linear4bit` / `Bnb_Linear4bit` that has `lora_A`/`lora_B` and isn't merged/disabled\n- Uses the same `active_adapters[0]` resolution pattern as `kernels/utils.py`\n- Converts each A and B tensor to `float32` CPU numpy, wraps with `onnx.numpy_helper.from_array()`, names them `\"<module_path>.lora_A\"` / `\"<module_path>.lora_B\"`\n- Builds a minimal but valid ONNX `GraphProto` (nodes=[], inputs=[], outputs=[], only initializers) — legal per ONNX spec, the standard pattern for weight-only storage\n- Embeds `rank`, `lora_alpha`, `target_modules`, `opset_version`, `exported_by` as ONNX `metadata_props`\n- Saves `lora_adapters.onnx` and `lora_metadata.json` (rank, alpha, target\\_modules, per-module scaling) to `output_dir`\n- Returns the path to the `.onnx` file\n\n---\n\n### 3. Add `unsloth_save_pretrained_onnx()` instance-method wrapper\nA thin shim that calls `export_lora_to_onnx(self, ...)` — same pattern as every other `unsloth_save_pretrained_*` function.\n\n---\n\n### 4. Register in `patch_saving_functions()`\nAdd one line in **both** the non-vision branch and the vision branch:\n```python\nmodel.save_pretrained_onnx = types.MethodType(unsloth_save_pretrained_onnx, model)\n```\nThis makes `model.save_pretrained_onnx(...)` available to users exactly like `model.save_pretrained_gguf(...)`.\n\n---\n\n## Resulting API\n\n```python\n# Primary usage (instance method)\nmodel.save_pretrained_onnx(\"my_lora_onnx/\")\nmodel.save_pretrained_onnx(\"my_lora_onnx/\", opset_version=18)\n\n# Standalone (importable from unsloth.save)\nfrom unsloth.save import export_lora_to_onnx\nexport_lora_to_onnx(model, output_dir=\"my_lora_onnx/\", opset_version=17)\n```\n\n## Output layout\n\n```\n<output_dir>/\n├── lora_adapters.onnx      ← all lora_A / lora_B tensors as named initializers\n└── lora_metadata.json      ← rank, lora_alpha, target_modules, scaling per module\n```",
+    "execute_duration_ms": 119598,
+    "execute_api_ms": 119520,
+    "execute_tokens_in": 20,
+    "execute_tokens_out": 7798,
+    "execute_cost_usd": 0.6060496500000001
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is comprehensive and meets all rubric requirements. Strengths: (1) New export_lora_to_onnx function correctly saves LoRA A/B matrices as ONNX initializers with fully-qualified names; (2) Accepts output_dir and opset_version (default 17) parameters as specified; (3) Metadata properly saved in both JSON file (rank, alpha, target_modules, opset, adapter_name, module scalings) and embedded in ONNX model properties; (4) Function exposed in __all__ and registered as model.save_pretrained_onnx via types.MethodType pattern, consistent with existing save_pretrained_* methods; (5) Uses proper ONNX utilities (numpy_helper, onnx_helper.make_graph/make_model, onnx.save); (6) Follows unsloth conventions (error handling for missing packages, adapter resolution logic, decorator pattern). Minor issues: (1) Redundant json import on line 2680 (json already imported line 2605); (2) Unnecessary pass statements at lines 2644 and 2693 (style only). These are cosmetic and don't affect functionality. Comprehensive error handling, good documentation, and sensible design choice of minimal ONNX graph with weight-only initializers.",
+          "diff_length": 8992,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19375
+  },
+  "session_id": "d29d7eb2-40ae-4708-bc36-21db0e851ac1"
+}

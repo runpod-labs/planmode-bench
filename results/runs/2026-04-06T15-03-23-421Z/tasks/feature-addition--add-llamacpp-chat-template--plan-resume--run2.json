@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T15:34:47.215Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 492358,
+    "duration_api_ms": 544176,
+    "num_turns": 26,
+    "total_cost_usd": 1.2843528,
+    "input_tokens": 21,
+    "output_tokens": 21973,
+    "cache_read_tokens": 778108,
+    "cache_creation_tokens": 114702,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 461471,
+    "plan_api_ms": 513336,
+    "plan_tokens_in": 14,
+    "plan_tokens_out": 19980,
+    "plan_cost_usd": 0.9423243,
+    "plan_content": "## Plan Summary\n\n**Only one file changes:** `common/chat.cpp`\n\n### Architecture insight\n\nThe codebase has two dispatch paths. The modern **Jinja/specialized path** in `common/chat.cpp` uses `common_chat_try_specialized_template` — a chain of template-source pattern checks that route to dedicated C++ handlers. This is where the new handler belongs. The legacy enum-based path (`src/llama-chat.h` / `src/llama-chat.cpp`) is untouched, satisfying \"do not modify the header file.\"\n\n---\n\n### Step 1 — New handler function (insert just before `common_chat_try_specialized_template`, ~line 1633)\n\n```cpp\n// Mistral Instruct v0.3 - simple [INST]/[/INST] format, system prepended to first user turn,\n// </s> after assistant turns, no [SYSTEM_PROMPT] / [AVAILABLE_TOOLS] / <<SYS>>.\nstatic common_chat_params common_chat_params_init_mistral_instruct_v3(\n        const common_chat_template &          tmpl,\n        const autoparser::generation_params & inputs) {\n    common_chat_params data;\n    data.prompt = common_chat_template_direct_apply_impl(tmpl, inputs);\n    data.format = COMMON_CHAT_FORMAT_CONTENT_ONLY;\n    return data;\n}\n```\n\n`common_chat_template_direct_apply_impl` renders the Jinja template (which already encodes the system-prepend logic). `COMMON_CHAT_FORMAT_CONTENT_ONLY` is correct because this format has no tools, no reasoning, no PEG parsing.\n\n---\n\n### Step 2 — Detection block (insert after GigaChatV3 check, before `return std::nullopt;`, ~line 1689)\n\n```cpp\n    // Mistral Instruct v0.3 - [INST]/[/INST] without [SYSTEM_PROMPT], [AVAILABLE_TOOLS], or <<SYS>>.\n    if (src.find(\"[INST]\") != std::string::npos &&\n        src.find(\"[SYSTEM_PROMPT]\") == std::string::npos &&\n        src.find(\"[AVAILABLE_TOOLS]\") == std::string::npos &&\n        src.find(\"<<SYS>>\") == std::string::npos) {\n        LOG_DBG(\"Using specialized template: Mistral Instruct v3\\n\");\n        return common_chat_params_init_mistral_instruct_v3(tmpl, params);\n    }\n```\n\n**What each condition excludes:**\n| Condition | Excluded templates |\n|---|---|\n| `[INST]` present | Only Mistral-family |\n| `[SYSTEM_PROMPT]` absent | Ministral 3, Mistral V7 |\n| `[AVAILABLE_TOOLS]` absent | Mistral-Nemo / V3-with-tools |\n| `<<SYS>>` absent | Llama-2 style |\n\nThe Ministral 3 check (requires `[SYSTEM_PROMPT]`) runs first and is completely disjoint — no ordering risk.",
+    "execute_duration_ms": 30887,
+    "execute_api_ms": 30840,
+    "execute_tokens_in": 7,
+    "execute_tokens_out": 1993,
+    "execute_cost_usd": 0.3420285
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.45,
+        "weight": 1,
+        "weighted_score": 0.45,
+        "passed": false,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation has correct structural elements: function definition, auto-detection logic with proper [SYSTEM_PROMPT] check, LOG_DBG call, and COMMON_CHAT_FORMAT_CONTENT_ONLY format. However, it fails on core functional requirements. The handler doesn't implement the actual template behavior - it just calls common_chat_template_direct_apply_impl without any logic to: wrap user turns with [INST]/[/INST] markers, prepend system messages to the first user turn, or append </s> after assistant turns. The function appears to be an empty wrapper relying entirely on template strings rather than implementing the format logic itself, which contradicts how similar handlers typically work. This is approximately 50% structurally correct but fundamentally incomplete in implementation.",
+          "diff_length": 1774,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 15201
+  },
+  "session_id": "4d450170-0959-41c9-af8a-b197140b4f3d"
+}

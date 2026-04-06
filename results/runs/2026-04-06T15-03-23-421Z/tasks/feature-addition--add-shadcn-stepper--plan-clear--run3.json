@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-shadcn-stepper",
+  "task_name": "add stepper component",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T17:20:37.691Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1993122,
+    "duration_api_ms": 2150854,
+    "num_turns": 44,
+    "total_cost_usd": 4.314177899999999,
+    "input_tokens": 41,
+    "output_tokens": 106573,
+    "cache_read_tokens": 1588819,
+    "cache_creation_tokens": 271954,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 755053,
+    "plan_api_ms": 914821,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 26694,
+    "plan_cost_usd": 2.2198649999999995,
+    "plan_content": "Here's the full implementation plan. Here's a summary:\n\n---\n\n## Plan Summary\n\n### Files to create (2 new files)\n1. **`apps/v4/registry/bases/base/ui/stepper.tsx`** — The compound component\n2. **`apps/v4/registry/bases/base/examples/stepper-example.tsx`** — Demo with 5 example sections\n\n### Files to modify (append-only, 2 registry files)\n3. **`apps/v4/registry/bases/base/ui/_registry.ts`** — Insert `stepper` entry after `spinner` (alphabetical)\n4. **`apps/v4/registry/bases/base/examples/_registry.ts`** — Insert `stepper-example` after `spinner-example`\n\n---\n\n### Component design — 7 sub-components, 2 React contexts\n\n| Component | Role |\n|-----------|------|\n| `Stepper` | Root `<div>` with `group/stepper` — manages `value` state (controlled/uncontrolled), orientation context |\n| `StepperItem` | Per-step `<div>` — computes `state: \"active\" \\| \"completed\" \\| \"inactive\"` from context |\n| `StepperTrigger` | Native `<button>` — navigates to step, `aria-current=\"step\"` when active |\n| `StepperTitle` | `<p>` — color varies by `data-[state=...]` |\n| `StepperDescription` | `<p>` — muted subtitle text |\n| `StepperSeparator` | `<div aria-hidden>` — connector line, turns primary when step is `completed` |\n| `StepperPanel` | `<div>` — returns `null` when not active (not in DOM) |\n\n**Key decisions:**\n- Uses `data-[orientation=horizontal]:` bracket syntax (not `data-horizontal:` shorthand) because it's a plain `<div>`, not a base-ui primitive\n- Children respond to root orientation via `group-data-[orientation=...]/stepper:` selectors\n- `StepperItem` accepts a `completed?` prop so callers can mark history steps as done (essential for linear wizards)\n- Vertical separator uses `ms-[11px]` to pixel-perfectly align under a `size-6` (24px) step indicator\n\n### 5 demo examples\n1. **Horizontal** — 3-step, prev/next buttons\n2. **Vertical** — 3-step with descriptions\n3. **With Content** — 4-step wizard using `StepperPanel` (back/continue inside each panel)\n4. **Disabled Steps** — Steps 2 & 3 non-clickable\n5. **Linear (Completed)** — Static tracker with checkmarks for completed steps",
+    "execute_duration_ms": 1238069,
+    "execute_api_ms": 1236033,
+    "execute_tokens_in": 23,
+    "execute_tokens_out": 79879,
+    "execute_cost_usd": 2.0943129
+  },
+  "evaluation": {
+    "overall_score": 0.65,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.65,
+        "weight": 1,
+        "weighted_score": 0.65,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation is well-structured with proper context, data-slot attributes, cn() utility usage, and support for both orientations. However, it has critical mismatches with the rubric requirements: (1) Exports StepperPanel instead of the required StepperContent, (2) Demo registry entry is named 'stepper-example' instead of required 'stepper-demo', (3) Demo code uses StepperPanel instead of StepperContent. The component itself is functional and demonstrates good patterns, but fails to meet the exact specification.",
+          "diff_length": 25371,
+          "new_files": "PLAN.md\napps/v4/registry/bases/base/examples/stepper-example.tsx\napps/v4/registry/bases/base/ui/stepper.tsx"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 14806
+  },
+  "session_id": "45bf948c-5a8b-48b7-a453-beba342eb5a7"
+}

@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "add new AI image provider",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T12:57:01.101Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 689996,
+    "duration_api_ms": 804003,
+    "num_turns": 79,
+    "total_cost_usd": 2.08253445,
+    "input_tokens": 1105,
+    "output_tokens": 33406,
+    "cache_read_tokens": 1740343,
+    "cache_creation_tokens": 129449,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 279468,
+    "plan_api_ms": 395389,
+    "plan_tokens_in": 1078,
+    "plan_tokens_out": 13167,
+    "plan_cost_usd": 1.0404579,
+    "plan_content": "Here's a summary of the plan I've written:\n\n## Plan: `@ai-sdk/pixel-art` Provider Package\n\nThe plan creates **17 files** total — 14 new files forming the package, plus 3 modifications to existing files.\n\n### New package structure at `packages/pixel-art/`\n\n| File | Purpose |\n|---|---|\n| `package.json` | Package config: `@ai-sdk/pixel-art`, version `0.0.0`, deps on `@ai-sdk/provider` + `@ai-sdk/provider-utils` |\n| `tsconfig.json` / `tsconfig.build.json` | TypeScript project references (provider + provider-utils) |\n| `tsup.config.ts` | Dual CJS + ESM build with `__PACKAGE_VERSION__` constant injection |\n| `vitest.node.config.js` / `vitest.edge.config.js` | Test environments (node + edge-runtime) |\n| `src/version.ts` | Runtime version constant |\n| `src/pixel-art-image-settings.ts` | `PixelArtImageModelId`: `'pixelart-v1' \\| 'pixelart-v2' \\| 'pixelart-v2-hd' \\| (string & {})` |\n| `src/pixel-art-image-options.ts` | Zod schema for `providerOptions.pixelArt`: `style`, `pixelDensity`, `outputFormat` |\n| `src/pixel-art-image-model.ts` | `PixelArtImageModel implements ImageModelV3` — POSTs to `/images/generate`, downloads image URLs as `Uint8Array[]` |\n| `src/pixel-art-provider.ts` | `createPixelArt()` factory + `pixelArt` default instance; throws `NoSuchModelError` for language/embedding |\n| `src/index.ts` | Public exports |\n| `src/pixel-art-image-model.test.ts` | Unit tests (request body, options camelCase→snake_case, aspectRatio warning, error handling, metadata) |\n| `src/pixel-art-provider.test.ts` | Factory tests (model construction, unsupported model types) |\n\n### Modifications to existing files\n1. **`tsconfig.json`** (root) — add `{ \"path\": \"packages/pixel-art\" }` alphabetically\n2. **`examples/ai-functions/package.json`** — add `\"@ai-sdk/pixel-art\": \"workspace:*\"`\n3. **`examples/ai-functions/src/generate-image/pixel-art/basic.ts`** — usage example\n\n### Key design decisions\n- Base URL: `https://api.pixelart.ai/v1` → endpoint: `POST /images/generate`\n- Auth: `Authorization: Bearer <key>`, env var: `PIXELART_API_KEY`\n- `maxImagesPerCall = 4`\n- `aspectRatio` → `'unsupported'` warning (API needs explicit width/height)\n- `providerOptions.pixelArt.style` → `style` in body; `pixelDensity → pixel_density`; `outputFormat → output_format`\n- `providerMetadata` key: `'pixelArt'`",
+    "execute_duration_ms": 410528,
+    "execute_api_ms": 408614,
+    "execute_tokens_in": 27,
+    "execute_tokens_out": 20239,
+    "execute_cost_usd": 1.0420765499999998
+  },
+  "evaluation": {
+    "overall_score": 0,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 0,
+        "weight": 0.4,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "checks_passed": 0,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "packages/pixelart/package.json",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/pixelart/src/index.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-provider.ts",
+              "check": "exists",
+              "passed": false
+            },
+            {
+              "path": "packages/pixelart/src/pixelart-image-model.ts",
+              "check": "exists",
+              "passed": false
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 0,
+        "weight": 0.3,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "command": "cd packages/pixelart && npx tsc --noEmit",
+          "exit_code": 1,
+          "output": "/bin/bash: line 0: cd: packages/pixelart: No such file or directory\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/pixelart/src/index.ts"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 0,
+        "weight": 0.15,
+        "weighted_score": 0,
+        "passed": false,
+        "details": {
+          "error": "File not found: packages/pixelart/src/pixelart-image-model.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 4
+  },
+  "session_id": "0cdd38c4-2906-4b29-804e-eaae85d7d22e"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T16:23:59.168Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1143210,
+    "duration_api_ms": 1258153,
+    "num_turns": 73,
+    "total_cost_usd": 4.14756515,
+    "input_tokens": 73,
+    "output_tokens": 34244,
+    "cache_read_tokens": 4173287,
+    "cache_creation_tokens": 160354,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 799322,
+    "plan_api_ms": 942280,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 13098,
+    "plan_cost_usd": 2.3594691500000002,
+    "plan_content": "The plan is written to the plan file. Here's a summary of what will be implemented:\n\n---\n\n## Plan: `@prisma/rest-client-generator`\n\n### New package: `packages/rest-client-generator/`\n\n**6 source files:**\n\n| File | Purpose |\n|---|---|\n| `src/prisma-type-to-ts.ts` | Maps DMMF scalar types (`String`, `DateTime`…) → TypeScript types (`string`, `Date`…) |\n| `src/model-file-generator.ts` | Generates `models/{Model}.ts` with 4 interfaces: `Model`, `ModelWhereUniqueInput`, `ModelCreateInput`, `ModelUpdateInput` |\n| `src/client-file-generator.ts` | Generates `client.ts` with the typed `RestClient` class (native `#` private fields) |\n| `src/generate-client.ts` | Orchestrates generation and writes the `FileMap` to disk |\n| `src/generator.ts` | Implements `Generator` interface from `@prisma/generator` |\n| `src/index.ts` | Entry point: exports `RestClientGenerator` + wires JSON-RPC via `generatorHandler` |\n\n**4 config files** (`package.json`, `tsconfig.json`, `tsconfig.build.json`, `helpers/build.ts`) — modelled after `packages/adapter-pg`.\n\n**2 existing files to modify:**\n- `tsconfig.build.bundle.json` — add `\"@prisma/rest-client-generator\"` path alias\n- `.github/workflows/test-template.yml` — add test step to the `others` CI job\n\n**Generated output** for a schema with `User` model + `Role` enum:\n```\n{outputDir}/\n├── models/User.ts     — 4 typed interfaces\n├── enums.ts           — TypeScript enum declarations\n├── client.ts          — RestClient class with findMany/findUnique/create/update/delete\n└── index.ts           — re-exports everything\n```\n\n**Key design decisions:**\n- Uses `adapterConfig` (CJS + ESM bundle via esbuild, `.d.ts` via tsc) — same as every adapter package\n- Relation/unsupported fields filtered out via `isSerializable()` (`kind === 'scalar' || kind === 'enum'`)\n- `@updatedAt` / DB-computed fields excluded from Create/UpdateInput via `isReadOnly`\n- Fields with `@default(…)` are optional in CreateInput via `hasDefaultValue`\n- `generatorHandler` from `@prisma/generator-helper` handles the JSON-RPC stdin/stderr protocol when the bundle is spawned as a generator binary",
+    "execute_duration_ms": 343888,
+    "execute_api_ms": 315873,
+    "execute_tokens_in": 56,
+    "execute_tokens_out": 21146,
+    "execute_cost_usd": 1.7880959999999995
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation that fully meets all rubric requirements. The package structure is proper with correct package.json configuration and monorepo integration. The entry point (index.ts) correctly uses generatorHandler with both onManifest and onGenerate callbacks following Prisma generator protocol. The generator reads DMMF and iterates over models appropriately (generator.ts, generate-client.ts). For each model, it generates four TypeScript interfaces (base model, WhereUniqueInput, CreateInput, UpdateInput) in model-file-generator.ts. The RestClient class implements all five CRUD methods (findMany, findUnique, create, update, delete) with proper types in client-file-generator.ts. File output is correctly handled with directory cleanup and recursive writing in generate-client.ts. Code quality is high with proper TypeScript conventions, async/await patterns, JSDoc comments, and tsconfig setup. GitHub workflow integration is included. Minor: The prisma-type-to-ts mapping is comprehensive but could theoretically miss custom scalar types in unusual schemas, though this is an acceptable design limitation.",
+          "diff_length": 14585,
+          "new_files": "packages/rest-client-generator/helpers/build.ts\npackages/rest-client-generator/package.json\npackages/rest-client-generator/src/client-file-generator.ts\npackages/rest-client-generator/src/generate-client.ts\npackages/rest-client-generator/src/generator.ts\npackages/rest-client-generator/src/index.ts\npackages/rest-client-generator/src/model-file-generator.ts\npackages/rest-client-generator/src/prisma-type-to-ts.ts\npackages/rest-client-generator/tsconfig.build.json\npackages/rest-client-generator/tsconfig.json"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16445
+  },
+  "session_id": "89c34425-4a99-4e0d-8af8-ffbf750e7986"
+}

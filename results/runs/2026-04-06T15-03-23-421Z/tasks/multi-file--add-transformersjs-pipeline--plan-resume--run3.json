@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-transformersjs-pipeline",
+  "task_name": "add image-text-to-text pipeline",
+  "mode": "plan-resume",
+  "run_number": 3,
+  "timestamp": "2026-04-06T17:55:20.225Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 579293,
+    "duration_api_ms": 754380,
+    "num_turns": 37,
+    "total_cost_usd": 1.77577645,
+    "input_tokens": 34,
+    "output_tokens": 28164,
+    "cache_read_tokens": 1232669,
+    "cache_creation_tokens": 105503,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 491851,
+    "plan_api_ms": 667009,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 22262,
+    "plan_cost_usd": 1.2003210999999998,
+    "plan_content": "Here's the complete plan:\n\n---\n\n## Plan: `image-text-to-text` Pipeline\n\n### What already exists (no changes needed)\n- `AutoModelForImageTextToText` — already exported from `src/models.js` line 8736\n- `MODEL_FOR_IMAGE_TEXT_TO_TEXT_MAPPING_NAMES` — covers LLaVA, SmolVLM, PaliGemma, Qwen2-VL, Florence2, Idefics3, Moondream1, Mistral3, Gemma3n (line 8240)\n- `prepareImages()`, `TextImagePipelineConstructorArgs`, `ImagePipelineInputs` — all reusable from `src/pipelines.js`\n\n---\n\n### Changes: only `src/pipelines.js` + one new test file\n\n**Step 1 — Import** (line ~40 in `src/pipelines.js`):  \nAdd `AutoModelForImageTextToText` to the named import from `./models.js`.\n\n**Step 2 — JSDoc typedefs** (after `ImageToTextPipeline` at line 2005):  \nThree typedefs following the established pattern: `ImageTextToTextSingle`, `ImageTextToTextOutput`, `ImageTextToTextPipelineCallback` (params: `images`, `text`, optional `GenerationConfig`), and the composite `ImageTextToTextPipelineType`.\n\n**Step 3 — Pipeline class** (immediately after Step 2):  \n`ImageTextToTextPipeline extends Pipeline` using `TextImagePipelineConstructorArgs`. The `_call(images, text, generate_kwargs={})` method:\n1. `prepareImages(images)` to normalise inputs\n2. **`this.processor(preparedImages, text, { padding: true, truncation: true })`** — the key VLM distinction: processor receives image *and* text jointly so it can insert image tokens into the text sequence\n3. `this.model.generate({ ...inputs, ...generate_kwargs })`\n4. `this.tokenizer.batch_decode(output, { skip_special_tokens: true })`\n5. Returns `ImageTextToTextOutput` for single / `ImageTextToTextOutput[]` for batched\n\n**Step 4 — `SUPPORTED_TASKS` registration** (after `\"image-to-text\"` entry, line ~3255):\n```js\n\"image-text-to-text\": {\n    tokenizer: AutoTokenizer,\n    pipeline: ImageTextToTextPipeline,\n    model: AutoModelForImageTextToText,\n    processor: AutoProcessor,\n    default: { model: \"HuggingFaceTB/SmolVLM-256M-Instruct\" },\n    type: \"multimodal\",\n}\n```\n\n**Step 5 — New test file**: `tests/pipelines/test_pipelines_image_text_to_text.js`  \nAuto-discovered by `collect_and_execute_pipeline_tests` via `fs.readdirSync`. Tests instanceof check, single-image, and batched calls. A small ONNX-compatible VLM test model ID needs to be confirmed at implementation time.",
+    "execute_duration_ms": 87442,
+    "execute_api_ms": 87371,
+    "execute_tokens_in": 18,
+    "execute_tokens_out": 5902,
+    "execute_cost_usd": 0.57545535
+  },
+  "evaluation": {
+    "overall_score": 0.55,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.55,
+        "weight": 1,
+        "weighted_score": 0.55,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is mostly correct but has a critical bug in the return logic. The pipeline class is well-structured with proper JSDoc documentation, correct imports (AutoModelForImageTextToText), and proper registration in SUPPORTED_TASKS as 'image-text-to-text' with type 'multimodal'. The _call method correctly processes images and text through the processor and calls generate(). However, there is a significant issue in line 2057: when isBatched is true, the code returns [decoded], which wraps the entire batch result in an extra array. This causes a structural mismatch with the test expectations: for 2 input images, the test expects output to be an array of length 2 where each element is an array, but the code would return a length-1 array containing all results. This would cause the batch_size>1 test case (lines 40-47) to fail. The single image case would work correctly. Additionally, the text batching behavior when multiple images are provided with a single text prompt is unclear in the implementation.",
+          "diff_length": 5877,
+          "new_files": "tests/pipelines/test_pipelines_image_text_to_text.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 29159
+  },
+  "session_id": "d3f199de-8c7b-4104-b0e7-604db5810ad1"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-resume",
+  "run_number": 3,
+  "timestamp": "2026-04-06T16:17:52.244Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 870606,
+    "duration_api_ms": 867534,
+    "num_turns": 55,
+    "total_cost_usd": 2.4178039499999997,
+    "input_tokens": 56,
+    "output_tokens": 51999,
+    "cache_read_tokens": 2891588,
+    "cache_creation_tokens": 126118,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 471935,
+    "plan_api_ms": 470119,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 21789,
+    "plan_cost_usd": 0.8722457999999998,
+    "plan_content": "Here's the complete plan for the `@prisma/rest-api-client-generator` package:\n\n---\n\n## Overview\n\nA new package `packages/rest-api-client-generator/` that implements the standard Prisma `Generator` interface and emits a typed TypeScript REST API client from the DMMF.\n\n## What gets generated (per model)\n\nGiven a `User` model, the generator produces 3 files in the configured `output` directory:\n\n- **`types.ts`** — 6 TypeScript declarations per model:\n  - `User` — full model interface (scalar + enum fields only, relation fields excluded)\n  - `UserWhereInput` — all fields optional (for filtering)\n  - `UserWhereUniqueInput` — only `@id`/`@unique` fields, optional\n  - `UserCreateInput` — required fields required, auto-generated fields (`@id`, `@updatedAt`) excluded\n  - `UserUpdateInput` — all fields optional\n  - `UserOrderByInput` — all fields typed as `'asc' | 'desc'`\n  - Plus enum union types: `export type Role = 'ADMIN' | 'USER'`\n\n- **`rest-client.ts`** — per-model `UserRestClient` class with 5 async `fetch`-based methods (`findMany`, `findUnique`, `create`, `update`, `delete`) + a top-level `RestApiClient` aggregator class\n\n- **`index.ts`** — `export *` from both files\n\n## Package structure (14 new files)\n\nAll config files (`package.json`, `tsconfig.json`, `tsconfig.build.json`, `helpers/build.ts`) mirror `client-generator-ts` exactly. Dependencies: `@prisma/generator`, `@prisma/dmmf`, `@prisma/internals`, `@prisma/debug` — all workspace deps, no third-party runtime deps.\n\n## 3 files modified\n\n| File | Change |\n|---|---|\n| `tsconfig.build.bundle.json` | Add path alias for editor go-to-definition |\n| `packages/client-generator-registry/package.json` | Add `workspace:*` dep |\n| `packages/client-generator-registry/src/default.ts` | Register `new RestApiClientGenerator()` |\n\n## Key design decisions\n- Uses template strings (not `@prisma/ts-builders`) — simpler for this use case\n- Uses global `fetch` in generated output — no runtime dependencies\n- `DateTime` → `string` (ISO 8601), `Bytes` → `string` (base64) for wire compatibility\n- URL pluralization: `modelName.toLowerCase() + 's'` (no pluralize library needed)\n- Native `#baseUrl` private field in `RestApiClient` per coding conventions",
+    "execute_duration_ms": 398671,
+    "execute_api_ms": 397415,
+    "execute_tokens_in": 40,
+    "execute_tokens_out": 30210,
+    "execute_cost_usd": 1.54555815
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete and correct implementation. All rubric requirements met: (1) Package directory with proper package.json and monorepo structure ✓; (2) Generator entry point implementing Generator interface with getManifest() and generate() methods ✓; (3) DMMF reading and model iteration in types-file.ts and client-file.ts ✓; (4) TypeScript interfaces generated for all models, plus all five CRUD methods (findMany, findUnique, create, update, delete) with proper types ✓; (5) Output file writing to generator directory with proper cleanup ✓; (6) TypeScript conventions followed, Prisma generator patterns implemented, comprehensive test suite included ✓. Additional strengths: proper registry integration, type-to-DMMF mapping utilities, good separation of concerns in generator modules, and well-designed tests verifying all functionality.",
+          "diff_length": 35096,
+          "new_files": "packages/rest-api-client-generator/helpers/build.ts\npackages/rest-api-client-generator/package.json\npackages/rest-api-client-generator/src/__tests__/client-file.test.ts\npackages/rest-api-client-generator/src/__tests__/fixtures.ts\npackages/rest-api-client-generator/src/__tests__/type-utils.test.ts\npackages/rest-api-client-generator/src/__tests__/types-file.test.ts\npackages/rest-api-client-generator/src/generate-rest-client.ts\npackages/rest-api-client-generator/src/generator.ts\npackages/rest-api-client-generator/src/generators/client-file.ts\npackages/rest-api-client-generator/src/generators/index-file.ts\npackages/rest-api-client-generator/src/generators/types-file.ts\npackages/rest-api-client-generator/src/index.ts\npackages/rest-api-client-generator/src/type-utils.ts\npackages/rest-api-client-generator/tsconfig.build.json\npackages/rest-api-client-generator/tsconfig.json"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 14413
+  },
+  "session_id": "b78b83f2-1789-49fb-9b65-037aa0232549"
+}

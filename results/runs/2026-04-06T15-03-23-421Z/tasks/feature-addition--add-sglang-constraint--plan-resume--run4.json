@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-resume",
+  "run_number": 4,
+  "timestamp": "2026-04-06T16:49:38.992Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1108915,
+    "duration_api_ms": 1199665,
+    "num_turns": 72,
+    "total_cost_usd": 3.66910225,
+    "input_tokens": 68,
+    "output_tokens": 54532,
+    "cache_read_tokens": 4568145,
+    "cache_creation_tokens": 190468,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 812347,
+    "plan_api_ms": 903302,
+    "plan_tokens_in": 27,
+    "plan_tokens_out": 36202,
+    "plan_cost_usd": 1.87368325,
+    "plan_content": "Here is the complete implementation plan for the `json_path` output constraint.\n\n---\n\n## Design Summary\n\nThe `json_path` constraint is **hybrid**: token-level grammar enforcement ensures the output is valid JSON, and post-generation validation checks the path expression is satisfied.\n\n---\n\n## New Files (2)\n\n| File | Purpose |\n|------|---------|\n| `python/sglang/lang/json_path_utils.py` | Self-contained JSONPath evaluator — `validate_json_path(json_str, path) -> bool`. Tries `jsonpath_ng` if installed, falls back to built-in evaluator supporting `$`, `.field`, `[n]`, `[*]`, `..` (recursive descent). |\n| `python/sglang/test/kits/json_path_constrained_kit.py` | Test mixin following `json_constrained_kit.py` pattern. |\n\n---\n\n## Modified Files (7)\n\n### Frontend (lang/)\n1. **`api.py`** — Add `json_path: Optional[str]` to `gen()`, validate it starts with `$`, pass to `SglGen`.\n2. **`ir.py`** — Add `json_path` to `SglSamplingParams` (dataclass field, `clone()` positional args, `to_srt_kwargs()`), and to `SglGen.__init__()`.\n3. **`interpreter.py`** — Add `\"json_path\"` to `_resolve_sampling_params()` propagation list. In `_execute_gen()`, call `validate_json_path()` after generation completes (both streaming and non-streaming paths) and raise `ValueError` if the path is not satisfied.\n\n### Backend SRT (srt/)\n4. **`sampling_params.py`** — Add `json_path` field + include it in `verify()`'s mutually-exclusive grammar check alongside `regex`, `json_schema`, `ebnf`.\n5. **`grammar_manager.py`** — Add `json_path` to the outer trigger condition and add `elif ... json_path ... → key = (\"json_path\", path)` to the dispatch chain.\n6. **`base_grammar_backend.py`** — Add `dispatch_json_path()` (default: calls `dispatch_json(\"{}\")` — empty schema matches any JSON value). Add `\"json_path\"` case in `_init_value_dispatch()`.\n7. **`xgrammar_backend.py`** — Override `dispatch_json_path()` to call `dispatch_json(\"$$ANY$$\")`, using xgrammar's efficient `compile_builtin_json_grammar()`.\n\n---\n\n## Key Design Decisions\n\n- **Multi-backend compatibility**: xgrammar uses its native builtin JSON grammar; outlines/llguidance fall back to `dispatch_json(\"{}\")` (empty schema = any JSON). No new grammar library APIs required.\n- **Path validation lives in the interpreter** (not SRT): keeps SRT changes minimal and works for both streaming and non-streaming generation.\n- **`clone()` positional arg ordering**: `json_path` must be added as the 19th positional arg immediately after `json_schema` — order must match the dataclass field declaration.\n- **Mutual exclusivity**: `json_path` is mutually exclusive with `regex`, `json_schema`, and `ebnf`.",
+    "execute_duration_ms": 296568,
+    "execute_api_ms": 296363,
+    "execute_tokens_in": 41,
+    "execute_tokens_out": 18330,
+    "execute_cost_usd": 1.7954189999999997
+  },
+  "evaluation": {
+    "overall_score": 0.88,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.88,
+        "weight": 1,
+        "weighted_score": 0.88,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation successfully addresses all rubric requirements. The agent created a json_path constraint for SGLang that: (1) includes a new validation function (validate_json_path) in json_path_utils.py following IR patterns; (2) validates output is valid JSON containing the specified path with support for JSONPath syntax (root, field access, array indexing, wildcards, recursive descent) and optional jsonpath_ng fallback; (3) registers the constraint alongside existing ones (regex, json_schema, ebnf) with mutual exclusivity checks in SamplingParams and GrammarManager; (4) adds json_path identifier throughout IR definitions (SglSamplingParams, SglGen, api.py); (5) follows existing patterns with parameter passing, validation hooks, and constraint dispatching. The design choice to validate post-generation rather than at token-level is reasonable for JSONPath since token-level constraints only need to enforce valid JSON structure. Includes comprehensive test kit. Minor deductions for post-generation validation being conceptually different from other grammar-based constraints, though this is a sound architectural choice.",
+          "diff_length": 18500,
+          "new_files": "python/sglang/lang/json_path_utils.py\npython/sglang/test/kits/json_path_constrained_kit.py"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19884
+  },
+  "session_id": "ab0dc14d-30d2-4772-a42b-893d830badc7"
+}

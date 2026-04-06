@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-prisma-generator",
+  "task_name": "add REST API client generator",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T16:22:49.918Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 581979,
+    "duration_api_ms": 722371,
+    "num_turns": 58,
+    "total_cost_usd": 1.79225665,
+    "input_tokens": 43,
+    "output_tokens": 34863,
+    "cache_read_tokens": 1325694,
+    "cache_creation_tokens": 94147,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 254986,
+    "plan_api_ms": 397426,
+    "plan_tokens_in": 11,
+    "plan_tokens_out": 9873,
+    "plan_cost_usd": 0.8357752500000001,
+    "plan_content": "Here's a summary of what was explored and planned:\n\n---\n\n## Plan: `@prisma/rest-client-generator`\n\n### How Prisma generators work (key findings)\n\n- Generators implement the `Generator` interface from `@prisma/generator` with two methods: `getManifest()` and `generate()`\n- **In-process generators** (like `prisma-client-js`) are registered in `packages/client-generator-registry/src/default.ts` — no RPC needed\n- `generate(options: GeneratorOptions)` receives the full `DMMF.Document` — a rich representation of the schema including all models and their fields\n- The `Generator` class's `name` property is what users put in `provider = \"...\"` in their schema\n\n### New package: 10 files to create\n\n| File | Role |\n|---|---|\n| `package.json` | Declares `@prisma/rest-client-generator`; deps: `@prisma/dmmf`, `@prisma/generator` |\n| `tsconfig.json` / `tsconfig.build.json` / `helpers/build.ts` | Standard monorepo config using `adapterConfig` for CJS+ESM build |\n| `src/type-mapper.ts` | Maps DMMF field types → TS types (`String→string`, `DateTime→string`, relations→skip) |\n| `src/model-code-generator.ts` | Generates interface, 5 args interfaces, and `UserRestClient` class per model |\n| `src/generate-client.ts` | Orchestrates all models + enums, writes `index.ts` to output dir |\n| `src/generator.ts` | `RestClientGenerator` class (`name = 'rest-client'`) |\n| `src/index.ts` | Public exports |\n| `src/__tests__/rest-client-generator.test.ts` | Vitest unit tests |\n\n### 4 files to modify\n\n1. **`packages/client-generator-registry/package.json`** — add `@prisma/rest-client-generator` workspace dep\n2. **`packages/client-generator-registry/src/default.ts`** — register `new RestClientGenerator()`\n3. **`tsconfig.build.bundle.json`** — add path alias for IDE go-to-definition\n4. **`.github/workflows/test-template.yml`** — add test step in `test-client-internals` job\n\n### Generated output shape\n\nFor each model, the output `index.ts` contains: a typed interface (scalar/enum fields only), `FindManyArgs`/`FindUniqueArgs`/`CreateArgs`/`UpdateArgs`/`DeleteArgs` interfaces, a `<Model>RestClient` class with 5 native-`fetch` CRUD methods, enum type aliases, and a top-level `RestClient` aggregating all per-model clients.",
+    "execute_duration_ms": 326993,
+    "execute_api_ms": 324945,
+    "execute_tokens_in": 32,
+    "execute_tokens_out": 24990,
+    "execute_cost_usd": 0.9564813999999998
+  },
+  "evaluation": {
+    "overall_score": 0.88,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.88,
+        "weight": 1,
+        "weighted_score": 0.88,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation that successfully meets all core requirements. The agent created a complete Prisma generator package with: (1) proper package.json with prisma/generator dependencies; (2) a Generator interface implementation with getManifest() and generate() methods (the actual Prisma protocol, though the rubric mentions 'generatorHandler callbacks' which appears to be outdated terminology); (3) correct DMMF reading and model iteration; (4) full TypeScript interfaces and all 5 CRUD methods (findMany, findUnique, create, update, delete) with proper types, error handling, and HTTP methods; (5) output correctly written to the generator output directory; (6) clean TypeScript code following conventions with proper integration into the monorepo structure, registry, CI/CD, and comprehensive tests. Minor deduction only for the rubric's mention of 'generatorHandler with onGenerate/onManifest callbacks' not matching the actual Generator interface pattern used (though the implementation is correct per Prisma's actual generator protocol).",
+          "diff_length": 26289,
+          "new_files": "PLAN.md\npackages/rest-client-generator/helpers/build.ts\npackages/rest-client-generator/package.json\npackages/rest-client-generator/src/__tests__/rest-client-generator.test.ts\npackages/rest-client-generator/src/generate-client.ts\npackages/rest-client-generator/src/generator.ts\npackages/rest-client-generator/src/index.ts\npackages/rest-client-generator/src/model-code-generator.ts\npackages/rest-client-generator/src/type-mapper.ts\npackages/rest-client-generator/tsconfig.build.json\npackages/rest-client-generator/tsconfig.json"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 20001
+  },
+  "session_id": "694e2a21-326c-49d2-8c0a-912be4518684"
+}

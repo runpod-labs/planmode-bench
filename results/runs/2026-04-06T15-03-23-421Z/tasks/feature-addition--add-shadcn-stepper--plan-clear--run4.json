@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-shadcn-stepper",
+  "task_name": "add stepper component",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T17:14:33.635Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 1624745,
+    "duration_api_ms": 1838424,
+    "num_turns": 53,
+    "total_cost_usd": 3.492208449999999,
+    "input_tokens": 47,
+    "output_tokens": 88685,
+    "cache_read_tokens": 1102046,
+    "cache_creation_tokens": 196819,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1078455,
+    "plan_api_ms": 1293207,
+    "plan_tokens_in": 22,
+    "plan_tokens_out": 46951,
+    "plan_cost_usd": 2.492065749999999,
+    "plan_content": "Here is the full implementation plan:\n\n---\n\n## Plan: Stepper Compound Component\n\n### What gets created (2 new files)\n1. `apps/v4/registry/new-york-v4/ui/stepper.tsx` — the full compound component\n2. `apps/v4/registry/new-york-v4/examples/stepper-demo.tsx` — 3-step onboarding wizard demo\n\n### What gets modified (2 registry files, entries added alphabetically)\n1. `apps/v4/registry/new-york-v4/ui/_registry.ts` — insert `stepper` entry between `separator` (line 447) and `sheet` (line 448)\n2. `apps/v4/registry/new-york-v4/examples/_registry.ts` — insert `stepper-demo` entry between `separator-demo` (line 1937) and `sheet-demo` (line 1938)\n\n---\n\n### Architecture highlights\n\n**Dual React context (mirrors `carousel.tsx`):**\n- `StepperContext` → root state: `activeStep`, `onStepChange`, `orientation`\n- `StepperItemContext` → per-item derived state: `step`, `isActive`, `isCompleted`\n\n**8 sub-components:**\n\n| Component | Notes |\n|---|---|\n| `Stepper` | Root div. Provides context, `data-orientation`, `group/stepper` |\n| `StepperItem` | Per-step div. Provides item context, `data-active`/`data-completed`, `group/stepper-item` |\n| `StepperTrigger` | Native `<button>`, calls `onStepChange(step)` on click |\n| `StepperIndicator` | Circular `<span>` — step number or `CheckIcon` when completed |\n| `StepperTitle` | `text-sm font-semibold` paragraph |\n| `StepperDescription` | `text-xs text-muted-foreground` paragraph |\n| `StepperSeparator` | Between items at root level; takes `step` prop; fills when step is completed |\n| `StepperPanel` | Inside `StepperItem`; `hidden` when `!isActive` |\n\n**Orientation:** Driven entirely by `data-[orientation=horizontal]/vertical` selectors on the root `group/stepper` — no conditional JS logic (mirrors `tabs.tsx` pattern).\n\n**No Radix dependency:** `lucide-react` (for `CheckIcon`) is already a style-level dependency in `registry.ts`.",
+    "execute_duration_ms": 546290,
+    "execute_api_ms": 545217,
+    "execute_tokens_in": 25,
+    "execute_tokens_out": 41734,
+    "execute_cost_usd": 1.0001426999999998
+  },
+  "evaluation": {
+    "overall_score": 0.85,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.85,
+        "weight": 1,
+        "weighted_score": 0.85,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is well-architected and mostly correct. All requirements met except for one critical naming mismatch: the rubric specifies 'StepperContent' should be exported, but the implementation exports 'StepperPanel' instead. The component is functionally equivalent and actually well-designed (StepperPanel is a more semantic name for the content wrapper), and the demo uses it correctly. All other requirements are satisfied: 'use client' marker present, all required sub-components with data-slot attributes, cn() utility used throughout, dual React contexts (StepperContext and StepperItemContext) properly implement state sharing, horizontal/vertical orientation support works via data-[orientation] selectors, demo is comprehensive with useState and navigation, registry entries correctly added. Bonus: StepperIndicator component included (not in rubric but necessary and used). No existing files modified. The deviation from specified component names prevents a perfect score despite solid implementation.",
+          "diff_length": 15814,
+          "new_files": "PLAN.md\napps/v4/registry/new-york-v4/examples/stepper-demo.tsx\napps/v4/registry/new-york-v4/ui/stepper.tsx"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 17304
+  },
+  "session_id": "d5f57169-d754-4d6d-a2ed-def5e7e8d1ec"
+}

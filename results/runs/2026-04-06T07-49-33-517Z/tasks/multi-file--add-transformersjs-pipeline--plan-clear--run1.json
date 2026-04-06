@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-transformersjs-pipeline",
+  "task_name": "add image-text-to-text pipeline",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T13:16:09.038Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 639905,
+    "duration_api_ms": 802702,
+    "num_turns": 59,
+    "total_cost_usd": 1.8405610000000001,
+    "input_tokens": 56,
+    "output_tokens": 28539,
+    "cache_read_tokens": 1404941,
+    "cache_creation_tokens": 89316,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 354618,
+    "plan_api_ms": 518890,
+    "plan_tokens_in": 22,
+    "plan_tokens_out": 14465,
+    "plan_cost_usd": 1.1745379,
+    "plan_content": "Here's a summary of the plan I've written:\n\n---\n\n## Plan: `image-text-to-text` Pipeline\n\n### What was found in the codebase\n\n- `AutoModelForImageTextToText` **already exists** in `src/models.js` (line 8736), supporting 11 VLMs: LLaVA, SmolVLM, PaliGemma, Qwen2-VL, Florence2, Moondream, Idefics3, and more.\n- All pipeline infrastructure (base class, typedefs, registration pattern, factory function) is in the single file `src/pipelines.js`.\n- The test runner (`collect_and_execute_pipeline_tests`) auto-discovers any file placed in `tests/pipelines/` — no registration needed.\n\n### Changes (2 files, no existing code modified)\n\n**`src/pipelines.js`** — 5 additions:\n1. Add `AutoModelForImageTextToText` to the existing `import … from './models.js'` block\n2. Add `@typedef` JSDoc block (`ImageTextToTextSingle`, `ImageTextToTextOutput`, `ImageTextToTextPipelineCallback`, `ImageTextToTextPipelineType`) — after the `ImageToTextPipeline` class\n3. Add `ImageTextToTextPipeline` class — same location, following `TextImagePipelineConstructorArgs` convention; `_call(image, text, generate_kwargs)` calls `this.processor(image, text)` then `model.generate()`, strips echoed input via the same character-trimming pattern used by `TextGenerationPipeline`\n4. Add `\"image-text-to-text\"` entry to `SUPPORTED_TASKS` (after `\"image-to-text\"`) with `tokenizer`, `pipeline`, `model`, `processor`, `default`, and `type: \"multimodal\"`\n5. Add one JSDoc bullet to the `pipeline()` function's task list\n\n**`tests/pipelines/test_pipelines_image_text_to_text.js`** — new file: instance check + inference output shape check, using a tiny test model.",
+    "execute_duration_ms": 285287,
+    "execute_api_ms": 283812,
+    "execute_tokens_in": 34,
+    "execute_tokens_out": 14074,
+    "execute_cost_usd": 0.6660231
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/pipelines.js",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/pipelines.js",
+              "check": "contains \"ImageTextToTextPipeline\"",
+              "passed": true
+            },
+            {
+              "path": "src/pipelines.js",
+              "check": "contains \"image-text-to-text\"",
+              "passed": true
+            },
+            {
+              "path": "src/pipelines.js",
+              "check": "contains \"AutoModelForImageTextToText\"",
+              "passed": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.3,
+        "weighted_score": 0.3,
+        "passed": true,
+        "details": {
+          "command": "node -e \"const p = require('./src/pipelines.js'); if (typeof p.ImageTextToTextPipeline !== 'function') { process.exit(1); } console.log('OK')\"",
+          "exit_code": 0,
+          "output": "OK\n"
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 6,
+          "patterns_total": 6,
+          "pattern_results": [
+            {
+              "pattern": "class ImageTextToTextPipeline",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "async _call\\(",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "\"image-text-to-text\":\\s*\\{",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "AutoModelForImageTextToText",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "generate\\(",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "@typedef.*ImageTextToText",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "regex",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "patterns_matched": 3,
+          "patterns_total": 3,
+          "pattern_results": [
+            {
+              "pattern": "\"type\":\\s*\"multimodal\"",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "generated_text",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            },
+            {
+              "pattern": "pixel_values",
+              "should_match": true,
+              "actual_match": true,
+              "correct": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 142
+  },
+  "session_id": "d4975153-b937-4e95-88d5-22d1a4a426d4"
+}

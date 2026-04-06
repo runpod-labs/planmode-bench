@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-nextjs-geo",
+  "task_name": "add geolocation utility module",
+  "mode": "plan-clear",
+  "run_number": 2,
+  "timestamp": "2026-04-06T15:51:25.194Z",
+  "model": "claude-sonnet-4-6",
+  "metrics": {
+    "duration_ms": 838105,
+    "duration_api_ms": 954420,
+    "num_turns": 36,
+    "total_cost_usd": 2.23238095,
+    "input_tokens": 34,
+    "output_tokens": 20536,
+    "cache_read_tokens": 633218,
+    "cache_creation_tokens": 97298,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 725915,
+    "plan_api_ms": 844911,
+    "plan_tokens_in": 17,
+    "plan_tokens_out": 11988,
+    "plan_cost_usd": 1.8977933500000002,
+    "plan_content": "The plan is written to `/Users/timpietrusky/.claude/plans/streamed-imagining-frog.md`. Here's a summary of what will be implemented:\n\n---\n\n## Plan: `next/geo` Utility Module\n\n**5 files total — 4 new, 1 modified (additive only):**\n\n### New files\n1. **`packages/next/src/server/web/spec-extension/geo.ts`** — The implementation. Modeled exactly on `user-agent.ts`. Exports:\n   - `GeoData`, `DistanceUnit`, `GeoRegion` types\n   - `geo({ headers })` / `geoFromHeaders(headers)` — extract country, city, region, lat/lon, timezone from Vercel `x-vercel-ip-*` headers (Cloudflare `cf-ipcountry`/`cf-ipcity` as fallback)\n   - `getCountryName(code)` — ISO 3166-1 alpha-2 → English name, embedded static table (~55 countries)\n   - `isInRegion(code, region)` — named groups (`\"EU\"`, `\"EEA\"`, `\"APAC\"`, `\"NA\"`, `\"LATAM\"`) or explicit `string[]`\n   - `haversineDistance(lat1, lon1, lat2, lon2, unit?)` — great-circle distance, km default\n\n2. **`packages/next/geo.js`** — CJS entry point, re-exports each named export from `./dist/server/web/spec-extension/geo` (follows `headers.js` pattern exactly)\n\n3. **`packages/next/geo.d.ts`** — `export * from './dist/server/web/spec-extension/geo'`\n\n4. **`test/unit/web-runtime/geo.test.ts`** — Edge-runtime jest environment, ~30 test cases covering all four functions\n\n### Modified file\n5. **`packages/next/package.json`** — Add `\"geo.js\"` and `\"geo.d.ts\"` to the `\"files\"` array (2-line additive change)\n\n**Key design decisions:**\n- Zero new npm dependencies — country table and region groups are embedded static constants\n- No Node.js built-ins — fully edge-runtime compatible (picked up by the existing SWC server glob automatically, no taskfile changes needed)\n- `next/server` is **not** touched — `next/geo` is a standalone dedicated entry point",
+    "execute_duration_ms": 112190,
+    "execute_api_ms": 109509,
+    "execute_tokens_in": 17,
+    "execute_tokens_out": 8548,
+    "execute_cost_usd": 0.3345876
+  },
+  "evaluation": {
+    "overall_score": 0.85,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.85,
+        "weight": 1,
+        "weighted_score": 0.85,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is well-structured and comprehensive, with proper TypeScript types, full test coverage (30+ test cases), and correct integration into package.json. All core functionality is present: geoFromHeaders correctly extracts Vercel/Cloudflare headers with proper fallbacks, getCountryName provides the lookup table, isInRegion handles named regions and explicit arrays with case-insensitivity, and the Haversine distance calculation is mathematically correct using Math.atan2 and Math.sin. Entry points (geo.js, geo.d.ts) follow the established pattern. However, there is one clear specification mismatch: the rubric explicitly requires a function named 'geoDistance' but the implementation provides 'haversineDistance' instead. Additionally, the type is named 'GeoData' rather than 'Geo'. These naming deviations from the specification, while functionally sound internally, constitute a notable gap from the stated requirements. The implementation is production-ready but does not fully conform to the rubric's explicit function naming.",
+          "diff_length": 16472,
+          "new_files": "PLAN.md\npackages/next/geo.d.ts\npackages/next/geo.js\npackages/next/src/server/web/spec-extension/geo.ts\ntest/unit/web-runtime/geo.test.ts"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 20188
+  },
+  "session_id": "75c11a10-f65d-42db-a03a-9690e01676a4"
+}
