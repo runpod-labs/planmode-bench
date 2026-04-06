@@ -39,26 +39,26 @@ export default function Verdict({ overall, totalTasks, model }: Props) {
   const planAvgDuration =
     planModes.reduce((s, m) => s + m.avgDurationMs, 0) / planModes.length;
 
-  const scoreDiff = pctDiff(planAvgScore, oneshot.avgScore);
+  // Use absolute percentage point difference for score (85% vs 87% = +2pp)
+  const scoreDiff = (planAvgScore - oneshot.avgScore) * 100;
   const costDiff = pctDiff(planAvgCost, oneshot.avgCost);
   const timeDiff = pctDiff(planAvgDuration, oneshot.avgDurationMs);
 
   const scoreLabel =
-    Math.abs(scoreDiff) < 5
+    Math.abs(scoreDiff) < 0.5
       ? "same accuracy"
       : scoreDiff > 0
-        ? `+${scoreDiff.toFixed(0)}% better`
-        : `${scoreDiff.toFixed(0)}% worse`;
+        ? `+${Math.round(scoreDiff)}% accuracy`
+        : `${Math.round(scoreDiff)}% accuracy`;
 
   return (
     <div>
       {/* Claim — constrained width */}
       <div className="mx-auto max-w-5xl">
         <h1 className="text-6xl sm:text-7xl lg:text-8xl font-heading tracking-tight">
-          stop using plan mode.
+          is plan mode worth it?
         </h1>
         <p className="mt-14 max-w-5xl text-lg leading-relaxed text-foreground">
-          does planning before coding actually help?
           we tested 3 modes (one-shot, plan+resume, plan+clear) across {totalTasks}{" "}tasks on real codebases
           like vLLM, bun, T3 Code, llama.cpp, unsloth, diffusers, transformers.js, and AI SDK.
           plan mode costs more, takes longer, and doesn&apos;t improve accuracy
@@ -73,7 +73,7 @@ export default function Verdict({ overall, totalTasks, model }: Props) {
             <Equal className="h-4 w-4" />
             accuracy
           </div>
-          <div className="text-5xl sm:text-6xl font-heading tabular-nums tracking-tight">
+          <div className={`text-5xl sm:text-6xl font-heading tabular-nums tracking-tight ${scoreDiff > 0.5 ? "text-emerald-400" : scoreDiff < -0.5 ? "text-red-400" : ""}`}>
             {scoreLabel}
           </div>
           <div className="mt-4 flex items-baseline gap-3 text-sm font-mono text-muted-foreground">

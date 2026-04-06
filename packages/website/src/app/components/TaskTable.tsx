@@ -98,7 +98,7 @@ export default function TaskTable({ tasks, model }: { tasks: TaskResult[]; model
         all results
       </h2>
       <p className="mb-8 text-sm text-muted-foreground text-center">
-        {tasks.length} tasks, 10 runs per mode in Claude Code using <code className="px-1.5 py-0.5 rounded bg-muted/30 text-xs font-mono text-foreground/80">{model}</code>
+        {tasks.length} tasks, 5 runs per mode in Claude Code using <code className="px-1.5 py-0.5 rounded bg-muted/30 text-xs font-mono text-foreground/80">{model}</code>
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">

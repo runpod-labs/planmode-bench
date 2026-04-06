@@ -28,6 +28,13 @@ function pct(value: number, baseline: number): string {
   return `${diff > 0 ? "+" : ""}${diff.toFixed(0)}%`;
 }
 
+// Absolute percentage point difference for score (0-1 scale values displayed as %)
+function pctPoints(value: number, baseline: number): string {
+  const diff = Math.round((value - baseline) * 100);
+  if (Math.abs(diff) < 1) return "";
+  return `${diff > 0 ? "+" : ""}${diff}%`;
+}
+
 function pctColor(value: number, baseline: number, lowerIsBetter: boolean): string {
   if (baseline === 0) return "text-muted-foreground";
   const diff = ((value - baseline) / baseline) * 100;
@@ -52,7 +59,7 @@ export default function KeyNumbers({ overall }: Props) {
   const maxTurns = Math.max(...active.map((m) => overall[m.key]!.avgTurns));
 
   const metrics = [
-    { label: "score", icon: Trophy, getValue: (s: Stats) => Math.round(s.avgScore * 100) + "%", getRaw: (s: Stats) => s.avgScore, max: maxScore, lowerIsBetter: false },
+    { label: "score", icon: Trophy, getValue: (s: Stats) => Math.round(s.avgScore * 100) + "%", getRaw: (s: Stats) => s.avgScore, max: maxScore, lowerIsBetter: false, useAbsPctDiff: true },
     { label: "cost/task", icon: DollarSign, getValue: (s: Stats) => "$" + s.avgCost.toFixed(2), getRaw: (s: Stats) => s.avgCost, max: maxCost, lowerIsBetter: true },
     { label: "duration", icon: Clock, getValue: (s: Stats) => formatDuration(s.avgDurationMs), getRaw: (s: Stats) => s.avgDurationMs, max: maxDuration, lowerIsBetter: true },
     { label: "turns", icon: Hash, getValue: (s: Stats) => String(Math.round(s.avgTurns)), getRaw: (s: Stats) => s.avgTurns, max: maxTurns, lowerIsBetter: true },
@@ -81,7 +88,7 @@ export default function KeyNumbers({ overall }: Props) {
                   const isBaseline = m.key === "normal";
                   const raw = metric.getRaw(s);
                   const baselineRaw = metric.getRaw(baseline);
-                  const diffLabel = isBaseline ? "" : pct(raw, baselineRaw);
+                  const diffLabel = isBaseline ? "" : (metric.useAbsPctDiff ? pctPoints(raw, baselineRaw) : pct(raw, baselineRaw));
                   const barPct = metric.max > 0 ? (raw / metric.max) * 100 : 0;
                   const basePct = metric.max > 0 ? (baselineRaw / metric.max) * 100 : 0;
                   const isMore = raw > baselineRaw;

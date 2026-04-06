@@ -28,7 +28,7 @@ const display = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "planmode-bench",
+  title: "planmode bench",
   description: "Does Plan Mode beat direct execution in Claude Code?",
 };
 
@@ -63,7 +63,7 @@ export default function RootLayout({
                 href="/"
                 className="font-mono text-sm font-medium tracking-tight text-muted-foreground hover:text-foreground"
               >
-                plan mode bench
+                <span className="text-base font-extrabold text-foreground">planmode</span> bench
               </a>
               <ModelSelector models={modelOptions} />
             </div>
