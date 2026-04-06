@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T20:10:46.969Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 647397,
+    "duration_api_ms": 818358,
+    "num_turns": 38,
+    "total_cost_usd": 2.6305213,
+    "input_tokens": 36,
+    "output_tokens": 11874,
+    "cache_read_tokens": 659173,
+    "cache_creation_tokens": 65357,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 418838,
+    "plan_api_ms": 592853,
+    "plan_tokens_in": 18,
+    "plan_tokens_out": 5379,
+    "plan_cost_usd": 1.8684041499999997,
+    "plan_content": "",
+    "execute_duration_ms": 228559,
+    "execute_api_ms": 225505,
+    "execute_tokens_in": 18,
+    "execute_tokens_out": 6495,
+    "execute_cost_usd": 0.7621171499999999
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation fully meets all rubric requirements. The export_to_onnx function correctly exports LoRA adapter A and B matrices to ONNX format with proper parameter handling (output_dir and opset_version with default=17). Metadata is comprehensively saved to adapter_metadata.json including rank, alpha, scaling, and target modules. The function is properly exposed via __all__, a method wrapper, and integrated into patch_saving_functions for both regular and vision models. ONNX export uses onnx helper libraries (make_tensor_value_info, make_node, make_graph, make_model, checker, save) as specified in rubric. Code follows unsloth patterns: @torch.inference_mode(), type hints, comprehensive docstrings, proper error handling (ImportError for missing onnx, ValueError for missing adapters), safe tensor conversion (.detach().cpu().float().numpy()), and correct matrix shape handling with transpose operations. Minor deduction only for empty PLAN.md file in diff, which is a trivial artifact that doesn't affect implementation quality.",
+          "diff_length": 8939,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 22979
+  },
+  "session_id": "976c8e33-02a3-4b3f-9758-5b8c42b11af6"
+}

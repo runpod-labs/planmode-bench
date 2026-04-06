@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-openclaw-channel",
+  "task_name": "add fictional PulseBoard channel",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T19:22:47.478Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 1700156,
+    "duration_api_ms": 1764460,
+    "num_turns": 115,
+    "total_cost_usd": 8.875855000000001,
+    "input_tokens": 66,
+    "output_tokens": 56461,
+    "cache_read_tokens": 5563087,
+    "cache_creation_tokens": 206851,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 903262,
+    "plan_api_ms": 1032578,
+    "plan_tokens_in": 22,
+    "plan_tokens_out": 12330,
+    "plan_cost_usd": 4.838328500000001,
+    "plan_content": "The plan is ready for your review. Here's a summary:\n\n**27 new files** under `extensions/pulseboard/` — no existing files modified.\n\n**Key design choices:**\n- **`board:name`** prefix for group targets (boards), **`@username`** for DM targets\n- **4000-character** text chunk limit (per requirements)\n- **Stub client** (`client.ts`) defines the full interface but doesn't connect to a real service since PulseBoard is fictional\n- **SDK imports** from generic `openclaw/plugin-sdk/*` subpaths (since we can't create a `plugin-sdk/pulseboard` barrel without modifying existing files)\n- **No `dangerouslyAllowNameMatching`** — PulseBoard `@username` handles are authoritative identifiers\n- Env vars: `PULSEBOARD_API_URL`, `PULSEBOARD_API_TOKEN`, `PULSEBOARD_USERNAME`\n\n**Structure mirrors IRC** exactly: manifest, package.json, index/setup entry points, then `src/` with types, runtime, config-schema, accounts, normalize, policy, client, send, probe, monitor, inbound, setup-core, setup-surface — plus 5 test files.",
+    "execute_duration_ms": 796894,
+    "execute_api_ms": 731882,
+    "execute_tokens_in": 44,
+    "execute_tokens_out": 44131,
+    "execute_cost_usd": 4.037526500000001
+  },
+  "evaluation": {
+    "overall_score": 0.85,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.85,
+        "weight": 1,
+        "weighted_score": 0.85,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is structurally sound with all required entry points, config files, and plugin architecture correctly implemented. The package.json has the scoped name and setupEntry, openclaw.plugin.json is properly configured, channel plugin uses createChatChannelPlugin with correct chatTypes (direct/group), textChunkLimit of 4000, and all required capabilities (gateway, messaging, normalizeTarget, outbound sendText). Index and setup entry points correctly use defineChannelPluginEntry and defineSetupPluginEntry. No existing files were modified. However, there's a discrepancy: the rubric requires 'boardUrl' in type interfaces but the implementation uses 'apiUrl' throughout. Additionally, the types.ts file content is cut off in the diff, preventing full verification of PulseBoardAccount, PulseBoardConfig, and PulseBoardMessage interface definitions and their exact field structure. The implementation follows the existing channel plugin pattern well, but the field naming mismatch and incomplete type definition visibility prevent a perfect score.",
+          "diff_length": 50000,
+          "new_files": "extensions/pulseboard/api.ts\nextensions/pulseboard/channel-config-api.ts\nextensions/pulseboard/index.ts\nextensions/pulseboard/openclaw.plugin.json\nextensions/pulseboard/package.json\nextensions/pulseboard/setup-entry.ts\nextensions/pulseboard/src/accounts.test.ts\nextensions/pulseboard/src/accounts.ts\nextensions/pulseboard/src/channel.ts\nextensions/pulseboard/src/client.ts\nextensions/pulseboard/src/config-schema.test.ts\nextensions/pulseboard/src/config-schema.ts\nextensions/pulseboard/src/config-ui-hints.ts\nextensions/pulseboard/src/inbound.ts\nextensions/pulseboard/src/monitor.ts\nextensions/pulseboard/src/normalize.test.ts\nextensions/pulseboard/src/normalize.ts\nextensions/pulseboard/src/policy.test.ts\nextensions/pulseboard/src/policy.ts\nextensions/pulseboard/src/probe.test.ts\nextensions/pulseboard/src/probe.ts\nextensions/pulseboard/src/runtime-api.ts\nextensions/pulseboard/src/runtime.ts\nextensions/pulseboard/src/send.ts\nextensions/pulseboard/src/setup-core.ts\nextensions/pulseboard/src/setup-surface.ts\nextensions/pulseboard/src/types.ts\nnode_modules\nui/node_modules"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16700
+  },
+  "session_id": "b771023d-42d0-47f6-b17c-e99c46d0ab40"
+}

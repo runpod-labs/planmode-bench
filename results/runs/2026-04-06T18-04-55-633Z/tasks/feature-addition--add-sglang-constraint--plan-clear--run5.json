@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-sglang-constraint",
+  "task_name": "add JSON path constraint",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T19:54:16.619Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 1129081,
+    "duration_api_ms": 1378958,
+    "num_turns": 97,
+    "total_cost_usd": 6.52859185,
+    "input_tokens": 3426,
+    "output_tokens": 29833,
+    "cache_read_tokens": 3845220,
+    "cache_creation_tokens": 151337,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 510481,
+    "plan_api_ms": 766957,
+    "plan_tokens_in": 3372,
+    "plan_tokens_out": 6737,
+    "plan_cost_usd": 3.2961987499999994,
+    "plan_content": "",
+    "execute_duration_ms": 618600,
+    "execute_api_ms": 612001,
+    "execute_tokens_in": 54,
+    "execute_tokens_out": 23096,
+    "execute_cost_usd": 3.2323931000000004
+  },
+  "evaluation": {
+    "overall_score": 0.85,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.85,
+        "weight": 1,
+        "weighted_score": 0.85,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation comprehensively adds json_path constraint support to SGLang. Strengths: (1) New json_path parameter properly added to IR layer (SglSamplingParams, SglGen) and public API; (2) Constraint validation via json_path_to_json_schema utility with proper error handling; (3) All backends updated consistently (llguidance, outlines, xgrammar with dispatch_json_path methods); (4) Proper registration in grammar_manager.py and grammar_backend.py following existing constraint patterns; (5) Mutual exclusivity validation in sampling_params.py; (6) gRPC and OpenAI protocol support added. Minor issues: (1) PLAN.md file created but empty (missing documentation); (2) json_path validation is indirect—converts to json_schema rather than validating path existence directly in output, though this is a valid generative constraint approach; (3) Created test files but cannot verify they execute/pass. Overall, the implementation demonstrates strong pattern adherence and systematic integration across the constraint pipeline.",
+          "diff_length": 27650,
+          "new_files": "PLAN.md\npython/sglang/srt/constrained/json_path_utils.py\npython/sglang/test/kits/json_path_constrained_kit.py\npython/sglang/test/test_json_path_utils.py"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 15865
+  },
+  "session_id": "81d1629c-bf16-4fe3-9046-a330eee8648b"
+}

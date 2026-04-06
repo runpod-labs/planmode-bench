@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T18:42:30.715Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 800054,
+    "duration_api_ms": 808876,
+    "num_turns": 54,
+    "total_cost_usd": 2.5548513999999996,
+    "input_tokens": 3474,
+    "output_tokens": 21011,
+    "cache_read_tokens": 1489571,
+    "cache_creation_tokens": 99713,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 239843,
+    "plan_api_ms": 356321,
+    "plan_tokens_in": 16,
+    "plan_tokens_out": 6511,
+    "plan_cost_usd": 1.1079708,
+    "plan_content": "",
+    "execute_duration_ms": 560211,
+    "execute_api_ms": 452555,
+    "execute_tokens_in": 3458,
+    "execute_tokens_out": 14500,
+    "execute_cost_usd": 1.4468805999999999
+  },
+  "evaluation": {
+    "overall_score": 0.35,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.35,
+        "weight": 1,
+        "weighted_score": 0.35,
+        "passed": false,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation has correct template auto-detection logic with proper distinction from Ministral 3 (checking for absence of [SYSTEM_PROMPT]) and a LOG_DBG call. However, the handler function has critical gaps: (1) uses COMMON_CHAT_FORMAT_PEG_NATIVE instead of COMMON_CHAT_FORMAT_CONTENT_ONLY; (2) does not actually wrap user turns with [INST]/[/INST] markers; (3) lacks system message prepending to the first user turn; (4) does not append </s> after assistant turns; (5) the PEG parser builder doesn't implement the required Mistral Instruct v3 formatting. The function body appears to be a generic placeholder rather than a proper Mistral Instruct v3 implementation.",
+          "diff_length": 1932,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 9392
+  },
+  "session_id": "e3d5501b-b0a9-4dff-8d7e-b6a04dc9c6ca"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-ollama-rename",
+  "task_name": "add model rename API endpoint and CLI command",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T19:00:07.521Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 711180,
+    "duration_api_ms": 879162,
+    "num_turns": 54,
+    "total_cost_usd": 2.0484001999999997,
+    "input_tokens": 38,
+    "output_tokens": 12364,
+    "cache_read_tokens": 727908,
+    "cache_creation_tokens": 54298,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 369975,
+    "plan_api_ms": 543489,
+    "plan_tokens_in": 21,
+    "plan_tokens_out": 6818,
+    "plan_cost_usd": 1.3877068999999997,
+    "plan_content": "",
+    "execute_duration_ms": 341205,
+    "execute_api_ms": 335673,
+    "execute_tokens_in": 17,
+    "execute_tokens_out": 5546,
+    "execute_cost_usd": 0.6606932999999999
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "All rubric requirements are fully implemented: (1) RenameRequest struct in api/types.go with properly json-tagged Source and Destination fields; (2) Client.Rename method in api/client.go POSTs to /api/rename with RenameRequest; (3) Server RenameHandler in server/routes.go with RenameModel implementation that copies then deletes source, returns 404 on os.ErrNotExist and 409 on os.ErrExist; (4) Route r.POST(\"/api/rename\", s.RenameHandler) registered; (5) CLI command \"rename SOURCE DESTINATION\" with cobra.ExactArgs(2) added to both command lists; (6) CLI RenameHandler creates client, calls client.Rename with args, prints success message; (7) No existing test files modified, only new functionality added. Implementation follows existing code patterns and error handling conventions.",
+          "diff_length": 5916,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 26619
+  },
+  "session_id": "44a7e4a6-f608-4ab7-965f-dc5c18912fb4"
+}

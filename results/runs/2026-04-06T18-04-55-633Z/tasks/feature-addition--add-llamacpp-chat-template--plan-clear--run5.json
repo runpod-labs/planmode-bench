@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T19:14:00.016Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 2560413,
+    "duration_api_ms": 2594831,
+    "num_turns": 80,
+    "total_cost_usd": 7.6200136,
+    "input_tokens": 71,
+    "output_tokens": 77208,
+    "cache_read_tokens": 3260725,
+    "cache_creation_tokens": 223741,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1363456,
+    "plan_api_ms": 1485676,
+    "plan_tokens_in": 31,
+    "plan_tokens_out": 11312,
+    "plan_cost_usd": 4.14444815,
+    "plan_content": "",
+    "execute_duration_ms": 1196957,
+    "execute_api_ms": 1109155,
+    "execute_tokens_in": 40,
+    "execute_tokens_out": 65896,
+    "execute_cost_usd": 3.475565450000001
+  },
+  "evaluation": {
+    "overall_score": 0.55,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.55,
+        "weight": 1,
+        "weighted_score": 0.55,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is mostly structurally correct but has a critical requirement violation: uses COMMON_CHAT_FORMAT_PEG_NATIVE instead of the required COMMON_CHAT_FORMAT_CONTENT_ONLY. The new static function is present with proper LOG_DBG logging, template auto-detection is correctly implemented with distinction checks for [SYSTEM_PROMPT], [TOOL_CALLS], <<SYS>>, and [AVAILABLE_TOOLS], and the handler is properly dispatched with (tmpl, params). The test case demonstrates the template correctly handles [INST]/[/INST] wrapping, system message prepending, and </s> appending through jinja2 logic. However, the explicit format requirement mismatch is a significant spec violation that prevents a higher score. No existing handlers were modified as required.",
+          "diff_length": 5318,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16098
+  },
+  "session_id": "327cf04c-2f35-4e42-ac11-65d1ced36ed7"
+}

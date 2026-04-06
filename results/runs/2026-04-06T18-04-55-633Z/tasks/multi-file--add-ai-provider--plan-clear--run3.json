@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "multi-file/add-ai-provider",
+  "task_name": "add new AI image provider",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T20:43:08.109Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 966770,
+    "duration_api_ms": 1101566,
+    "num_turns": 61,
+    "total_cost_usd": 3.3991035500000013,
+    "input_tokens": 51,
+    "output_tokens": 22549,
+    "cache_read_tokens": 1610114,
+    "cache_creation_tokens": 98394,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 610924,
+    "plan_api_ms": 769307,
+    "plan_tokens_in": 19,
+    "plan_tokens_out": 7102,
+    "plan_cost_usd": 1.8716500500000008,
+    "plan_content": "The plan is ready for your review. Here's a quick summary:\n\n**14 new files** in `packages/pixelart/` following the exact LUMA provider structure:\n- **7 config files**: `package.json`, `tsconfig.json`, `tsconfig.build.json`, `tsup.config.ts`, `turbo.json`, and vitest configs\n- **5 source files**: `version.ts`, `pixelart-image-settings.ts` (model IDs), `pixelart-image-model.ts` (core ImageModelV3 implementation with style/pixelDensity options), `pixelart-provider.ts` (factory + singleton), `index.ts` (public API)\n- **2 test files**: provider factory tests + image model tests\n\n**2 root config edits**: add the package reference to `tsconfig.json` and `PIXELART_API_KEY` to `turbo.json`",
+    "execute_duration_ms": 355846,
+    "execute_api_ms": 332259,
+    "execute_tokens_in": 32,
+    "execute_tokens_out": 15447,
+    "execute_cost_usd": 1.5274535000000002
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Excellent implementation that meets all core requirements. Creates a complete PixelArt provider package with proper structure: package.json with correct metadata and dependencies, exported createPixelArt factory function, PixelArtProvider interface with image() and imageModel() methods, PixelArtImageModel implementing ImageModelV3 with doGenerate (correct SDK method, not generateImage), image settings supporting size, style enum with all three values ('pixel', 'retro', '8bit'), and pixel density (1-4), base URL correctly set to 'https://api.pixelart.ai/v1', follows established AI SDK provider patterns (tsconfig, tsup, vitest configs, proper exports), and only creates new files with minimal necessary root config updates (tsconfig.json and turbo.json references). Comprehensive tests verify functionality. Minor: rubric mentions 'generateImage' method but agent correctly used 'doGenerate' per ImageModelV3 interface; PLAN.md file wasn't strictly required but doesn't harm the implementation.",
+          "diff_length": 29076,
+          "new_files": "PLAN.md\npackages/pixelart/package.json\npackages/pixelart/src/index.ts\npackages/pixelart/src/pixelart-image-model.test.ts\npackages/pixelart/src/pixelart-image-model.ts\npackages/pixelart/src/pixelart-image-settings.ts\npackages/pixelart/src/pixelart-provider.test.ts\npackages/pixelart/src/pixelart-provider.ts\npackages/pixelart/src/version.ts\npackages/pixelart/tsconfig.build.json\npackages/pixelart/tsconfig.json\npackages/pixelart/tsup.config.ts\npackages/pixelart/turbo.json\npackages/pixelart/vitest.edge.config.js\npackages/pixelart/vitest.node.config.js"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 81345
+  },
+  "session_id": "8230e636-4ccd-4ac4-a225-bda1819cd2a3"
+}

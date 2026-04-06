@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-openclaw-channel",
+  "task_name": "add fictional PulseBoard channel",
+  "mode": "plan-clear",
+  "run_number": 4,
+  "timestamp": "2026-04-06T19:20:54.389Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 1353656,
+    "duration_api_ms": 1638605,
+    "num_turns": 87,
+    "total_cost_usd": 6.137498300000002,
+    "input_tokens": 92,
+    "output_tokens": 37772,
+    "cache_read_tokens": 1905862,
+    "cache_creation_tokens": 224370,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 838411,
+    "plan_api_ms": 1089161,
+    "plan_tokens_in": 24,
+    "plan_tokens_out": 10080,
+    "plan_cost_usd": 3.9780796500000015,
+    "plan_content": "The plan is ready for your review. Here's a quick summary:\n\n**19 new files** to create under `extensions/pulseboard/`, following the synology-chat plugin as the primary template:\n\n- **Root files**: `package.json`, `openclaw.plugin.json`, `index.ts`, `setup-entry.ts`, `api.ts`\n- **Core source** (`src/`): `types.ts`, `config-schema.ts`, `runtime.ts`, `accounts.ts`, `channel.ts`\n- **Security & auth**: `security.ts`, `approval-auth.ts`\n- **Inbound pipeline**: `webhook-handler.ts`, `inbound-context.ts`, `inbound-turn.ts`, `session-key.ts`, `gateway-runtime.ts`\n- **Outbound & setup**: `client.ts` (stubbed), `setup-surface.ts`\n\nKey design points:\n- `chatTypes: [\"direct\", \"group\"]` — boards are groups, DMs are direct\n- `textChunkLimit: 4000` — as specified\n- Gateway delivery mode (webhook-based inbound)\n- No media support (keeps it simple)\n- Stub client since PulseBoard is fictional\n- No existing files modified",
+    "execute_duration_ms": 515245,
+    "execute_api_ms": 549444,
+    "execute_tokens_in": 68,
+    "execute_tokens_out": 27692,
+    "execute_cost_usd": 2.15941865
+  },
+  "evaluation": {
+    "overall_score": 0.75,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.75,
+        "weight": 1,
+        "weighted_score": 0.75,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is mostly complete with correct structure: package.json with @openclaw/pulseboard scoped name and setupEntry ✓, openclaw.plugin.json with channels and configSchema ✓, runtime store with get/set accessors ✓, channel plugin using createChatChannelPlugin with chatTypes=[direct, group] ✓, textChunkLimit=4000 ✓, gateway delivery mode ✓, index and setup entry points ✓, no existing files modified ✓. However, critical issues: (1) types.ts file is listed in created files but content not shown in diff - cannot verify PulseBoardAccount/PulseBoardConfig/PulseBoardMessage interfaces or required boardUrl and apiToken fields; (2) visible code uses apiKey/apiUrl instead of the rubric's specified apiToken/boardUrl fields - potential field naming mismatch; (3) webhook-handler.ts also created but not shown in diff. While the overall plugin structure is sound, inability to verify the types file and field name discrepancies prevent full score.",
+          "diff_length": 50000,
+          "new_files": "PLAN.md\nextensions/pulseboard/api.ts\nextensions/pulseboard/index.ts\nextensions/pulseboard/openclaw.plugin.json\nextensions/pulseboard/package.json\nextensions/pulseboard/setup-entry.ts\nextensions/pulseboard/src/accounts.ts\nextensions/pulseboard/src/approval-auth.ts\nextensions/pulseboard/src/channel.ts\nextensions/pulseboard/src/client.ts\nextensions/pulseboard/src/config-schema.ts\nextensions/pulseboard/src/gateway-runtime.ts\nextensions/pulseboard/src/inbound-context.ts\nextensions/pulseboard/src/inbound-turn.ts\nextensions/pulseboard/src/runtime.ts\nextensions/pulseboard/src/security.ts\nextensions/pulseboard/src/session-key.ts\nextensions/pulseboard/src/setup-surface.ts\nextensions/pulseboard/src/types.ts\nextensions/pulseboard/src/webhook-handler.ts\nnode_modules\nui/node_modules"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 21393
+  },
+  "session_id": "164a5970-1dd5-4f33-a0a1-6dd66fa58507"
+}

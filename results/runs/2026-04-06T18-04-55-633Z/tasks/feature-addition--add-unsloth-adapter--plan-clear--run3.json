@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T20:14:34.346Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 764768,
+    "duration_api_ms": 937320,
+    "num_turns": 46,
+    "total_cost_usd": 3.4117152000000006,
+    "input_tokens": 40,
+    "output_tokens": 19120,
+    "cache_read_tokens": 893690,
+    "cache_creation_tokens": 80525,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 475405,
+    "plan_api_ms": 650468,
+    "plan_tokens_in": 21,
+    "plan_tokens_out": 6458,
+    "plan_cost_usd": 2.377471050000001,
+    "plan_content": "",
+    "execute_duration_ms": 289363,
+    "execute_api_ms": 286852,
+    "execute_tokens_in": 19,
+    "execute_tokens_out": 12662,
+    "execute_cost_usd": 1.03424415
+  },
+  "evaluation": {
+    "overall_score": 0.87,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.87,
+        "weight": 1,
+        "weighted_score": 0.87,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation successfully meets all core rubric requirements: (1) export_to_onnx function correctly extracts and saves LoRA A and B matrices; (2) accepts output_directory and opset_version (default 17); (3) saves comprehensive metadata including rank, lora_alpha, target_modules in adapter_metadata.json; (4) properly exposed via types.MethodType in patch_saving_functions and exported from save.py; (5) uses ONNX helper libraries (onnx_helper, numpy_helper, onnx.checker) to build and validate graphs; (6) follows unsloth conventions with Apache 2.0 headers, docstrings, type hints, and error handling. Minor deviations: uses manual ONNX graph construction via helpers rather than torch.onnx.export, though this is actually more appropriate for standalone adapter export. The empty PLAN.md file is concerning (suggests plan-mode confusion) but doesn't affect code quality. Overall, a well-structured, production-ready implementation with good error handling and extensive metadata preservation.",
+          "diff_length": 10722,
+          "new_files": "PLAN.md\nunsloth/onnx_export.py"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 79854
+  },
+  "session_id": "0222319f-f5d9-473c-8b07-b3f50411f3d5"
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-vllm-sampler",
+  "task_name": "add Top-A sampling strategy",
+  "mode": "normal",
+  "run_number": 1,
+  "timestamp": "2026-04-06T20:22:54.963Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 698338,
+    "duration_api_ms": 697131,
+    "num_turns": 129,
+    "total_cost_usd": 5.712978900000001,
+    "input_tokens": 107,
+    "output_tokens": 28904,
+    "cache_read_tokens": 8289184,
+    "cache_creation_tokens": 105977,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 0.88,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.88,
+        "weight": 1,
+        "weighted_score": 0.88,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Comprehensive implementation that meets all core requirements. The top_a parameter is properly added to SamplingParams with float type, default 0.0, and [0.0, 1.0] range validation. Filtering logic is correctly implemented across multiple samplers (main, V1 GPU, V1 TPU) with proper max probability computation, masking, and implicit renormalization. The parameter is properly threaded through all intermediate data structures: OpenAI protocol → SamplingParams → SamplingMetadata → SamplingTensors → Sampler, and tracked through InputBatch for GPU/TPU workers. Documentation and docstrings are present. Code is syntactically valid and follows vLLM conventions. Minor issue: the main sampler uses in-place unsqueeze (unsqueeze_) in _apply_top_a while V1 implementations use regular unsqueeze, creating an inconsistency in code style/safety practices. The in-place operation is unlikely to cause bugs in this usage pattern, but represents a minor code quality deviation.",
+          "diff_length": 24547,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 27746
+  },
+  "session_id": "efd9ff19-a9da-4de7-8408-121f4b3dfa99"
+}

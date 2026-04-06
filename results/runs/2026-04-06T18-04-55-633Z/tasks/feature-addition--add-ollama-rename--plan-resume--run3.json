@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-ollama-rename",
+  "task_name": "add model rename API endpoint and CLI command",
+  "mode": "plan-resume",
+  "run_number": 3,
+  "timestamp": "2026-04-06T18:55:21.879Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 577972,
+    "duration_api_ms": 674976,
+    "num_turns": 51,
+    "total_cost_usd": 2.34556855,
+    "input_tokens": 31,
+    "output_tokens": 13858,
+    "cache_read_tokens": 790036,
+    "cache_creation_tokens": 86887,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 389553,
+    "plan_api_ms": 588750,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 7474,
+    "plan_cost_usd": 1.6895417999999998,
+    "plan_content": "",
+    "execute_duration_ms": 188419,
+    "execute_api_ms": 86226,
+    "execute_tokens_in": 11,
+    "execute_tokens_out": 6384,
+    "execute_cost_usd": 0.6560267500000001
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Complete and correct implementation. All rubric requirements are satisfied: (1) RenameRequest struct in api/types.go with proper 'source' and 'destination' JSON tags, (2) Client.Rename method in api/client.go POSTs to /api/rename, (3) Server.RenameHandler validates inputs, returns 404 when source doesn't exist, returns 409 when destination exists, copies model via CopyModel(), then deletes source manifest and layers, (4) Route registered as r.POST(\"/api/rename\", s.RenameHandler), (5) CLI command 'rename SOURCE DESTINATION' with cobra.ExactArgs(2), (6) CLI RenameHandler calls client.Rename() with properly constructed RenameRequest, (7) No test files modified and all existing code remains intact. Implementation also includes thoughtful CLI behavior (unloads running model before rename) and comprehensive API documentation.",
+          "diff_length": 8280,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16263
+  },
+  "session_id": "a0e61ed9-4256-40f4-909c-dd3bf5ddb09f"
+}

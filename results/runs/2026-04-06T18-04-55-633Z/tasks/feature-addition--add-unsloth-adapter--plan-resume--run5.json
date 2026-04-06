@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T20:07:21.383Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 504401,
+    "duration_api_ms": 698044,
+    "num_turns": 40,
+    "total_cost_usd": 2.8340912999999985,
+    "input_tokens": 28,
+    "output_tokens": 13225,
+    "cache_read_tokens": 746262,
+    "cache_creation_tokens": 102229,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 429684,
+    "plan_api_ms": 623390,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 8071,
+    "plan_cost_usd": 2.2100292999999986,
+    "plan_content": "Here's a summary of the plan:\n\n**Goal:** Add `model.export_to_onnx(save_directory, opset_version=17)` to unsloth, exporting LoRA adapter A/B matrices as per-layer ONNX graphs with a JSON metadata sidecar.\n\n**3 files to modify:**\n\n1. **`unsloth/save.py`** — The bulk of the work:\n   - Add `unsloth_export_to_onnx()` function (after `unsloth_save_pretrained_torchao`, line ~2561) that iterates over all LoRA layers via `named_modules()`, wraps each A/B pair in a minimal `LoRAAdapter(nn.Module)`, calls `torch.onnx.export`, and writes `adapter_config.json` metadata\n   - Wire it into `patch_saving_functions()` so it appears as `model.export_to_onnx(...)` for both language and vision models\n   - Add to `__all__`\n\n2. **`pyproject.toml`** — Add `onnx` optional dependency group\n\n3. **`tests/saving/test_unsloth_save.py`** — Add `test_export_to_onnx` using existing fixtures\n\n**Key design decisions:**\n- Uses `named_modules()` + isinstance check (not hardcoded `LLAMA_WEIGHTS`) — works across all architectures\n- Reuses existing `get_lora_parameters_bias()` for weight extraction\n- One `.onnx` file per LoRA layer (self-contained with baked-in scaling)\n- Lazy `import onnx` with clear error message",
+    "execute_duration_ms": 74717,
+    "execute_api_ms": 74654,
+    "execute_tokens_in": 8,
+    "execute_tokens_out": 5154,
+    "execute_cost_usd": 0.6240619999999999
+  },
+  "evaluation": {
+    "overall_score": 0.85,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.85,
+        "weight": 1,
+        "weighted_score": 0.85,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation successfully adds export_to_onnx functionality with all core requirements met: (1) Function exports LoRA A and B matrices via get_lora_parameters_bias(), (2) Accepts save_directory and opset_version parameters with correct defaults, (3) Saves comprehensive metadata including rank, lora_alpha, target_modules to adapter_config.json, (4) Properly exposed via types.MethodType in patch_saving_functions for both regular and vision models, added to __all__, (5) Uses torch.onnx.export correctly with dynamic axes for batch/sequence dimensions, (6) Follows unsloth patterns (decorators, pass statements, error handling). Test coverage is good with validation of file existence and ONNX model integrity. Minor concerns: imports for get_lora_parameters_bias, Peft_Linear4bit, and Peft_Linear are not shown in diff (likely already in file but not explicitly verified), and dummy input shape assumes specific tensor format which may have limited flexibility. Overall well-structured, production-ready implementation.",
+          "diff_length": 8425,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 17563
+  },
+  "session_id": "805c7e29-9990-42d7-90f6-3603b55833ce"
+}

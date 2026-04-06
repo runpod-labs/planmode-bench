@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "normal",
+  "run_number": 1,
+  "timestamp": "2026-04-06T18:28:48.044Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 370382,
+    "duration_api_ms": 326506,
+    "num_turns": 24,
+    "total_cost_usd": 1.00969585,
+    "input_tokens": 18,
+    "output_tokens": 13506,
+    "cache_read_tokens": 539534,
+    "cache_creation_tokens": 41801,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.45,
+        "weight": 1,
+        "weighted_score": 0.45,
+        "passed": false,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation has correct template detection logic (checks for [INST]/[/INST] and absence of [SYSTEM_PROMPT]), proper logging (LOG_DBG call), and correct dispatcher call with (tmpl, params). However, there are critical issues: (1) Uses COMMON_CHAT_FORMAT_PEG_NATIVE instead of required COMMON_CHAT_FORMAT_CONTENT_ONLY, (2) The handler doesn't explicitly implement [INST]/[/INST] wrapping logic - it delegates to common_chat_template_direct_apply_impl without visible wrapping, (3) No explicit system message prepending logic shown, (4) No visible logic for appending </s> after assistant turns. The implementation appears to use a PEG parser approach rather than the direct formatting approach the rubric suggests, which may indicate a fundamentally different implementation strategy than intended.",
+          "diff_length": 2622,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19330
+  },
+  "session_id": "ef152efa-e19d-450c-8356-17baac6579dc"
+}

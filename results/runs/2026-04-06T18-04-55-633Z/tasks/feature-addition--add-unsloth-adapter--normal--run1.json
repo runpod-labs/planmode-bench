@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "normal",
+  "run_number": 1,
+  "timestamp": "2026-04-06T19:58:36.805Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 241480,
+    "duration_api_ms": 239567,
+    "num_turns": 24,
+    "total_cost_usd": 0.7976946999999998,
+    "input_tokens": 19,
+    "output_tokens": 6909,
+    "cache_read_tokens": 430524,
+    "cache_creation_tokens": 30373,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 0.87,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.87,
+        "weight": 1,
+        "weighted_score": 0.87,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation successfully meets all rubric requirements: (1) exports LoRA A and B matrices via _save_weight_as_onnx helper, (2) accepts output_directory and opset_version (default 17), (3) saves comprehensive metadata including rank, alpha, target_modules, (4) properly exposed in __all__ and registered via patch_saving_functions() in both vision/non-vision branches, (5) uses appropriate ONNX utilities (onnx_helper.make_tensor, make_graph, make_model, onnx.save), (6) follows unsloth conventions (@torch.inference_mode, pass statements, proper error handling, integration with PEFT). Minor concerns: dependency on LLAMA_WEIGHTS constant which appears undefined in the diff (likely defined elsewhere in file), assumes model.model.layers structure with only fallback error handling, edge case when no LoRA modules found will still create metadata.json with n_exported=0. Overall solid, comprehensive implementation with proper integration.",
+          "diff_length": 8247,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 16450
+  },
+  "session_id": "74b6d0d3-f812-435e-8a2a-c9c0f47a9fd9"
+}

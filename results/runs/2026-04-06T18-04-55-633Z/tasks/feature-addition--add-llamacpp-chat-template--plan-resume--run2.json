@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T18:37:59.773Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 719382,
+    "duration_api_ms": 773249,
+    "num_turns": 63,
+    "total_cost_usd": 3.8638298,
+    "input_tokens": 2058,
+    "output_tokens": 25184,
+    "cache_read_tokens": 3575651,
+    "cache_creation_tokens": 158753,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 518627,
+    "plan_api_ms": 641917,
+    "plan_tokens_in": 2031,
+    "plan_tokens_out": 20023,
+    "plan_cost_usd": 2.1787120499999997,
+    "plan_content": "",
+    "execute_duration_ms": 200755,
+    "execute_api_ms": 131332,
+    "execute_tokens_in": 27,
+    "execute_tokens_out": 5161,
+    "execute_cost_usd": 1.6851177500000003
+  },
+  "evaluation": {
+    "overall_score": 0.62,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.62,
+        "weight": 1,
+        "weighted_score": 0.62,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation adds the required static function and auto-detection logic with proper distinguishing checks for [INST]/[/INST] without [SYSTEM_PROMPT], includes the LOG_DBG call, and correctly dispatches from the template detection function. However, there is a critical issue: the format is set to COMMON_CHAT_FORMAT_PEG_NATIVE (line 1633) instead of the required COMMON_CHAT_FORMAT_CONTENT_ONLY. Additionally, while the detection and handler function are properly structured, the rubric explicitly requires verification that user turns are wrapped with [INST]/[/INST] markers, system messages are prepended, and </s> is appended after assistant turns - these formatting details are not explicitly visible in the handler code itself (they may be delegated to the template, but aren't verifiable from the diff). The implementation is functionally sound but deviates from specific rubric requirements regarding the format constant and explicit handling of the wrapping/formatting markers.",
+          "diff_length": 4207,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 19355
+  },
+  "session_id": "351a2c66-40f9-44db-9372-6768f580a117"
+}

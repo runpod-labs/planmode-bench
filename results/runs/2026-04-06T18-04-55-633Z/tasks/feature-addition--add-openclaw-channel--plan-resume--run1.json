@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-openclaw-channel",
+  "task_name": "add fictional PulseBoard channel",
+  "mode": "plan-resume",
+  "run_number": 1,
+  "timestamp": "2026-04-06T19:22:27.883Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 1759197,
+    "duration_api_ms": 1806395,
+    "num_turns": 94,
+    "total_cost_usd": 8.836065500000002,
+    "input_tokens": 2460,
+    "output_tokens": 51936,
+    "cache_read_tokens": 3756695,
+    "cache_creation_tokens": 243684,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 1206642,
+    "plan_api_ms": 1331775,
+    "plan_tokens_in": 2439,
+    "plan_tokens_out": 17232,
+    "plan_cost_usd": 6.081879500000002,
+    "plan_content": "The plan is ready for your review. Here's a summary of what it covers:\n\n**28 new files** in `extensions/pulseboard/` — no existing files modified.\n\n**Key design points:**\n- **PulseBoard** is a fictional bulletin board platform with `b/board-name` group targets and plain username DM targets\n- **4000-character text chunk limit** (vs IRC's 350)\n- Supports both `direct` and `group` chat types\n- Follows the exact same extension structure as IRC/Nostr (manifest, package.json, entry points, SDK imports, setup wizard, etc.)\n- All SDK imports are verified against the public entrypoint list — since we can't create a `plugin-sdk/pulseboard.ts` facade, imports come from generic public subpaths\n- I/O modules (`send.ts`, `monitor.ts`, `probe.ts`) are stub implementations that log rather than making real network calls\n- `dispatchInboundReplyWithBase` (only available from per-channel facades) is manually composed from its public building blocks: `recordInboundSession` + `createChannelReplyPipeline` + `createNormalizedOutboundDeliverer` + `dispatchReplyWithBufferedBlockDispatcher`\n- A local `chunkTextForOutbound` is implemented (~10 lines) since the shared one isn't on a public entrypoint\n- 6 test files covering normalization, policy, chunking, accounts, channel plugin shape, and config schema validation",
+    "execute_duration_ms": 552555,
+    "execute_api_ms": 474620,
+    "execute_tokens_in": 21,
+    "execute_tokens_out": 34704,
+    "execute_cost_usd": 2.7541860000000002
+  },
+  "evaluation": {
+    "overall_score": 0.55,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.55,
+        "weight": 1,
+        "weighted_score": 0.55,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation shows a well-structured approach with correct file organization and most entry points properly defined (package.json, openclaw.plugin.json, index.ts, setup-entry.ts all meet requirements). The channel plugin correctly uses createChatChannelPlugin with chatTypes supporting both 'direct' and 'group', textChunkLimit of 4000, and outbound sendText capability. However, critical files are missing from the diff: (1) types.ts content is not shown despite being listed as created - cannot verify PulseBoardAccount, PulseBoardConfig, PulseBoardMessage interfaces with required boardUrl and apiToken fields, (2) runtime.ts content is not shown - cannot verify createPluginRuntimeStore with get/set accessors, (3) inbound.ts is cut off mid-function suggesting truncated diff. Without these critical verifications, the implementation cannot be fully validated against the rubric requirements.",
+          "diff_length": 50000,
+          "new_files": "extensions/pulseboard/api.ts\nextensions/pulseboard/channel-config-api.ts\nextensions/pulseboard/index.ts\nextensions/pulseboard/openclaw.plugin.json\nextensions/pulseboard/package.json\nextensions/pulseboard/runtime-api.ts\nextensions/pulseboard/setup-entry.ts\nextensions/pulseboard/src/accounts.test.ts\nextensions/pulseboard/src/accounts.ts\nextensions/pulseboard/src/channel.test.ts\nextensions/pulseboard/src/channel.ts\nextensions/pulseboard/src/chunking.test.ts\nextensions/pulseboard/src/chunking.ts\nextensions/pulseboard/src/config-schema.test.ts\nextensions/pulseboard/src/config-schema.ts\nextensions/pulseboard/src/config-ui-hints.ts\nextensions/pulseboard/src/inbound.ts\nextensions/pulseboard/src/monitor.ts\nextensions/pulseboard/src/normalize.test.ts\nextensions/pulseboard/src/normalize.ts\nextensions/pulseboard/src/policy.test.ts\nextensions/pulseboard/src/policy.ts\nextensions/pulseboard/src/probe.ts\nextensions/pulseboard/src/runtime.ts\nextensions/pulseboard/src/send.ts\nextensions/pulseboard/src/setup-core.ts\nextensions/pulseboard/src/setup-surface.ts\nextensions/pulseboard/src/types.ts\nnode_modules\nui/node_modules"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 17411
+  },
+  "session_id": "0db1b738-19c5-4124-baa5-70a02eeb64c5"
+}

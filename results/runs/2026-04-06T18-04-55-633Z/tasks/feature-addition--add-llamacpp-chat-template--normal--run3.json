@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "normal",
+  "run_number": 3,
+  "timestamp": "2026-04-06T18:30:56.978Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 444241,
+    "duration_api_ms": 244198,
+    "num_turns": 32,
+    "total_cost_usd": 1.16497315,
+    "input_tokens": 25,
+    "output_tokens": 9350,
+    "cache_read_tokens": 880355,
+    "cache_creation_tokens": 54475,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 0.45,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.45,
+        "weight": 1,
+        "weighted_score": 0.45,
+        "passed": false,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Partial implementation with critical issues: (1) Uses COMMON_CHAT_FORMAT_PEG_NATIVE instead of required COMMON_CHAT_FORMAT_CONTENT_ONLY format; (2) Missing explicit logic to wrap user turns with [INST]/[/INST] markers, prepend system messages to first user turn, and append </s> after assistant turns - relies on direct template application instead; (3) Parser logic (literal + rest) doesn't clearly implement the Mistral Instruct v3 specific formatting requirements. Positive: Auto-detection correctly distinguishes from Ministral 3 via [SYSTEM_PROMPT] absence, LOG_DBG call present, handler dispatched correctly, no existing code modified.",
+          "diff_length": 1860,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 10717
+  },
+  "session_id": "410c94d0-f654-4123-b440-628ad6182e0f"
+}

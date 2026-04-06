@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 2,
+  "timestamp": "2026-04-06T20:06:28.564Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 504992,
+    "duration_api_ms": 652076,
+    "num_turns": 32,
+    "total_cost_usd": 2.8306975999999993,
+    "input_tokens": 29,
+    "output_tokens": 12160,
+    "cache_read_tokens": 727519,
+    "cache_creation_tokens": 92285,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 417867,
+    "plan_api_ms": 568160,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 6530,
+    "plan_cost_usd": 2.2308385999999993,
+    "plan_content": "",
+    "execute_duration_ms": 87125,
+    "execute_api_ms": 83916,
+    "execute_tokens_in": 9,
+    "execute_tokens_out": 5630,
+    "execute_cost_usd": 0.599859
+  },
+  "evaluation": {
+    "overall_score": 0.95,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.95,
+        "weight": 1,
+        "weighted_score": 0.95,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation successfully meets all rubric requirements: (1) export_to_onnx function exports both LoRA A and B matrices as ONNX initializers, (2) correctly accepts save_directory and opset_version parameters with opset_version defaulting to 17, (3) saves comprehensive metadata (rank, alpha, target_modules, scaling, model info) in ONNX metadata_props and a separate adapter_config.json, (4) properly exposes the method via types.MethodType in patch_saving_functions for both vision and non-vision models, (5) uses onnx library utilities (helper.make_graph, helper.make_model, numpy_helper.from_array, onnx.checker.check_model, onnx.save), and (6) follows unsloth conventions with proper error handling, memory cleanup, and consistent patterns. The test is comprehensive, validating file creation, ONNX model validity, metadata content, tensor shapes, and config values. Minor deduction: unconventional use of trailing `pass` statements throughout the function body, which is non-idiomatic Python but functionally harmless.",
+          "diff_length": 10300,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 15308
+  },
+  "session_id": "14bc6aff-ba62-4e11-b71a-46490d328df7"
+}

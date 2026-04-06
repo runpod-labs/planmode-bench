@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-uv-cache-stats",
+  "task_name": "add 'uv cache stats' subcommand",
+  "mode": "plan-resume",
+  "run_number": 5,
+  "timestamp": "2026-04-06T20:16:22.545Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 483675,
+    "duration_api_ms": 641942,
+    "num_turns": 57,
+    "total_cost_usd": 2.6688409,
+    "input_tokens": 39,
+    "output_tokens": 14093,
+    "cache_read_tokens": 1120527,
+    "cache_creation_tokens": 107277,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 396040,
+    "plan_api_ms": 559518,
+    "plan_tokens_in": 28,
+    "plan_tokens_out": 8229,
+    "plan_cost_usd": 1.9648724000000002,
+    "plan_content": "",
+    "execute_duration_ms": 87635,
+    "execute_api_ms": 82424,
+    "execute_tokens_in": 11,
+    "execute_tokens_out": 5864,
+    "execute_cost_usd": 0.7039684999999999
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation fully meets all rubric requirements: (1) CLI variant Stats(StatsArgs) with human bool flag properly defined in crates/uv-cli/src/lib.rs; (2) Command implementation in crates/uv/src/commands/cache_stats.rs correctly iterates CacheBucket::iter() and uses DiskUsage::new() to compute bucket sizes; (3) Function signature is pub(crate) fn cache_stats returning Result<ExitStatus> with Ok(ExitStatus::Success); (4) --human flag properly implemented using human_readable_bytes() for formatting; (5) Output includes per-bucket lines via display_name() helper and total line; (6) Module properly registered in crates/uv/src/commands/mod.rs with both mod declaration and pub(crate) use import; (7) Dispatch wiring correctly matches CacheCommand::Stats in crates/uv/src/lib.rs; (8) Code follows established patterns: preview feature warnings, printer usage, and test structure match cache_size implementation. Additional supporting changes are correct: CacheBucket::display_name() method added, test helpers (with_filtered_cache_stats, cache_stats command) added to TestContext, and comprehensive tests covering empty and populated cache scenarios with both raw and human-readable output.",
+          "diff_length": 11016,
+          "new_files": "crates/uv/src/commands/cache_stats.rs\ncrates/uv/tests/it/cache_stats.rs"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 17742
+  },
+  "session_id": "472a0dbd-962c-4e64-9fdc-69a05c30c015"
+}

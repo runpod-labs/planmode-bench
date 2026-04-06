@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-openclaw-channel",
+  "task_name": "add fictional PulseBoard channel",
+  "mode": "plan-clear",
+  "run_number": 5,
+  "timestamp": "2026-04-06T19:11:53.445Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 769739,
+    "duration_api_ms": 935392,
+    "num_turns": 64,
+    "total_cost_usd": 2.5693276,
+    "input_tokens": 1525,
+    "output_tokens": 20798,
+    "cache_read_tokens": 988037,
+    "cache_creation_tokens": 119622,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 269280,
+    "plan_api_ms": 436807,
+    "plan_tokens_in": 1509,
+    "plan_tokens_out": 7218,
+    "plan_cost_usd": 1.2391523999999996,
+    "plan_content": "The plan is ready for your review. Here's a quick summary:\n\n**13 new files** to create under `extensions/pulseboard/`, following the exact same patterns as the IRC and Nostr channel plugins:\n\n| File | Purpose |\n|------|---------|\n| `openclaw.plugin.json` | Plugin manifest (id: `pulseboard`) |\n| `package.json` | Package metadata with `openclaw` channel block |\n| `index.ts` | Entry point via `defineChannelPluginEntry()` |\n| `setup-entry.ts` | Setup entry via `defineSetupPluginEntry()` |\n| `api.ts` | Public API barrel |\n| `runtime-api.ts` | SDK type re-exports |\n| `src/channel.ts` | Core plugin via `createChatChannelPlugin()` — both `direct` + `group` chat types, 4000 char chunk limit |\n| `src/runtime.ts` | Runtime store via `createPluginRuntimeStore()` |\n| `src/types.ts` | `ResolvedPulseBoardAccount`, account resolution functions |\n| `src/config-schema.ts` | Zod schema (apiKey, serverUrl, boards, dmPolicy, allowFrom) |\n| `src/setup-surface.ts` | Setup adapter + wizard (credentials, text inputs, DM policy) |\n| `src/normalize.ts` | Target normalization (`#board` for groups, bare names for DMs) |\n| `src/send.ts` | Placeholder send function (fictional platform) |\n\nNo existing files are modified. All SDK helpers are reused from `openclaw/plugin-sdk/*`.",
+    "execute_duration_ms": 500459,
+    "execute_api_ms": 498585,
+    "execute_tokens_in": 16,
+    "execute_tokens_out": 13580,
+    "execute_cost_usd": 1.3301752000000002
+  },
+  "evaluation": {
+    "overall_score": 0.68,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.68,
+        "weight": 1,
+        "weighted_score": 0.68,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation correctly creates the extension structure with proper file organization, defineChannelPluginEntry/defineSetupPluginEntry, createPluginRuntimeStore with get/set accessors, and createChatChannelPlugin with all required capabilities (direct+group chat types, 4000 char limit, sendText, gateway, messaging, normalizeTarget). However, there are two significant deviations from the rubric: (1) Field naming mismatch—the rubric specifies 'boardUrl' and 'apiToken' fields, but the implementation uses 'serverUrl' and 'apiKey' instead; (2) Missing PulseBoardMessage interface—the rubric explicitly requires this interface in the types file, but only PulseBoardAccountConfig and ResolvedPulseBoardAccount are defined. The node_modules symlinks in the diff are also questionable artifacts. The overall structure and most implementation details follow the correct patterns, but the specific field name requirements and missing interface represent notable gaps from the specification.",
+          "diff_length": 36754,
+          "new_files": "PLAN.md\nextensions/pulseboard/api.ts\nextensions/pulseboard/index.ts\nextensions/pulseboard/openclaw.plugin.json\nextensions/pulseboard/package.json\nextensions/pulseboard/runtime-api.ts\nextensions/pulseboard/setup-entry.ts\nextensions/pulseboard/src/channel.ts\nextensions/pulseboard/src/config-schema.ts\nextensions/pulseboard/src/normalize.ts\nextensions/pulseboard/src/runtime.ts\nextensions/pulseboard/src/send.ts\nextensions/pulseboard/src/setup-surface.ts\nextensions/pulseboard/src/types.ts\nnode_modules\nui/node_modules"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 14458
+  },
+  "session_id": "0b6cd554-6bf0-4ae4-8806-6aef15092c71"
+}

@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "task_id": "algorithm/implement-event-emitter",
+  "task_name": "implement full-featured event emitter",
+  "mode": "plan-clear",
+  "run_number": 3,
+  "timestamp": "2026-04-06T18:07:25.941Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 144584,
+    "duration_api_ms": 141254,
+    "num_turns": 19,
+    "total_cost_usd": 0.45947479999999996,
+    "input_tokens": 22,
+    "output_tokens": 5108,
+    "cache_read_tokens": 205580,
+    "cache_creation_tokens": 30113,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 88450,
+    "plan_api_ms": 87107,
+    "plan_tokens_in": 12,
+    "plan_tokens_out": 2415,
+    "plan_cost_usd": 0.23748454999999996,
+    "plan_content": "The plan is ready for your review. Here's a quick summary of what it proposes:\n\n**Single file change:** `src/event-emitter.ts`\n\n**Core design decisions:**\n1. **Data structure** — `Map<string, ListenerEntry[]>` where `ListenerEntry` has a `listener` (original reference for `off()` matching) and `wrapper` (actual callable — same as listener for `on()`, a self-removing wrapper for `once()`)\n2. **Safe mid-emit iteration** — `emit()` snapshots the listener array before iterating, so removals during iteration can't corrupt the loop or crash\n3. **Auto-cleanup** — When an event's listener array becomes empty (after `off()` or `once()` fires), the map key is deleted to keep `eventNames()` and `listenerCount()` accurate\n4. **`emit()` return value** — Captures `hadListeners` *before* invoking anything, so a `once` listener that auto-removes still causes `emit()` to return `true`\n\nAll 31 tests across 11 describe blocks should pass after implementation.",
+    "execute_duration_ms": 56134,
+    "execute_api_ms": 54147,
+    "execute_tokens_in": 10,
+    "execute_tokens_out": 2693,
+    "execute_cost_usd": 0.22199024999999997
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "test-suite",
+        "score": 1,
+        "weight": 0.5,
+        "weighted_score": 0.5,
+        "passed": true,
+        "details": {
+          "command": "npx vitest run",
+          "tests_passed": 1,
+          "tests_failed": 0,
+          "tests_total": 1,
+          "output": "\n RUN  v3.2.4 /private/var/folders/vq/9q38rw0x2455zr_whqcrjbhr0000gn/T/planmode-bench-wt-run-1775498695646-5mu4hc\n\n ✓ tests/event-emitter.test.ts (29 tests) 6ms\n\n Test Files  1 passed (1)\n      Tests  29 passed (29)\n   Start at  20:07:25\n   Duration  252ms (transform 51ms, setup 0ms, collect 49ms, tests 6ms, environment 0ms, prepare 55ms)\n\n"
+        }
+      },
+      {
+        "type": "test-integrity",
+        "score": 1,
+        "weight": 0.1,
+        "weighted_score": 0.1,
+        "passed": true,
+        "details": {
+          "message": "Test files unchanged from scaffold"
+        }
+      },
+      {
+        "type": "build",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "command": "npx tsc --noEmit",
+          "exit_code": 0,
+          "output": ""
+        }
+      },
+      {
+        "type": "file-check",
+        "score": 1,
+        "weight": 0.2,
+        "weighted_score": 0.2,
+        "passed": true,
+        "details": {
+          "checks_passed": 4,
+          "checks_total": 4,
+          "check_details": [
+            {
+              "path": "src/event-emitter.ts",
+              "check": "exists",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"on(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"emit(\"",
+              "passed": true
+            },
+            {
+              "path": "src/event-emitter.ts",
+              "check": "contains \"once(\"",
+              "passed": true
+            }
+          ]
+        }
+      }
+    ],
+    "evaluation_duration_ms": 1288
+  },
+  "session_id": "e5885eae-0de7-4246-aa25-273267574ae5"
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-llamacpp-chat-template",
+  "task_name": "add Mistral Instruct v3 chat template",
+  "mode": "normal",
+  "run_number": 5,
+  "timestamp": "2026-04-06T18:29:31.245Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 275237,
+    "duration_api_ms": 221300,
+    "num_turns": 19,
+    "total_cost_usd": 0.71871475,
+    "input_tokens": 15,
+    "output_tokens": 8531,
+    "cache_read_tokens": 306639,
+    "cache_creation_tokens": 27827,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 0.4,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.4,
+        "weight": 1,
+        "weighted_score": 0.4,
+        "passed": false,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation has correct scaffolding but critical implementation flaws. Positives: new function exists, template auto-detection is properly registered with correct distinguishing checks ([INST] present, [SYSTEM_PROMPT] absent), LOG_DBG call is present, handler is dispatched correctly with (tmpl, params), and no existing code is modified. Critical failures: (1) Format is COMMON_CHAT_FORMAT_PEG_NATIVE instead of COMMON_CHAT_FORMAT_CONTENT_ONLY, (2) Handler implementation is generic PEG parser setup rather than Mistral Instruct v3 specialized logic, (3) Missing explicit [INST]/[/INST] wrapping of user turns, (4) Missing system message prepending to first user turn, (5) Missing </s> appending after assistant turns. The function appears to be a copy-paste from another handler rather than a proper Mistral Instruct v3 implementation with the required specialized behavior.",
+          "diff_length": 2142,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 11697
+  },
+  "session_id": "4ecf84c0-2929-442c-903b-30e1fc771142"
+}

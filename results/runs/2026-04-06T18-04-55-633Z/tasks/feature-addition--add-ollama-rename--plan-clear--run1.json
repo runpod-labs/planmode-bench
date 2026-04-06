@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-ollama-rename",
+  "task_name": "add model rename API endpoint and CLI command",
+  "mode": "plan-clear",
+  "run_number": 1,
+  "timestamp": "2026-04-06T18:55:10.402Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 490759,
+    "duration_api_ms": 672794,
+    "num_turns": 56,
+    "total_cost_usd": 1.6358783,
+    "input_tokens": 30,
+    "output_tokens": 12262,
+    "cache_read_tokens": 480740,
+    "cache_creation_tokens": 53228,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 311239,
+    "plan_api_ms": 495181,
+    "plan_tokens_in": 15,
+    "plan_tokens_out": 6651,
+    "plan_cost_usd": 1.0721966499999998,
+    "plan_content": "",
+    "execute_duration_ms": 179520,
+    "execute_api_ms": 177613,
+    "execute_tokens_in": 15,
+    "execute_tokens_out": 5611,
+    "execute_cost_usd": 0.56368165
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "All rubric requirements fully met: RenameRequest struct with proper json tags in api/types.go; Client.Rename method in api/client.go POSTing to /api/rename; Server.RenameHandler in server/routes.go properly validates inputs and calls RenameModel which copies the manifest file then deletes source, returning 404 (os.StatusNotFound) for missing source and 409 (os.StatusConflict) for existing destination; route registration r.POST(\"/api/rename\", s.RenameHandler); CLI command \"rename SOURCE DESTINATION\" with cobra.ExactArgs(2) and proper RunE handler; CLI RenameHandler correctly calls client.Rename; no existing test files or code modified, only new code added. Implementation is complete, correct, and follows existing patterns.",
+          "diff_length": 6301,
+          "new_files": "PLAN.md"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18373
+  },
+  "session_id": "6e449927-fd22-43da-9b18-7adb3b308a3c"
+}

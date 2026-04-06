@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-uv-cache-stats",
+  "task_name": "add 'uv cache stats' subcommand",
+  "mode": "normal",
+  "run_number": 4,
+  "timestamp": "2026-04-06T20:12:07.679Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 318446,
+    "duration_api_ms": 301911,
+    "num_turns": 44,
+    "total_cost_usd": 1.3256354999999997,
+    "input_tokens": 31,
+    "output_tokens": 11618,
+    "cache_read_tokens": 1061254,
+    "cache_creation_tokens": 51232,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "evaluation": {
+    "overall_score": 1,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 1,
+        "weight": 1,
+        "weighted_score": 1,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "Implementation is complete and correct. Checklist: (1) CLI variant `Stats(StatsArgs)` with `human: bool` flag added to `CacheCommand` enum ✓; (2) Command iterates via `CacheBucket::iter_all()` and computes sizes using `DiskUsage::new()` ✓; (3) Function is `pub(crate) fn cache_stats()` returning `Result<ExitStatus>` with `Ok(ExitStatus::Success)` ✓; (4) `--human` flag implemented with `-H` short form, uses `human_readable_bytes()` ✓; (5) Output includes all per-bucket lines with aligned formatting and a Total line ✓; (6) Module registration: `mod cache_stats` and `pub(crate) use cache_stats::cache_stats` in mod.rs ✓; (7) Dispatch wiring in lib.rs matches `CacheCommand::Stats` and calls `commands::cache_stats()` ✓; (8) Follows cache_size patterns: preview warning, printer.stdout_important(), parameter ordering ✓. Helper methods `CacheBucket::name()` and `CacheBucket::iter_all()` properly added. Comprehensive test coverage with empty cache and populated cache tests (both raw and human-readable). Test infrastructure updated with filtered output helpers.",
+          "diff_length": 12176,
+          "new_files": "crates/uv/src/commands/cache_stats.rs\ncrates/uv/tests/it/cache_stats.rs"
+        }
+      }
+    ],
+    "evaluation_duration_ms": 18971
+  },
+  "session_id": "db46d6f1-151f-4ae0-901e-192a645f2816"
+}

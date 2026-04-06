@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "task_id": "feature-addition/add-unsloth-adapter",
+  "task_name": "add ONNX LoRA adapter export",
+  "mode": "plan-resume",
+  "run_number": 3,
+  "timestamp": "2026-04-06T20:07:58.646Z",
+  "model": "claude-opus-4-6",
+  "metrics": {
+    "duration_ms": 554787,
+    "duration_api_ms": 706085,
+    "num_turns": 36,
+    "total_cost_usd": 2.5306762999999997,
+    "input_tokens": 32,
+    "output_tokens": 10754,
+    "cache_read_tokens": 795627,
+    "cache_creation_tokens": 75653,
+    "stop_reason": "end_turn",
+    "is_error": false
+  },
+  "plan_metrics": {
+    "plan_duration_ms": 468259,
+    "plan_api_ms": 619975,
+    "plan_tokens_in": 20,
+    "plan_tokens_out": 5452,
+    "plan_cost_usd": 1.9213957999999995,
+    "plan_content": "",
+    "execute_duration_ms": 86528,
+    "execute_api_ms": 86110,
+    "execute_tokens_in": 12,
+    "execute_tokens_out": 5302,
+    "execute_cost_usd": 0.6092805
+  },
+  "evaluation": {
+    "overall_score": 0.55,
+    "strategy_results": [
+      {
+        "type": "llm-judge",
+        "score": 0.55,
+        "weight": 1,
+        "weighted_score": 0.55,
+        "passed": true,
+        "details": {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning": "The implementation covers most rubric requirements: exports LoRA A/B matrices, accepts correct parameters with defaults, saves comprehensive metadata, exposes the method on the model class, and uses ONNX helper libraries appropriately. However, there are critical issues: (1) Missing imports for Bnb_Linear4bit, Peft_Linear4bit, and Peft_Linear classes referenced in isinstance() checks - this causes runtime NameError; (2) Redundant 'pass' statements after raise statements and block endings indicate code quality issues; (3) Unusual ONNX graph construction with Identity nodes for every initializer is unconventional and may not be necessary. The core logic for extracting LoRA parameters and building ONNX structures is sound, but the missing imports make this non-functional as-is.",
+          "diff_length": 9545,
+          "new_files": ""
+        }
+      }
+    ],
+    "evaluation_duration_ms": 20326
+  },
+  "session_id": "246b9745-5142-46c1-b8f7-7c950bdbc3aa"
+}
