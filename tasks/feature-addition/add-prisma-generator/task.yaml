@@ -10,36 +10,12 @@ author: "runpod-labs"
 created_at: "2026-04-04"
 
 prompt: |
-  Add a new Prisma generator package that generates a typed REST API client
-  from a Prisma schema. Study how existing generators work in the Prisma monorepo
-  (look at `packages/generator-helper/`, `packages/client/`, and the generator
-  protocol).
-
-  Create a new package at `packages/generator-rest-client/` with:
-
-  1. `package.json` with proper name (`@prisma/generator-rest-client`) and dependencies
-  2. `tsconfig.json` following the monorepo conventions
-  3. `src/index.ts` - Entry point that implements the generator protocol:
-     - Export a `generatorHandler` that implements `GeneratorManifest` and `GeneratorOptions`
-     - Handle the `onGenerate` callback
-  4. `src/generator.ts` - The main generation logic:
-     - Parse the DMMF (Data Model Meta Format) from `options.dmmf`
-     - For each model in the schema, generate:
-       - A typed interface for the model
-       - CRUD methods: `findMany`, `findUnique`, `create`, `update`, `delete`
-       - Each method should be properly typed with the model's fields
-     - Output a single `rest-client.ts` file
-  5. `src/template.ts` - String template helpers for code generation
-
-  The generator should be usable in a Prisma schema like:
-  ```prisma
-  generator restClient {
-    provider = "prisma-generator-rest-client"
-    output   = "./generated/rest-client"
-  }
-  ```
-
-  Follow existing Prisma monorepo patterns for package structure, tsconfig, and naming.
+  Add a new Prisma generator package that generates a typed REST API client from
+  a Prisma schema. For each model it should generate a TypeScript interface and
+  CRUD methods (findMany, findUnique, create, update, delete) with proper types.
+  The generator should implement the standard Prisma generator protocol (onGenerate
+  callback with DMMF parsing) and output a single rest-client.ts file. Follow the
+  existing monorepo package structure and conventions.
 
 setup:
   source_repo:

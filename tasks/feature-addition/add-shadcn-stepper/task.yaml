@@ -10,81 +10,13 @@ author: "runpod-labs"
 created_at: "2026-04-04"
 
 prompt: |
-  Add a new "Stepper" compound component to the shadcn/ui component library.
-  The Stepper component displays a multi-step progress indicator, commonly used
-  for wizards, onboarding flows, and checkout processes.
-
-  Study the existing component patterns carefully:
-  - `apps/v4/registry/new-york-v4/ui/` — all UI component source files
-  - `apps/v4/registry/new-york-v4/ui/_registry.ts` — UI component registry entries
-  - `apps/v4/registry/new-york-v4/examples/` — example/demo files
-  - `apps/v4/registry/new-york-v4/examples/_registry.ts` — example registry entries
-  - `apps/v4/lib/utils.ts` — the `cn()` utility used by all components
-
-  Study compound component patterns like `carousel.tsx`, `tabs.tsx`, or `accordion.tsx`
-  to understand how shadcn/ui builds multi-part components with React context.
-
-  Key conventions to follow:
-  - Use `"use client"` directive at the top
-  - Use function declarations (not arrow functions)
-  - Use `cn()` from `@/lib/utils` for className merging
-  - Add `data-slot="..."` attribute on every component element
-  - Use `React.ComponentProps<"element">` for prop types
-  - Named exports only (no default exports)
-  - Use `class-variance-authority` (cva) for visual variants
-
-  Requirements:
-
-  1. Create `apps/v4/registry/new-york-v4/ui/stepper.tsx` with these exports:
-     - `Stepper` — root container component
-       * Props: `orientation?: "horizontal" | "vertical"` (default "horizontal"),
-         `activeStep: number`, `className`, standard div props
-       * Uses React context to share `activeStep` and `orientation` with children
-       * Renders a `<div>` with `data-slot="stepper"` and appropriate flex layout
-       * data-orientation attribute matching the orientation prop
-     - `StepperItem` — wrapper for each step
-       * Props: `step: number`, `className`, standard div props
-       * Renders `<div>` with `data-slot="stepper-item"`, `data-step`, and
-         `data-state` ("completed" | "active" | "pending") based on context
-     - `StepperTrigger` — clickable step indicator (the circle/number)
-       * Props: `className`, standard button props
-       * Renders `<button>` with `data-slot="stepper-trigger"`
-       * Shows step number by default, uses children if provided
-       * Styled differently based on parent StepperItem's data-state
-     - `StepperTitle` — label text for a step
-       * Props: `className`, standard paragraph props
-       * Renders `<p>` with `data-slot="stepper-title"`
-     - `StepperDescription` — description text for a step
-       * Props: `className`, standard paragraph props
-       * Renders `<p>` with `data-slot="stepper-description"`
-     - `StepperSeparator` — line between steps
-       * Props: `className`, standard div props
-       * Renders `<div>` with `data-slot="stepper-separator"`
-       * Styled as a line (horizontal or vertical based on orientation context)
-       * Visual state changes when the NEXT step is completed
-     - `StepperContent` — content panel for the active step
-       * Props: `step: number`, `className`, standard div props
-       * Only renders children when `step === activeStep` from context
-       * Renders `<div>` with `data-slot="stepper-content"`
-
-  2. Create `apps/v4/registry/new-york-v4/examples/stepper-demo.tsx`:
-     - A demo showing a 3-step horizontal stepper (e.g., "Account", "Profile", "Complete")
-     - Each step has a StepperTrigger, StepperTitle, and StepperSeparator
-     - Include StepperContent panels for each step with placeholder text
-     - Use `React.useState` to manage the activeStep
-     - Include "Next" and "Previous" buttons to navigate between steps
-
-  3. Add the stepper entry to `apps/v4/registry/new-york-v4/ui/_registry.ts`:
-     - Follow the exact pattern of existing entries
-     - `name`: `"stepper"`
-     - `type`: `"registry:ui"`
-     - `files`: pointing to `ui/stepper.tsx`
-
-  4. Add the example entry to `apps/v4/registry/new-york-v4/examples/_registry.ts`:
-     - `name`: `"stepper-demo"`
-     - `type`: `"registry:example"`
-     - `registryDependencies`: `["stepper"]`
-     - `files`: pointing to `examples/stepper-demo.tsx`
+  Add a new "Stepper" compound component to the shadcn/ui component library for
+  multi-step wizards and onboarding flows. It should include sub-components for
+  the container, individual step items, clickable triggers, titles, descriptions,
+  separators between steps, and step content panels. Support both horizontal and
+  vertical orientations. Use React context to share state between sub-components.
+  Also create a demo example and register both the component and example in the
+  appropriate registries.
 
   Do NOT modify any existing component files. Only create new files and add
   registry entries.

@@ -10,78 +10,15 @@ author: "runpod-labs"
 created_at: "2026-04-04"
 
 prompt: |
-  Add a model rename feature to Ollama that allows users to rename a local model
-  in a single atomic operation (instead of requiring copy + delete). This requires
-  changes across three layers: API types, server route handler, and CLI command.
-
-  Study the existing codebase first:
-  - `api/types.go` contains all request/response type definitions (e.g.,
-    `CopyRequest`, `DeleteRequest`, `ShowRequest`)
-  - `api/client.go` contains the `Client` methods that map to API endpoints
-    (e.g., `Client.Copy()`, `Client.Delete()`)
-  - `server/routes.go` contains:
-    - Handler methods on the `*Server` struct (e.g., `CopyHandler`, `DeleteHandler`)
-    - Route registration in `GenerateRoutes()` using the Gin framework
-  - `cmd/cmd.go` contains Cobra CLI command definitions in `NewCLI()` and
-    handler functions (e.g., `CopyHandler`, `DeleteHandler`)
-
-  Requirements:
-
-  1. In `api/types.go`, add a `RenameRequest` struct with two fields:
-     - `Source` (string, json tag "source") - the current model name
-     - `Destination` (string, json tag "destination") - the new model name
-     Follow the exact same pattern as `CopyRequest`.
-
-  2. In `api/client.go`, add a `Rename` method on `*Client`:
-     - Signature: `func (c *Client) Rename(ctx context.Context, req *RenameRequest) error`
-     - It should call `c.do(ctx, http.MethodPost, "/api/rename", req, nil)`
-     - Follow the same pattern as `Client.Copy()`
-
-  3. In `server/routes.go`, add a `RenameHandler` method on `*Server`:
-     - Signature: `func (s *Server) RenameHandler(c *gin.Context)`
-     - Parse the JSON body into `api.RenameRequest`
-     - Validate that both `Source` and `Destination` are non-empty (return 400 if missing)
-     - Validate that both model names are valid using `model.ParseName()` and `name.IsValid()`
-       (return 400 with `errtypes.InvalidModelNameErrMsg` if invalid)
-     - Perform the rename by calling the existing copy logic followed by delete:
-       a. First, call `CopyModel(src, dst)` with the parsed model names (this function
-          already exists in `server/images.go`). If it fails, return the appropriate error.
-       b. Then delete the source model by calling `manifest.ParseNamedManifest(src)` to get
-          the manifest, then calling `m.Remove()` followed by `m.RemoveLayers()` (this is
-          the same pattern used by the existing `DeleteHandler`).
-          If delete fails, return 500 but note the copy succeeded.
-     - Return HTTP 200 with `gin.H{"status": "success"}` on success
-     - Handle errors:
-       - If source model not found: return 404 with `"model 'X' not found"`
-       - If destination already exists: return 409 (Conflict) with `"destination model 'X' already exists"`
-       - For invalid names: return 400
-
-  4. Register the route in `GenerateRoutes()` in `server/routes.go`:
-     - Add `r.POST("/api/rename", s.RenameHandler)` in the "Local model cache management"
-       section, near the existing `/api/copy` route
-
-  5. In `cmd/cmd.go`, add:
-     a. A `RenameHandler` function:
-        - Signature: `func RenameHandler(cmd *cobra.Command, args []string) error`
-        - Takes exactly 2 args: source and destination model names
-        - Creates an API client and calls `client.Rename()` with an `api.RenameRequest`
-        - On success, prints `"Renamed "<source>" to "<destination>"` to stdout
-        - Follow the same pattern as the existing `CopyHandler` function
-     b. A `renameCmd` cobra.Command:
-        - Use: `"rename SOURCE DESTINATION"`
-        - Short: `"Rename a model"`
-        - Args: `cobra.ExactArgs(2)`
-        - PreRunE: `checkServerHeartbeat`
-        - RunE: `RenameHandler`
-     c. Register `renameCmd` in the `rootCmd.AddCommand(...)` call, placed after `copyCmd`
-
-  6. For the destination-already-exists check in `RenameHandler`, use
-     `manifest.ParseNamedManifest()` to check if the destination model already exists.
-     If the error is nil (manifest found), return 409 Conflict.
+  Add a model rename feature to Ollama so users can rename a local model in one
+  operation instead of copy + delete. This needs a new API endpoint
+  (POST /api/rename), a corresponding client method, a server handler that
+  copies then deletes the source, and a CLI command (`ollama rename SOURCE DEST`).
+  The handler should return 404 if the source doesn't exist and 409 if the
+  destination already exists.
 
   Do NOT try to build or run Ollama. Only modify source files.
-  Do NOT modify any test files.
-  All existing code must remain intact. Only add new code.
+  Do NOT modify any test files. All existing code must remain intact.
 
 setup:
   source_repo:

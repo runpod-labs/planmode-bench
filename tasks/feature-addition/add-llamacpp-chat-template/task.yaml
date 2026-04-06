@@ -10,50 +10,12 @@ author: "runpod-labs"
 created_at: "2026-04-03"
 
 prompt: |
-  Add a new specialized chat template handler called "mistral-instruct-v3" to llama.cpp.
-  This template implements the Mistral Instruct v0.3 chat format used by models like
-  Mistral-7B-Instruct-v0.3.
-
-  Study the existing codebase first:
-  - `common/chat.cpp` contains all specialized template handlers (e.g.,
-    `common_chat_params_init_ministral_3`, `common_chat_params_init_gpt_oss`, etc.)
-  - `common/chat.h` contains the `common_chat_format` enum and data structures
-  - Each handler is a static function that takes `(const common_chat_template &, const autoparser::generation_params &)` and returns `common_chat_params`
-  - Templates are detected in `common_chat_try_specialized_template()` by matching
-    unique markers in the Jinja template source string
-
-  Requirements:
-
-  1. Add a new static handler function `common_chat_params_init_mistral_instruct_v3`
-     in `common/chat.cpp`. The handler must format messages using the Mistral v0.3
-     instruction format:
-     - System message is prepended to the first user message
-     - User turns are wrapped: `[INST] {content} [/INST]`
-     - Assistant turns are appended directly followed by `</s>`
-     - Multi-turn example:
-       `<s>[INST] {system}\n{user1} [/INST] {assistant1}</s>[INST] {user2} [/INST]`
-     - If there is no system message, omit it:
-       `<s>[INST] {user1} [/INST] {assistant1}</s>[INST] {user2} [/INST]`
-     - The handler should build up `data.prompt` by iterating over `inputs.messages`
-       and formatting each role appropriately (system, user, assistant)
-     - Set `data.format = COMMON_CHAT_FORMAT_CONTENT_ONLY`
-
-  2. Register the template in `common_chat_try_specialized_template()` in `common/chat.cpp`.
-     Add detection logic that identifies the Mistral v0.3 template by checking for the
-     presence of `[INST]` and `[/INST]` markers in the template source AND the absence
-     of `[SYSTEM_PROMPT]` (to distinguish from the existing Ministral 3 handler which
-     uses a different format). Log with: `LOG_DBG("Using specialized template: Mistral Instruct v3\n");`
-
-  3. Follow the existing code patterns exactly:
-     - Same function signature as other handlers
-     - Use `nlohmann::json` (aliased as `json`) for message iteration
-     - Use `msg.value("role", "")` and `msg.value("content", "")` for field access
-     - Return `common_chat_params` struct with `prompt` and `format` fields set
-
-  4. Do NOT modify `common/chat.h` -- the existing `COMMON_CHAT_FORMAT_CONTENT_ONLY`
-     enum value is sufficient for this template.
-
-  5. All existing code must remain intact. Only add new code.
+  Add a specialized "mistral-instruct-v3" chat template handler to llama.cpp for
+  the Mistral Instruct v0.3 format. The format wraps user turns with [INST]/[/INST]
+  markers, prepends system messages to the first user turn, and appends </s> after
+  assistant turns. Register it with template auto-detection (distinguish it from the
+  existing Ministral 3 handler by checking for the absence of [SYSTEM_PROMPT]).
+  Only add new code -- do not modify any existing handlers or the header file.
 
 setup:
   source_repo:

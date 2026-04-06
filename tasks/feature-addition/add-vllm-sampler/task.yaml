@@ -9,22 +9,11 @@ author: "runpod-labs"
 created_at: "2026-04-04"
 
 prompt: |
-  Add a "Top-A" sampling method to the vLLM inference engine. Top-A sampling
-  keeps only tokens whose probability is at least `a * max_probability`, then
-  renormalizes.
-
-  Study the existing sampling code in `vllm/` (look at how top_p and top_k
-  are implemented in the sampling parameters and sampler layers).
-
-  Requirements:
-  1. Add a `top_a` float parameter to the sampling params class (default 0.0 = disabled)
-  2. Add validation: 0.0 <= top_a <= 1.0
-  3. Document the parameter in the docstring
-  4. Add the Top-A filtering logic in the appropriate sampler file:
-     - Find max probability for each sequence
-     - Mask tokens where p(token) < top_a * max_p
-     - When top_a == 0.0, skip filtering (no-op)
-  5. Thread the top_a value through any intermediate data structures
+  Add "Top-A" sampling to vLLM. Top-A keeps only tokens whose probability is at
+  least `top_a * max_probability`, then renormalizes. Add a `top_a` parameter
+  (float, default 0.0 meaning disabled, valid range [0.0, 1.0]) to the sampling
+  params and implement the filtering logic in the sampler. Thread the value
+  through any intermediate data structures as needed.
 
   Do NOT try to run or install vLLM. Only modify source files.
 

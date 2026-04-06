@@ -9,67 +9,13 @@ author: "runpod-labs"
 created_at: "2026-04-04"
 
 prompt: |
-  Add a new `uv cache stats` subcommand to the uv Python package manager that
-  displays a per-bucket breakdown of cache disk usage.
+  `uv cache size` shows the total cache size. Add a new `uv cache stats`
+  subcommand that shows a per-bucket breakdown of cache usage (wheels, sdists,
+  git, etc.) with a total at the end. Support a --human flag for human-readable
+  sizes. Wire it through the CLI definition, command dispatch, and module
+  registration.
 
-  The existing `uv cache size` command only prints the *total* cache size.
-  Your new `uv cache stats` command should print the size of every cache
-  bucket individually (e.g., wheels, sdists, git, simple, archives, etc.)
-  plus a total line at the end.
-
-  Study the codebase first:
-  - `crates/uv-cli/src/lib.rs` defines all CLI subcommands via clap.
-    Look at the `CacheCommand` enum and the existing `Size(SizeArgs)` variant.
-  - `crates/uv/src/lib.rs` dispatches commands. Search for `CacheCommand::Size`
-    to see the dispatch pattern.
-  - `crates/uv/src/commands/mod.rs` declares and re-exports command modules.
-    See how `cache_size` is declared and exported.
-  - `crates/uv/src/commands/cache_size.rs` implements `uv cache size`.
-  - `crates/uv-cache/src/lib.rs` has the `CacheBucket` enum with variants
-    `Wheels`, `SourceDistributions`, `FlatIndex`, `Git`, `Interpreter`,
-    `Simple`, `Archive`, `Builds`, `Environments`, `Binaries`.
-    It also has `CacheBucket::iter()` and `Cache::bucket(CacheBucket) -> PathBuf`.
-
-  Requirements:
-
-  1. In `crates/uv-cli/src/lib.rs`:
-     - Add a `Stats(StatsArgs)` variant to the `CacheCommand` enum with
-       doc comment: `/// Show per-bucket cache statistics.`
-     - Define a new `StatsArgs` struct (next to `SizeArgs`) with a single field:
-       `#[arg(long = "human", short = 'H', alias = "human-readable")]`
-       `pub human: bool`
-
-  2. Create a new file `crates/uv/src/commands/cache_stats.rs` implementing:
-     ```rust
-     pub(crate) fn cache_stats(
-         cache: &Cache,
-         human_readable: bool,
-         printer: Printer,
-     ) -> Result<ExitStatus>
-     ```
-     The function must:
-     - Iterate over `CacheBucket::iter()`
-     - For each bucket, compute its disk size using `diskus::DiskUsage` on
-       `cache.bucket(bucket)` (same approach as `cache_size.rs`)
-     - Print one line per bucket: `{bucket_name}: {size}` where bucket_name
-       is the Display impl of CacheBucket (e.g., "wheels-v6")
-     - Print a final `total: {total_size}` line
-     - When `human_readable` is true, format sizes with `human_readable_bytes`;
-       otherwise print raw byte counts
-     - Return `Ok(ExitStatus::Success)`
-
-  3. In `crates/uv/src/commands/mod.rs`:
-     - Add `mod cache_stats;` alongside the existing `mod cache_size;`
-     - Add `pub(crate) use cache_stats::cache_stats;` alongside the existing
-       `pub(crate) use cache_size::cache_size;`
-
-  4. In `crates/uv/src/lib.rs`:
-     - Import `CacheCommand::Stats` (it is imported via the existing glob path)
-     - Add a dispatch arm for `CacheCommand::Stats(args)` right after the
-       `CacheCommand::Size` arm, calling:
-       `commands::cache_stats(&cache, args.human, printer)`
-
-  Do NOT try to run `cargo build` or `cargo check`. Only modify source files.
+  Do NOT run cargo build or cargo check -- only modify source files.
 
 setup:
   source_repo:
